@@ -6,12 +6,13 @@ dotenv.config();
 
 // Lesen Sie die Kommandozeilenargumente
 // process.argv[2] ist das erste Argument nach dem Skriptnamen
-const indexName = process.argv[2];
-const namespaceID = process.argv[3];
+const indexName = process.env.INDEX_NAME
+const namespaceID = process.argv[2];
+const question = process.argv[3]
 
 // Überprüfen Sie, ob die erforderlichen Argumente vorhanden sind
-if (!indexName || !namespaceID) {
-  console.error('Verwendung: node upload_informations.js <indexName> <namespaceID>');
+if (!namespaceID) {
+  console.error('Verwendung: node upload_informations.js <namespaceID> <question>');
   process.exit(1);
 }
 
@@ -21,7 +22,7 @@ const model = process.env.EMBEDDING_MODEL;
 
 // Definieren Sie Ihre Abfrage
 const query = [
-  'Tell me about the tech company known as Apple.',
+  question,
 ];
 
 // Asynchrone Funktion zur Verwendung von await
