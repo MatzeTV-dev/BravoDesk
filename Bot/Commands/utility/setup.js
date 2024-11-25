@@ -1,6 +1,7 @@
 const { channel } = require('diagnostics_channel');
 const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder  } = require('discord.js');
 const fs = require('fs');
+const { gzip } = require('zlib');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -13,6 +14,7 @@ module.exports = {
 			// Call the helper functions for setup
 			await createRoles(interaction);
 			await createChannel(interaction);
+            await createCategories(interaction);
 			//await saveDatabase();
 
 			await interaction.editReply('Setup completed successfully!');
@@ -45,13 +47,14 @@ async function createRoles(interaction) {
 				color: roleData.color,
 				permissions: roleData.permissions,
 			});
-			console.log(`${guild.id}: Created role: ${roleData.name}, ${roleData.id}`);
+			console.log(`${guild.name}: Created role: ${roleData.name}, ${roleData.id}`);
 		} else {
-			console.log(`${guild.id}: Role already exists: ${roleData.name}, ${roleData.id}`);
+			console.log(`${guild.name}: Role already exists: ${roleData.name}, ${roleData.id}`);
 		}
 	}
 }
 
+// Function to create Channels
 async function createChannel(interaction) {
     const guild = interaction.guild;
 
@@ -63,10 +66,18 @@ async function createChannel(interaction) {
             name: channelName,
             type: ChannelType.GuildText,
             topic: `Willkommen Im Ticketsystem von ${guild.name}`,
+            permissionOverwrites: [
+                {
+                    id: guild.roles.everyone,
+                    deny: [
+                        PermissionsBitField.Flags.SendMessages
+                    ],    
+                },
+            ],
         });
-        console.log(`${guild.id}: Created channel: ${channel.id}`);
+        console.log(`${guild.name}: Created channel: ${channel.id}`);
     } else {
-        console.log(`${guild.id}: Channel already exists: ${channel.id}`);
+        console.log(`${guild.name}: Channel already exists: ${channel.id}`);
     }
 
     // Load the embed data from JSON
@@ -87,21 +98,25 @@ async function createChannel(interaction) {
                 label: 'Technischer Support',
                 description: 'Fragen zu technischen Problemen',
                 value: 'technical_support',
+				emoji: '📺'
             },
             {
                 label: 'Allgemeine Fragen',
                 description: 'Haben Sie allgemeine Fragen',
                 value: 'general_questions',
+				emoji: '❓'
             },
             {
                 label: 'Verbesserungsvorschläge',
                 description: 'Teilen Sie uns Ihre Vorschläge mit',
                 value: 'suggestions',
+				emoji: '⭐'
             },
 			{
                 label: 'Bug Report',
                 description: 'Haben Sie ein Fehler gefunden?',
                 value: 'bug_report',
+				emoji: '👾'
             },
         ]);
 
@@ -115,9 +130,37 @@ async function createChannel(interaction) {
             username: embedData.username,
 			components: [row],
         });
-        console.log(`Embed sent to channel: ${channel.id}`);
+        console.log(`${guild.name} Embed sent to channel: ${channel.id}`);
     } catch (error) {
-        console.error('Error sending embed:', error);
+        console.error(`${guild.name} Error sending embed:`, error);
+    }
+}
+
+// Function to create categories
+async function createCategories(interaction) {
+    const guild = interaction.guild;
+    const categorieName = 'tickets';
+    var categorie = null;
+
+    if (!categorie) {
+        categorie = await guild.channels.create({
+            name: categorieName,
+            type: ChannelType.GuildCategory,
+            permissionOverwrites: [
+                {
+                    id: guild.roles.everyone,
+                    deny: [
+                        PermissionsBitField.Flags.ViewChannel
+                    ],
+                    allow: [
+                        PermissionsBitField.Flags.SendMessages
+                    ]    
+                },
+            ],
+        });
+        console.log(`${guild.name}: Created categorie: ${categorie.id}`);
+    } else {
+        console.log(`${guild.name}: categorie already exists: ${categorie.id}`);
     }
 }
 
