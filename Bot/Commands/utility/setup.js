@@ -86,7 +86,7 @@ async function createChannel(interaction) {
     // Prepare the embed payload
     const embeds = embedData.embeds.map(embed => ({
         ...embed,
-        color: embed.color || 5763719, // Ensure a default color if not provided
+        color: embed.color || 7049073, // Ensure a default color if not provided
     }));
 
 	    // Create the dropdown menu
@@ -157,7 +157,7 @@ async function createCategories(interaction) {
                     ]    
                 },
             ],
-        });
+        }); 
         console.log(`${guild.name}: Created categorie: ${categorie.id}`);
     } else {
         console.log(`${guild.name}: categorie already exists: ${categorie.id}`);

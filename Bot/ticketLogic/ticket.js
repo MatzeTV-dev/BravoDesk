@@ -1,4 +1,6 @@
-const {} = require('discord.js');
+const { channel } = require('diagnostics_channel');
+const { PermissionsBitField, ChannelType, PermissionOverwrites } = require('discord.js');
+const fs = require('fs');
 
 module.exports = {
     data: {
@@ -11,16 +13,16 @@ module.exports = {
         for (const value of selectedValues) {
             switch (value) {
                 case 'technical_support':
-                    console.log("1")
+                    createTicket(interaction, "Technischer Support")
                     break;
                 case 'general_questions':
-                    console.log("2")
+                    createTicket(interaction, "Allgemeine Frage")
                     break;
                 case 'suggestions':
-                    console.log("3")
+                    createTicket(interaction, "Verbesserungsvorschlag")
                     break;
                 case 'bug_report':
-                    console.log("4")
+                    createTicket(interaction, "Bug Report")
                     break;
             }
 
@@ -31,6 +33,57 @@ module.exports = {
     },
 };
 
-function createTicket() {
+async function createTicket(interaction, reason) {
+    const guild = interaction.guild;
+    const createdChannel = null;
+    try {
+        const channelName = interaction.user.id;
+
+        createdChannel = await guild.channels.create({
+            name: channelName,
+            type: ChannelType.GuildText,
+            topic: 'This is your ' + reason + ' ticket ',
+            parent: "1309549212119207997",
+            permissionOverwrites: [
+                {
+                    id: interaction.user.id,
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,
+                        PermissionsBitField.Flags.SendMessages,
+                        PermissionsBitField.Flags.AttachFiles,
+                    ]
+                },
+                {
+                    id: guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+            ]
+        })
+
+    } catch (errorCreatingTicket) {
+        console.error('Fehler beim erstelen des Tickets:', errorCreatingTicket);
+    }
     
+
+    try {
+        const embedData = JSON.parse(fs.readFileSync('./Design/Welcome_message.json', 'utf-8'));
+
+        // Prepare the embed payload
+        const embeds = embedData.embeds.map(embed => ({
+            ...embed,
+            color: embed.color || 7049073,
+        }));
+
+        await createdChannel.send({
+            content: embedData.content || '',
+            embeds: embeds,
+            username: embedData.username,
+			components: [row],
+        });
+
+        createdChannel.send("Hallo! Mein Name ist Bern ich bin ein AI gestützter Supporter. Ich werde Ihnen dabei helfen Ihre Angelegenheit zu klären.\nSollten Sie zu irgendeiner Zeit mit einem Menschen sprechen wollen teilen Sie mir dies mit!\n\nWie darf ich Ihnen helfen?")
+
+    } catch (errorSendingMessage) {
+        console.error('Fehler beim erstellen des Tickets:', errorSendingMessage)
+    }
 }
