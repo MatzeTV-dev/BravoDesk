@@ -1,5 +1,4 @@
-const { channel } = require('diagnostics_channel');
-const { PermissionsBitField, ChannelType, PermissionOverwrites } = require('discord.js');
+const { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 
 module.exports = {
@@ -13,37 +12,38 @@ module.exports = {
         for (const value of selectedValues) {
             switch (value) {
                 case 'technical_support':
-                    createTicket(interaction, "Technischer Support")
+                    await createTicket(interaction, "Technischer Support");
                     break;
                 case 'general_questions':
-                    createTicket(interaction, "Allgemeine Frage")
+                    await createTicket(interaction, "Allgemeine Frage");
                     break;
                 case 'suggestions':
-                    createTicket(interaction, "Verbesserungsvorschlag")
+                    await createTicket(interaction, "Verbesserungsvorschlag");
                     break;
                 case 'bug_report':
-                    createTicket(interaction, "Bug Report")
+                    await createTicket(interaction, "Bug Report");
                     break;
             }
-
         }
 
         // Antwort an den Benutzer
-        await interaction.reply({ content: 'Dein Ticket wurde ertellt!', ephemeral: true });
+        await interaction.reply({ content: 'Dein Ticket wurde erstellt!', ephemeral: true });
     },
 };
 
 async function createTicket(interaction, reason) {
     const guild = interaction.guild;
-    const createdChannel = null;
+    let createdChannel = null;
+    const supporterRole = guild.roles.cache.get('1311717514606284934');
+
     try {
-        const channelName = interaction.user.id;
+        const channelName = `${interaction.user.username}s Ticket`;
 
         createdChannel = await guild.channels.create({
             name: channelName,
             type: ChannelType.GuildText,
-            topic: 'This is your ' + reason + ' ticket ',
-            parent: "1309549212119207997",
+            topic: `Du hast ein ${reason} Ticket erstellt.`,
+            parent: "1311717519194587198",
             permissionOverwrites: [
                 {
                     id: interaction.user.id,
@@ -55,35 +55,90 @@ async function createTicket(interaction, reason) {
                 },
                 {
                     id: guild.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel],
+                    deny: [PermissionsBitField.Flags.ViewChannel]
+                },
+                {
+                    id: supporterRole.id,
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,
+                        PermissionsBitField.Flags.SendMessages,
+                        PermissionsBitField.Flags.AttachFiles,
+                    ]
                 },
             ]
-        })
+        });
 
-    } catch (errorCreatingTicket) {
-        console.error('Fehler beim erstelen des Tickets:', errorCreatingTicket);
-    }
-    
-
-    try {
         const embedData = JSON.parse(fs.readFileSync('./Design/Welcome_message.json', 'utf-8'));
 
-        // Prepare the embed payload
-        const embeds = embedData.embeds.map(embed => ({
-            ...embed,
-            color: embed.color || 7049073,
-        }));
+        // Bereite die Embeds vor und ersetze Platzhalter
+        const embeds = embedData.embeds.map(embed => {
+            // Erstelle eine Kopie des Embeds, um Seiteneffekte zu vermeiden
+            const processedEmbed = {
+                ...embed,
+                color: embed.color || 7049073,
+            };
 
+            // Ersetze Platzhalter in Titel und Beschreibung
+            if (processedEmbed.title) {
+                processedEmbed.title = processedEmbed.title.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
+            }
+
+            if (processedEmbed.description) {
+                processedEmbed.description = processedEmbed.description.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
+            }
+
+            // Ersetze Platzhalter in den Feldern
+            if (processedEmbed.fields) {
+                processedEmbed.fields = processedEmbed.fields.map(field => ({
+                    ...field,
+                    name: field.name.replace('{category}', reason).replace('{user_ID}', interaction.user.id),
+                    value: field.value.replace('{category}', reason).replace('{user_ID}', interaction.user.id),
+                }));
+            }
+
+            return processedEmbed;
+        });
+
+        // Erstelle die Buttons
+        const closeTicketButton = new ButtonBuilder()
+            .setCustomId('close_ticket_button')
+            .setLabel('Schließen')
+            .setEmoji("❌")
+            .setStyle(ButtonStyle.Primary);
+
+        const solvedTicketButton = new ButtonBuilder()
+            .setCustomId('mark_as_solved_button')
+            .setLabel('Gelöst')
+            .setEmoji("✅")
+            .setStyle(ButtonStyle.Secondary);
+
+        const talkToHumanButton = new ButtonBuilder()
+            .setCustomId('talk_to_human')
+            .setLabel('Menschen Support')
+            .setEmoji("🙋")
+            .setStyle(ButtonStyle.Secondary);
+
+        // Erstelle eine Action Row und füge die Buttons hinzu
+        const actionRow = new ActionRowBuilder()
+            .addComponents(closeTicketButton, solvedTicketButton, talkToHumanButton);
+
+        // Sende die Nachricht mit den aktualisierten Embeds
         await createdChannel.send({
             content: embedData.content || '',
             embeds: embeds,
             username: embedData.username,
-			components: [row],
+            components: [actionRow],
         });
 
-        createdChannel.send("Hallo! Mein Name ist Bern ich bin ein AI gestützter Supporter. Ich werde Ihnen dabei helfen Ihre Angelegenheit zu klären.\nSollten Sie zu irgendeiner Zeit mit einem Menschen sprechen wollen teilen Sie mir dies mit!\n\nWie darf ich Ihnen helfen?")
+        // Optional: Weitere Nachricht senden
+        await createdChannel.send(`Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein KI-gestützter Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären.\nSolltest du zu irgendeiner Zeit mit einem Menschen sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`);
 
-    } catch (errorSendingMessage) {
-        console.error('Fehler beim erstellen des Tickets:', errorSendingMessage)
+    } catch (errorCreatingTicket) {
+        console.error('Fehler beim Erstellen des Tickets:', errorCreatingTicket);
     }
+}
+
+
+async function getMessageHistory(interaction) {
+
 }

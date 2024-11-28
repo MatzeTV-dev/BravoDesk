@@ -8,11 +8,11 @@
       "fields": [
         {
           "name": "Kategorie",
-          "value": "Bug report"
+          "value": "{category}"
         },
         {
           "name": "User ID",
-          "value": "1111111111111111111"
+          "value": "{user_ID}"
         }
       ],
       "author": {
