@@ -1,3 +1,8 @@
+const axios = require("axios");
+require('dotenv').config();
+
+let lastMessage = null;
+
 module.exports = async (client, message) => {
     if (message.author.bot) {
         // Ignore messages from all bots, including this bot
@@ -68,6 +73,9 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     // Remove the first two elements from the array
     messageArray.splice(0, 2);
 
+    // Store the last element in a separate const and remove it from the array
+    lastMessage = messageArray.pop();
+
     for (const message of messageArray) {
         const member = await channel.guild.members.fetch(message.author.id).catch(() => null);
 
@@ -100,5 +108,27 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 
 
 async function sendMessagesToAI(messages) {
-    return `test`;
+    try {
+        const response = await axios.post(
+        process.env.OPENAI_URL,
+            {
+            model: process.env.MODELL,
+            messages: [
+                { role: 'system', content: "Du bist ein AI Supporter der sich auf FiveM spezialisiert. Dein Name ist Bern. Wenn dich jemadn etwas anderes Fragen über den FiveM server stellt antwortest du mit einer passenden antwort. Hier ist der ursprüngliche Nachrichten Verlauf und antworte auf die Frage des Users:", messages },
+                { role: 'user', content: lastMessage },
+            ],
+        },
+        {
+            headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+        }
+        );
+        
+        return response.data.choices[0].message.content; // Antwort von OpenAI
+    } catch (error) {
+        console.error("Fehler bei der Anfrage an die OpenAI API:", error);
+        return "Entschuldigung, es gab ein Problem mit der Anfrage.";
+    }
 }

@@ -1,7 +1,13 @@
-const { channel } = require('diagnostics_channel');
 const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder  } = require('discord.js');
-const fs = require('fs');
+const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js')
+const { channel } = require('diagnostics_channel');
 const { gzip } = require('zlib');
+const fs = require('fs');
+
+var guildID = "";
+var ticketChannelID = "";
+var ticketCategoryID = "";
+var supportRoleID = "";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -12,12 +18,23 @@ module.exports = {
 
 		try {
 			// Call the helper functions for setup
-			await createRoles(interaction);
-			await createChannel(interaction);
-            await createCategories(interaction);
-			//await saveDatabase();
 
-			await interaction.editReply('Setup completed successfully!');
+            guildID = interaction.guild.id;
+            returnValue = await chefIfServerExists(guildID);
+
+            if (returnValue) {
+                await createRoles(interaction);
+                await createChannel(interaction);
+                await createCategories(interaction);
+    
+                await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID);
+                await interaction.editReply('Setup completed successfully!');
+            } else {
+                await interaction.editReply('Setup already done!')
+            }
+			
+
+			
 		} catch (error) {
 			console.error('Error during setup:', error);
 			await interaction.editReply('An error occurred during the setup process. Please try again.');
@@ -42,11 +59,12 @@ async function createRoles(interaction) {
 	for (const roleData of roles) {
 		const existingRole = guild.roles.cache.find(role => role.name === roleData.name);
 		if (!existingRole) {
-			await guild.roles.create({
+			const supportRole = await guild.roles.create({
 				name: roleData.name,
 				color: roleData.color,
 				permissions: roleData.permissions,
 			});
+            supportRoleID = supportRole.id;
 			console.log(`${guild.name}: Created role: ${roleData.name}, ${roleData.id}`);
 		} else {
 			console.log(`${guild.name}: Role already exists: ${roleData.name}, ${roleData.id}`);
@@ -75,6 +93,7 @@ async function createChannel(interaction) {
                 },
             ],
         });
+        ticketChannelID = channel.id;
         console.log(`${guild.name}: Created channel: ${channel.id}`);
     } else {
         console.log(`${guild.name}: Channel already exists: ${channel.id}`);
@@ -159,15 +178,13 @@ async function createCategories(interaction) {
             ],
         }); 
         console.log(`${guild.name}: Created categorie: ${categorie.id}`);
+        ticketCategoryID = categorie.id;
     } else {
         console.log(`${guild.name}: categorie already exists: ${categorie.id}`);
     }
 }
 
 // Function to simulate saving to a database
-async function saveDatabase() {
-	// Simulate saving data to a database
-	console.log('Saving data to the database...');
-	await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async DB operation
-	console.log('Database saved successfully!');
+async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID) {
+	saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID);
 }

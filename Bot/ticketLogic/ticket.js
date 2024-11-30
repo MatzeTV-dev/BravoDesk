@@ -1,5 +1,7 @@
 const { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getServerInformation } = require('../Database/database.js')
 const fs = require('fs');
+const { randomFillSync } = require('crypto');
 
 module.exports = {
     data: {
@@ -32,18 +34,21 @@ module.exports = {
 };
 
 async function createTicket(interaction, reason) {
-    const guild = interaction.guild;
-    let createdChannel = null;
-    const supporterRole = guild.roles.cache.get('1311717514606284934');
-
     try {
+        const rawData = await getServerInformation(interaction.guild.id);
+        const data = rawData[0][0][0];
+
+        const guild = interaction.guild;
+        const supporterRole = guild.roles.cache.get(data.support_role_id);
+        let createdChannel = null;
+
         const channelName = `${interaction.user.username}s Ticket`;
 
         createdChannel = await guild.channels.create({
             name: channelName,
             type: ChannelType.GuildText,
             topic: `Du hast ein ${reason} Ticket erstellt.`,
-            parent: "1311717519194587198",
+            parent: data.ticket_category_id,
             permissionOverwrites: [
                 {
                     id: interaction.user.id,
@@ -72,13 +77,11 @@ async function createTicket(interaction, reason) {
 
         // Bereite die Embeds vor und ersetze Platzhalter
         const embeds = embedData.embeds.map(embed => {
-            // Erstelle eine Kopie des Embeds, um Seiteneffekte zu vermeiden
             const processedEmbed = {
                 ...embed,
                 color: embed.color || 7049073,
             };
 
-            // Ersetze Platzhalter in Titel und Beschreibung
             if (processedEmbed.title) {
                 processedEmbed.title = processedEmbed.title.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
             }
@@ -87,7 +90,6 @@ async function createTicket(interaction, reason) {
                 processedEmbed.description = processedEmbed.description.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
             }
 
-            // Ersetze Platzhalter in den Feldern
             if (processedEmbed.fields) {
                 processedEmbed.fields = processedEmbed.fields.map(field => ({
                     ...field,
@@ -137,6 +139,9 @@ async function createTicket(interaction, reason) {
         console.error('Fehler beim Erstellen des Tickets:', errorCreatingTicket);
     }
 }
+
+
+
 
 
 async function getMessageHistory(interaction) {

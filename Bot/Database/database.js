@@ -14,25 +14,46 @@ const pool = mysql.createPool({
 });
 
 // Funktion: Daten speichern oder aktualisieren
-async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id) {
+async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID) {
     await pool.query(
-      `CALL Save_Server_Information(?, ?, ?)`,
-      [server_id, ticket_system_channel_id, ticket_category_id]
+      `CALL Save_Server_Information(?, ?, ?, ?)`,
+      [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID]
     );
   }
   
 
 // Funktion: Tabelle initialisieren (falls noch nicht vorhanden)
 async function getServerInformation(discord_server_id) {
-  await pool.query(
-    `CALL Get_Server_Information(?)`,
-    [discord_server_id]
-  );
-  console.log('Tabelle erfolgreich initialisiert!');
+  try {
+    const data = await pool.query(
+      `CALL Get_Server_Information(?)`,
+      [discord_server_id]
+    );
+    console.log('Daten erhalten!');
+
+    return data;
+  } catch (error) {
+    console.log("Fehler beim Abrufen der Serverinformationen", error);
+  }
+}
+
+// Funktion, um die Existenz zu überprüfen
+async function chefIfServerExists(input_id) {
+  try {
+      const [rows] = await pool.query(`CALL Check_If_Server_Exists(?, @exists_flag)`, [input_id]);
+
+      const [[result]] = await pool.query('SELECT @exists_flag AS exists_flag');
+      
+      return result.exists_flag;
+  } catch (err) {
+      console.error('Fehler beim Aufruf der Stored Procedure:', err);
+      throw err;
+  }
 }
 
 // Exportiere Funktionen
 module.exports = {
   saveServerInformation,
   getServerInformation,
+  chefIfServerExists,
 };
