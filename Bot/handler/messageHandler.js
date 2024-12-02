@@ -14,7 +14,7 @@ module.exports = async (client, message) => {
             const messages = await collectMessagesFromChannel(message.channel, client, message);
 
             if (!messages.includes("Alles klar, ein Menschlicher Supporter wird das Ticket übernehmen!")) {
-                const aiResponse = await sendMessagesToAI(messages);
+                const aiResponse = await sendMessagesToAI(messages, message.content);
                 await message.channel.send(aiResponse);
             }           
         } catch (error) {
@@ -38,10 +38,9 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     allMessages.set(triggeringMessage.id, triggeringMessage);
 
     let lastMessageId = null;
-    let totalFetchedMessages = 0;
-    const maxMessages = 100; // Limit to prevent excessive API calls
+    const maxMessages = 10; // Limit to the last 10 messages
 
-    while (true) {
+    while (allMessages.size < maxMessages) {
         const options = { limit: 100 };
         if (lastMessageId) {
             options.before = lastMessageId;
@@ -54,28 +53,21 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 
         for (const [id, message] of messages) {
             allMessages.set(id, message);
-        }
-
-        totalFetchedMessages += messages.size;
-        if (totalFetchedMessages >= maxMessages) {
-            break;
+            if (allMessages.size >= maxMessages) {
+                break;
+            }
         }
 
         lastMessageId = messages.last().id;
 
         // Optional: Delay between fetches to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 200));        
     }
 
     // Sort messages by timestamp in ascending order
     const messageArray = Array.from(allMessages.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-    // Remove the first two elements from the array
-    messageArray.splice(0, 2);
-
-    // Store the last element in a separate const and remove it from the array
-    lastMessage = messageArray.pop();
-
+    // Process the last 10 messages (sorted array ensures the order)
     for (const message of messageArray) {
         const member = await channel.guild.members.fetch(message.author.id).catch(() => null);
 
@@ -107,7 +99,8 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 
 
 
-async function sendMessagesToAI(messages) {
+
+async function sendMessagesToAI(messages, lastMessage) {
     try {
         const response = await axios.post(
         process.env.OPENAI_URL,

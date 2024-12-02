@@ -14,10 +14,10 @@ const pool = mysql.createPool({
 });
 
 // Funktion: Daten speichern oder aktualisieren
-async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID) {
+async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id) {
     await pool.query(
-      `CALL Save_Server_Information(?, ?, ?, ?)`,
-      [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID]
+      `CALL Save_Server_Information(?, ?, ?, ?, ?)`,
+      [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id]
     );
   }
   

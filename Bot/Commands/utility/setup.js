@@ -4,10 +4,12 @@ const { channel } = require('diagnostics_channel');
 const { gzip } = require('zlib');
 const fs = require('fs');
 
+var guild = null;
 var guildID = "";
 var ticketChannelID = "";
 var ticketCategoryID = "";
 var supportRoleID = "";
+var kiadminRoleID = "";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -15,28 +17,62 @@ module.exports = {
 		.setDescription('Starts the automatic setup of the Discord Bot'),
 	async execute(interaction) {
 		await interaction.reply('Setup process started. Creating roles and channels...');
-
+        guild = interaction.guild 
 		try {
-			// Call the helper functions for setup
+            if (guild.ownerId === interaction.user.id) {
 
-            guildID = interaction.guild.id;
-            returnValue = await chefIfServerExists(guildID);
+                guildID = interaction.guild.id;
+                returnValue = await chefIfServerExists(guildID);
 
-            if (returnValue) {
-                await createRoles(interaction);
-                await createChannel(interaction);
-                await createCategories(interaction);
-    
-                await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID);
-                await interaction.editReply('Setup completed successfully!');
+                if (returnValue) {
+                    await createRoles(interaction);
+                    await createChannel(interaction);
+                    await createCategories(interaction);
+        
+                    await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
+                    await interaction.editReply('Setup completed successfully!');
+                } else {
+                    await interaction.editReply('Setup already done!')
+                } 
+
             } else {
-                await interaction.editReply('Setup already done!')
+                interaction.editReply('This Action can only be performed by the Server Owner!');
             }
-			
-
-			
 		} catch (error) {
 			console.error('Error during setup:', error);
+            const category = guild.channels.cache.get(ticketChannelID);
+            const channel = guild.channels.cache.get(ticketChannelID);
+
+            if (channel) {
+                await channel.delete();
+                console.log(`Deleted channel with ID: ${ticketChannelID}`);
+            } else {
+                console.log(`Channel with ID ${ticketChannelID} not found.`);
+            }
+            
+            if (category) {
+                await category.delete();
+                console.log(`Deleted category with ID: ${ticketCategoryID}`);
+            } else {
+                console.log(`Category with ID ${ticketCategoryID} not found or is not a category.`);
+            }
+
+            let role = guild.roles.cache.get(supportRoleID);
+            if (role) {
+                await role.delete();
+                console.log(`Deleted role with ID: ${supportRoleID}`);
+            } else {
+                console.log(`Role with ID ${supportRoleID} not found.`);
+            }
+
+            role = guild.roles.cache.get(kiadminRoleID);
+            if (role) {
+                await role.delete();
+                console.log(`Deleted role with ID: ${kiadminRoleID}`);
+            } else {
+                console.log(`Role with ID ${kiadminRoleID} not found.`);
+            }
+
 			await interaction.editReply('An error occurred during the setup process. Please try again.');
 		}
 	},
@@ -44,37 +80,54 @@ module.exports = {
 
 // Function to create roles
 async function createRoles(interaction) {
-	const guild = interaction.guild;
+    const guild = interaction.guild;
+    const roles = [
+        { 
+            name: 'Supporter', 
+            color: 'Blue', 
+            permissions: [ 
+                PermissionsBitField.Flags.ViewChannel, 
+                PermissionsBitField.Flags.SendMessages
+            ] 
+        },
+        { 
+            name: 'KI-Admin', 
+            color: 'Grey' 
+        },
+    ];
 
-	const roles = [
-		{ 
-			name: 'Supporter', 
-			color: 'Blue', 
-			permissions: [ 
-				PermissionsBitField.Flags.ViewChannel, 
-				PermissionsBitField.Flags.SendMessages] 
-		},
-	];
+    for (const roleData of roles) {
+        const existingRole = guild.roles.cache.find(role => role.name === roleData.name);
+        if (!existingRole) {
+            const createdRole = await guild.roles.create({
+                name: roleData.name,
+                color: roleData.color,
+                permissions: roleData.permissions,
+            });
 
-	for (const roleData of roles) {
-		const existingRole = guild.roles.cache.find(role => role.name === roleData.name);
-		if (!existingRole) {
-			const supportRole = await guild.roles.create({
-				name: roleData.name,
-				color: roleData.color,
-				permissions: roleData.permissions,
-			});
-            supportRoleID = supportRole.id;
-			console.log(`${guild.name}: Created role: ${roleData.name}, ${roleData.id}`);
-		} else {
-			console.log(`${guild.name}: Role already exists: ${roleData.name}, ${roleData.id}`);
-		}
-	}
+            console.log(`${guild.name}: Created role: ${roleData.name}`);
+
+            // Save the role ID based on the role name
+            if (roleData.name === 'Supporter') {
+                supportRoleID = createdRole.id;
+            } else if (roleData.name === 'KI-Admin') {
+                kiadminRoleID = createdRole.id;
+            }
+        } else {
+            console.log(`${guild.name}: Role already exists: ${roleData.name}`);
+            
+            // Save the existing role ID based on the role name
+            if (roleData.name === 'Supporter') {
+                supportRoleID = existingRole.id;
+            } else if (roleData.name === 'KI-Admin') {
+                kiadminRoleID = existingRole.id;
+            }
+        }
+    }
 }
 
 // Function to create Channels
 async function createChannel(interaction) {
-    const guild = interaction.guild;
 
     const channelName = 'Ticket-System';
     let channel = guild.channels.cache.find(channel => channel.name === channelName);
@@ -185,6 +238,6 @@ async function createCategories(interaction) {
 }
 
 // Function to simulate saving to a database
-async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID) {
-	saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID);
+async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id)  {
+	saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id);
 }
