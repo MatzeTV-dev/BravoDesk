@@ -51,9 +51,41 @@ async function chefIfServerExists(input_id) {
   }
 }
 
+// Simple Select statement
+async function Select(statement, dataInput) {
+  try {
+    const data = await pool.query(
+      statement,
+      dataInput
+    );
+    console.log('Daten erhalten!');
+
+    return data;
+  } catch (error) {
+    console.log("Fehler beim Abrufen der Serverinformationen", error);
+  }
+}
+
+// Simple Select statement
+async function Delete(statement, dataInput) {
+  try {
+    const data = await pool.query(
+      statement,
+      dataInput
+    );
+    console.log('Daten erhalten!');
+
+    return data;
+  } catch (error) {
+    console.log("Fehler beim Abrufen der Serverinformationen", error);
+  }
+}
+
 // Exportiere Funktionen
 module.exports = {
   saveServerInformation,
   getServerInformation,
   chefIfServerExists,
+  Select,
+  Delete,
 };

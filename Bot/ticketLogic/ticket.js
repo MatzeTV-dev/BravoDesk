@@ -139,11 +139,3 @@ async function createTicket(interaction, reason) {
         console.error('Fehler beim Erstellen des Tickets:', errorCreatingTicket);
     }
 }
-
-
-
-
-
-async function getMessageHistory(interaction) {
-
-}
