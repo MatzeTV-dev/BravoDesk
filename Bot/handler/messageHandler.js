@@ -1,8 +1,6 @@
 const axios = require("axios");
 require('dotenv').config();
 
-let lastMessage = null;
-
 module.exports = async (client, message) => {
     if (message.author.bot) {
         // Ignore messages from all bots, including this bot
@@ -96,9 +94,6 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     console.log("Collected messages:\n", collectedMessages);
     return collectedMessages.trim();
 }
-
-
-
 
 async function sendMessagesToAI(messages, lastMessage) {
     try {

@@ -39,7 +39,7 @@ module.exports = {
                 interaction.editReply('This Action can only be performed by the Server Owner!');
             }
 		} catch (error) {
-			console.error('Error during setup:', error);
+			console.error('Error during setup:', error); 
             const category = guild.channels.cache.get(ticketChannelID);
             const channel = guild.channels.cache.get(ticketChannelID);
 
