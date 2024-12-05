@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const { upload } = require('../../Database/qdrant.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()

@@ -1,3 +1,4 @@
+const { getData } = require('../Database/qdrant.js')
 const axios = require("axios");
 require('dotenv').config();
 
@@ -12,7 +13,7 @@ module.exports = async (client, message) => {
             const messages = await collectMessagesFromChannel(message.channel, client, message);
 
             if (!messages.includes("Alles klar, ein Menschlicher Supporter wird das Ticket übernehmen!")) {
-                const aiResponse = await sendMessagesToAI(messages, message.content);
+                const aiResponse = await sendMessagesToAI(messages, message);
                 await message.channel.send(aiResponse);
             }           
         } catch (error) {
@@ -96,14 +97,36 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 }
 
 async function sendMessagesToAI(messages, lastMessage) {
+    var data = null;
+    try {
+        const collectionName = 'guild_' +  lastMessage.guild.id;
+        data = await getData(collectionName, lastMessage.content);
+    } catch (error) {
+        console.log(error)
+    }
+    
+    // Verarbeite die Daten
+    let knowledgeBaseText = '';
+    if (data && data.length > 0) {
+        knowledgeBaseText = data.map((item) => item.payload.text).join('\n');
+    } else {
+        knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
+    }
+
+    const contentGPT = "Du bist ein AI Supporter der sich auf FiveM spezialisiert. Dein Name ist Bern. Wenn dich jemadn etwas anderes Fragen über den FiveM server stellt antwortest du mit einer passenden antwort. Hier ist der ursprüngliche Nachrichten Verlauf und antworte auf die Frage des Users:" + messages + knowledgeBaseText;
+
+    console.log(knowledgeBaseText);
+    console.log(contentGPT);
+
+
     try {
         const response = await axios.post(
         process.env.OPENAI_URL,
             {
             model: process.env.MODELL,
             messages: [
-                { role: 'system', content: "Du bist ein AI Supporter der sich auf FiveM spezialisiert. Dein Name ist Bern. Wenn dich jemadn etwas anderes Fragen über den FiveM server stellt antwortest du mit einer passenden antwort. Hier ist der ursprüngliche Nachrichten Verlauf und antworte auf die Frage des Users:", messages },
-                { role: 'user', content: lastMessage },
+                { role: 'system', content: contentGPT},
+                { role: 'user', content: lastMessage.content },
             ],
         },
         {
