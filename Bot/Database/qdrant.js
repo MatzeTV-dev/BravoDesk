@@ -105,6 +105,7 @@ async function getEverythingCollection(guildID) {
     }
 }
 
+// Funktion: Löscht einen Eintrag
 async function deleteEntry(guildID, id) {
     const collectionName = `guild_${guildID}`; // Name deiner Collection
     try {
@@ -120,6 +121,7 @@ async function deleteEntry(guildID, id) {
     }
 }
 
+// Funktion: Edetiert ein Eintrag
 async function editEntry(guildID, id, newContent) {
     const collectionName = `guild_${guildID}`;
     try {
@@ -145,6 +147,7 @@ async function editEntry(guildID, id, newContent) {
     }
 }
 
+// Funktion: Fragt Daten an
 async function getData(collectionName, userQuery) {
     const embededData = await getEmbedding(userQuery);
 
@@ -159,10 +162,22 @@ async function getData(collectionName, userQuery) {
     return searchResult;
 }
 
+// Funktion: Löscht alles anhand einer discord ID
+async function deleteAll(collectionName) {
+    try {
+        // Collection löschen
+        const response = await qdrantClient.deleteCollection(collectionName);
+        console.log(`Collection "${collectionName}" erfolgreich gelöscht.`, response);
+    } catch (error) {
+        console.error(`Fehler beim Löschen der Collection "${collectionName}":`, error.message);
+    }
+}
+
 // Exportiere Funktionen
 module.exports = {
     getEverythingCollection,
     deleteEntry,
+    deleteAll,
     editEntry,
     getData,
     upload,

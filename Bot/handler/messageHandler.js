@@ -92,7 +92,6 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
         collectedMessages += `${prefix}${content}\n`;
     }
 
-    console.log("Collected messages:\n", collectedMessages);
     return collectedMessages.trim();
 }
 
@@ -102,7 +101,7 @@ async function sendMessagesToAI(messages, lastMessage) {
         const collectionName = 'guild_' +  lastMessage.guild.id;
         data = await getData(collectionName, lastMessage.content);
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
     
     // Verarbeite die Daten
@@ -117,7 +116,6 @@ async function sendMessagesToAI(messages, lastMessage) {
 
     console.log(knowledgeBaseText);
     console.log(contentGPT);
-
 
     try {
         const response = await axios.post(

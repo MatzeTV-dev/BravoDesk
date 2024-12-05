@@ -1,5 +1,6 @@
+const { getServerInformation, Delete } = require('../../Database/database.js');
 const { SlashCommandBuilder } = require('discord.js');
-const { getServerInformation, Delete } = require('../../Database/database.js')
+const { deleteAll } = require('../../Database/qdrant.js');
 
 var guild = null;
 
@@ -50,8 +51,12 @@ module.exports = {
 				} else {
 					console.log(`Role with ID ${data.kiadmin_role_id} not found.`);
 				}
-
+				interaction.editReply("Deleting Database Information");
 				await Delete("CALL Delete_Server_Information(?)", guild.id);
+
+				interaction.editReply("Deleting AI Knowledge.");
+				await deleteAll("guild_" + guild.id);
+
 				interaction.editReply("Everything got deleted!");
 			} else {
 				interaction.editReply("This Action can only performed by the Server Owner! A Administrator was informed about your Actions.");
