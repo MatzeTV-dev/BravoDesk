@@ -1,38 +1,63 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('commands')
-		.setDescription('Delete Information from the AI'),
-	async execute(interaction) {
+    data: new SlashCommandBuilder()
+        .setName('commands')
+        .setDescription('Lösche Informationen aus der KI'),
+    async execute(interaction) {
+        try {
+            const roleName = 'KI-Admin';
+            const member = interaction.member;
 
-		const roleName = 'KI-Admin';
-		const member = interaction.member || message.member;
+            if (!member) {
+                throw new Error('Could not determine the executing user.');
+            }
 
-		const role = member.roles.cache.find(role => role.name === roleName);
+            const role = member.roles.cache.find(role => role.name === roleName);
 
-		if (role) {
-			await interaction.deferReply();
+            if (role) {
+                await interaction.deferReply();
 
-			const embed = await new EmbedBuilder()
-                    .setTitle('**Command List**')
+                const embed = new EmbedBuilder()
+                    .setTitle('**Befehlsliste**')
                     .addFields(
-                        { name: '**/list**', value: "Anzeigen aller Daten im AI Wissens speicher" },
-                        { name: '**/reset**', value: "Alles wird gelöscht und auf anfang Gesetzt" },
-						{ name: '**/setup**', value: "Initialer Setup" },
-						{ name: '**/upload**', value: "Daten in das AI wissen eintragen" },
+                        { name: '**/list**', value: 'Zeige alle Daten im Wissensspeicher der KI an' },
+                        { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
+                        { name: '**/setup**', value: 'Initiale Einrichtung' },
+                        { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' }
                     )
                     .setColor(0x00AE86);
 
-			await interaction.followUp({
-				embeds: [embed]
-			});
+                await interaction.followUp({
+                    embeds: [embed],
+                });
+            } else {
+                await interaction.reply({
+                    content: 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!',
+                    ephemeral: true,
+                });
 
-		} else {
-			await interaction.reply({
-				content: 'Whoops! Looks like you do not have the permisson for that. A Administrator was informed!',
-				ephemeral: true,
-			});
-		}
-	},
+                const adminChannel = interaction.guild.channels.cache.find(
+                    (channel) => channel.name === 'admin-log'
+                );
+                if (adminChannel) {
+                    await adminChannel.send(
+                        `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/commands\` ohne die erforderliche Rolle (${roleName}) auszuführen.`
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('An error occurred:', error);
+
+            try {
+                await interaction.reply({
+                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    ephemeral: true,
+                });
+            } catch (replyError) {
+                console.error('Error sending error message:', replyError);
+            }
+        }
+    },
 };

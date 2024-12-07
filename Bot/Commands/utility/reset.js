@@ -1,72 +1,119 @@
 const { getServerInformation, Delete } = require('../../Database/database.js');
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { deleteAll } = require('../../Database/qdrant.js');
 
-var guild = null;
-
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('reset')
-		.setDescription('Delete Everything form the AI and all channels + roles'),
-	async execute(interaction) {
-		guild = interaction.guild;
+    data: new SlashCommandBuilder()
+        .setName('reset')
+        .setDescription('Delete Everything from the AI and all channels + roles'),
+    async execute(interaction) {
+        const guild = interaction.guild;
 
-		await interaction.reply('Deleting everything in progress...');
+        try {
+            // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
+            if (guild.ownerId !== interaction.user.id) {
+                await interaction.reply({
+                    content:
+                        'This action can only be performed by the server owner! An administrator has been informed about your attempt.',
+                    ephemeral: true,
+                });
 
-		try {
+                // Optionale Benachrichtigung für Admins
+                const adminChannel = guild.channels.cache.find(
+                    (channel) => channel.name === 'admin-log'
+                );
+                if (adminChannel) {
+                    await adminChannel.send(
+                        `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/reset\` ohne Berechtigung auszuführen.`
+                    );
+                }
+                return;
+            }
 
-			if(guild.ownerId === interaction.user.id) {
-				const rawData = await getServerInformation(guild.id);
-				const data = rawData[0][0][0];
+            // Antwort senden, um die Aktion zu bestätigen
+            await interaction.reply('Starting reset process...');
 
-				const category = guild.channels.cache.get(data.ticket_category_id);
-				const channel = guild.channels.cache.get(data.ticket_system_channel_id);
-				let role = guild.roles.cache.get(data.support_role_id);
+            const rawData = await getServerInformation(guild.id);
+            if (!rawData || rawData.length === 0) {
+                await interaction.editReply('Keine Serverinformationen gefunden. Abbruch.');
+                return;
+            }
 
-				if (channel) {
-					await channel.delete();
-					console.log(`Deleted channel with ID: ${data.ticket_system_channel_id}`);
-				} else {
-					console.log(`Channel with ID ${data.ticket_system_channel_id} not found.`);
-				}
-				
-				if (category) {
-					await category.delete();
-					console.log(`Deleted category with ID: ${data.ticket_category_id}`);
-				} else {
-					console.log(`Category with ID ${data.ticket_category_id} not found or is not a category.`);
-				}
-	
-				if (role) {
-					await role.delete();
-					console.log(`Deleted role with ID: ${data.support_role_id}`);
-				} else {
-					console.log(`Role with ID ${data.support_role_id} not found.`);
-				}
-	
-				role = guild.roles.cache.get(data.kiadmin_role_id);
-				if (role) {
-					await role.delete();
-					console.log(`Deleted role with ID: ${data.kiadmin_role_id}`);
-				} else {
-					console.log(`Role with ID ${data.kiadmin_role_id} not found.`);
-				}
-				interaction.editReply("Deleting Database Information");
-				await Delete("CALL Delete_Server_Information(?)", guild.id);
+            const data = rawData[0][0][0];
 
-				interaction.editReply("Deleting AI Knowledge.");
-				await deleteAll("guild_" + guild.id);
+            // Löschen von Ressourcen (Channels, Kategorien, Rollen)
+            try {
+                const channel = guild.channels.cache.get(data.ticket_system_channel_id);
+                if (channel) {
+                    await channel.delete();
+                    console.log(`Deleted channel with ID: ${data.ticket_system_channel_id}`);
+                } else {
+                    console.log(`Channel with ID ${data.ticket_system_channel_id} not found.`);
+                }
 
-				interaction.editReply("Everything got deleted!");
-			} else {
-				await interaction.reply({
-					content: 'This Action can only performed by the Server Owner! A Administrator was informed about your Actions.',
-					ephemeral: true,
-				});
-			}
+                const category = guild.channels.cache.get(data.ticket_category_id);
+                if (category) {
+                    await category.delete();
+                    console.log(`Deleted category with ID: ${data.ticket_category_id}`);
+                } else {
+                    console.log(`Category with ID ${data.ticket_category_id} not found.`);
+                }
 
-		} catch (error) {
-			console.log("error:", error)
-		}
-	},
+                let role = guild.roles.cache.get(data.support_role_id);
+                if (role) {
+                    await role.delete();
+                    console.log(`Deleted role with ID: ${data.support_role_id}`);
+                } else {
+                    console.log(`Role with ID ${data.support_role_id} not found.`);
+                }
+
+                role = guild.roles.cache.get(data.kiadmin_role_id);
+                if (role) {
+                    await role.delete();
+                    console.log(`Deleted role with ID: ${data.kiadmin_role_id}`);
+                } else {
+                    console.log(`Role with ID ${data.kiadmin_role_id} not found.`);
+                }
+            } catch (resourceError) {
+                console.error('Fehler beim Löschen von Ressourcen:', resourceError);
+                await interaction.editReply('Fehler beim Löschen von Ressourcen.');
+                return;
+            }
+
+            // Datenbankeinträge löschen
+            try {
+                await interaction.editReply('Deleting database information...');
+                await Delete('CALL Delete_Server_Information(?)', guild.id);
+            } catch (dbError) {
+                console.error('Fehler beim Löschen der Datenbankinformationen:', dbError);
+                await interaction.editReply('Fehler beim Löschen der Datenbankinformationen.');
+                return;
+            }
+
+            // KI-Wissen löschen
+            try {
+                await interaction.editReply('Deleting AI knowledge...');
+                await deleteAll('guild_' + guild.id);
+            } catch (aiError) {
+                console.error('Fehler beim Löschen des KI-Wissens:', aiError);
+                await interaction.editReply('Fehler beim Löschen des KI-Wissens.');
+                return;
+            }
+
+            // Abschlussnachricht
+            await interaction.editReply('Reset process completed successfully!');
+        } catch (error) {
+            console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+
+            // Benutzerfreundliche Fehlermeldung
+            try {
+                await interaction.reply({
+                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    ephemeral: true,
+                });
+            } catch (replyError) {
+                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+            }
+        }
+    },
 };

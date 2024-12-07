@@ -1,55 +1,82 @@
-const { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getServerInformation } = require('../Database/database.js')
+const {
+    PermissionsBitField,
+    ChannelType,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} = require('discord.js');
+const { getServerInformation } = require('../Database/database.js');
 const fs = require('fs');
-const { randomFillSync } = require('crypto');
 
 module.exports = {
     data: {
         customId: 'ticket_category', // Muss exakt mit dem customId des Select Menus übereinstimmen
     },
     async execute(interaction) {
-
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
 
         const selectedValues = interaction.values;
 
         for (const value of selectedValues) {
-            switch (value) {
-                case 'technical_support':
-                    await createTicket(interaction, "Technischer Support");
-                    break;
-                case 'general_questions':
-                    await createTicket(interaction, "Allgemeine Frage");
-                    break;
-                case 'suggestions':
-                    await createTicket(interaction, "Verbesserungsvorschlag");
-                    break;
-                case 'bug_report':
-                    await createTicket(interaction, "Bug Report");
-                    break;
+            try {
+                switch (value) {
+                    case 'technical_support':
+                        await createTicket(interaction, 'Technischer Support');
+                        break;
+                    case 'general_questions':
+                        await createTicket(interaction, 'Allgemeine Frage');
+                        break;
+                    case 'suggestions':
+                        await createTicket(interaction, 'Verbesserungsvorschlag');
+                        break;
+                    case 'bug_report':
+                        await createTicket(interaction, 'Bug Report');
+                        break;
+                    default:
+                        console.warn(`Unbekannte Kategorie ausgewählt: ${value}`);
+                }
+            } catch (error) {
+                console.error(`Fehler beim Erstellen des Tickets für Kategorie "${value}":`, error);
             }
         }
 
         // Antwort an den Benutzer
-        await interaction.reply({ content: 'Dein Ticket wurde erstellt!', ephemeral: true });
+        await interaction.editReply({ content: 'Dein Ticket wurde erstellt!', ephemeral: true });
     },
 };
 
 async function createTicket(interaction, reason) {
     try {
         const rawData = await getServerInformation(interaction.guild.id);
-        const data = rawData[0][0][0];
+        const data = rawData?.[0]?.[0]?.[0];
+
+        if (!data) {
+            console.error('Serverinformationen konnten nicht geladen werden.');
+            await interaction.followUp({
+                content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
+                ephemeral: true,
+            });
+            return;
+        }
 
         const guild = interaction.guild;
         const supporterRole = guild.roles.cache.get(data.support_role_id);
-        let createdChannel = null;
 
-        const channelName = `${interaction.user.username}s Ticket`;
+        if (!supporterRole) {
+            console.error('Support-Rolle nicht gefunden.');
+            await interaction.followUp({
+                content: 'Es scheint ein Problem mit der Konfiguration zu geben. Bitte kontaktiere einen Administrator.',
+                ephemeral: true,
+            });
+            return;
+        }
 
-        createdChannel = await guild.channels.create({
+        const channelName = `${interaction.user.username}s-Ticket`;
+
+        const createdChannel = await guild.channels.create({
             name: channelName,
             type: ChannelType.GuildText,
-            topic: `Du hast ein ${reason} Ticket erstellt.`,
+            topic: `Du hast ein ${reason}-Ticket erstellt.`,
             parent: data.ticket_category_id,
             permissionOverwrites: [
                 {
@@ -58,11 +85,11 @@ async function createTicket(interaction, reason) {
                         PermissionsBitField.Flags.ViewChannel,
                         PermissionsBitField.Flags.SendMessages,
                         PermissionsBitField.Flags.AttachFiles,
-                    ]
+                    ],
                 },
                 {
                     id: guild.id,
-                    deny: [PermissionsBitField.Flags.ViewChannel]
+                    deny: [PermissionsBitField.Flags.ViewChannel],
                 },
                 {
                     id: supporterRole.id,
@@ -70,74 +97,85 @@ async function createTicket(interaction, reason) {
                         PermissionsBitField.Flags.ViewChannel,
                         PermissionsBitField.Flags.SendMessages,
                         PermissionsBitField.Flags.AttachFiles,
-                    ]
+                    ],
                 },
-            ]
+            ],
         });
 
+        // Lade und verarbeite Embeds
         const embedData = JSON.parse(fs.readFileSync('./Design/Welcome_message.json', 'utf-8'));
 
-        // Bereite die Embeds vor und ersetze Platzhalter
         const embeds = embedData.embeds.map(embed => {
             const processedEmbed = {
                 ...embed,
                 color: embed.color || 7049073,
             };
 
-            if (processedEmbed.title) {
-                processedEmbed.title = processedEmbed.title.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
-            }
+            const placeholders = {
+                '{category}': reason,
+                '{user_ID}': interaction.user.id,
+                '{username}': interaction.user.username,
+            };
 
-            if (processedEmbed.description) {
-                processedEmbed.description = processedEmbed.description.replace('{category}', reason).replace('{user_ID}', interaction.user.id);
-            }
+            processedEmbed.title = replacePlaceholders(processedEmbed.title, placeholders);
+            processedEmbed.description = replacePlaceholders(processedEmbed.description, placeholders);
 
             if (processedEmbed.fields) {
                 processedEmbed.fields = processedEmbed.fields.map(field => ({
                     ...field,
-                    name: field.name.replace('{category}', reason).replace('{user_ID}', interaction.user.id),
-                    value: field.value.replace('{category}', reason).replace('{user_ID}', interaction.user.id),
+                    name: replacePlaceholders(field.name, placeholders),
+                    value: replacePlaceholders(field.value, placeholders),
                 }));
             }
 
             return processedEmbed;
         });
 
-        // Erstelle die Buttons
-        const closeTicketButton = new ButtonBuilder()
-            .setCustomId('close_ticket_button')
-            .setLabel('Schließen')
-            .setEmoji("❌")
-            .setStyle(ButtonStyle.Primary);
+        // Buttons erstellen
+        const actionRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('close_ticket_button')
+                .setLabel('Schließen')
+                .setEmoji('❌')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('mark_as_solved_button')
+                .setLabel('Gelöst')
+                .setEmoji('✅')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('talk_to_human')
+                .setLabel('Menschen Support')
+                .setEmoji('🙋')
+                .setStyle(ButtonStyle.Secondary)
+        );
 
-        const solvedTicketButton = new ButtonBuilder()
-            .setCustomId('mark_as_solved_button')
-            .setLabel('Gelöst')
-            .setEmoji("✅")
-            .setStyle(ButtonStyle.Secondary);
-
-        const talkToHumanButton = new ButtonBuilder()
-            .setCustomId('talk_to_human')
-            .setLabel('Menschen Support')
-            .setEmoji("🙋")
-            .setStyle(ButtonStyle.Secondary);
-
-        // Erstelle eine Action Row und füge die Buttons hinzu
-        const actionRow = new ActionRowBuilder()
-            .addComponents(closeTicketButton, solvedTicketButton, talkToHumanButton);
-
-        // Sende die Nachricht mit den aktualisierten Embeds
+        // Begrüßungsnachricht senden
         await createdChannel.send({
             content: embedData.content || '',
-            embeds: embeds,
-            username: embedData.username,
+            embeds,
             components: [actionRow],
         });
 
-        // Optional: Weitere Nachricht senden
-        await createdChannel.send(`Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein KI-gestützter Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären.\nSolltest du zu irgendeiner Zeit mit einem Menschen sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`);
+        // Zusätzliche Nachricht senden
+        await createdChannel.send(
+            `Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein KI-gestützter Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit einem Menschen sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
+        );
 
+        console.log(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);
     } catch (errorCreatingTicket) {
         console.error('Fehler beim Erstellen des Tickets:', errorCreatingTicket);
+        await interaction.followUp({
+            content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
+            ephemeral: true,
+        });
     }
+}
+
+function replacePlaceholders(text, placeholders) {
+    if (!text) return '';
+    for (const [placeholder, value] of Object.entries(placeholders)) {
+        text = text.replace(new RegExp(placeholder, 'g'), value);
+    }
+    return text;
 }

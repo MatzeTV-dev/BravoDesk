@@ -7,29 +7,42 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const client = new Client({ 
+// Discord-Client initialisieren
+const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-    ] 
+    ],
 });
+
 client.commands = new Collection();
 client.selectMenus = new Map();
-client.buttons = new Map(); // Hinzugefügt: Map für Buttons
+client.buttons = new Map(); // Map für Buttons
 
-
-// Pfade zu den verschiedenen Handler-Verzeichnissen
+// **Pfad zu den Verzeichnissen**
 const commandsPath = path.join(__dirname, './Commands/utility');
 const selectMenusPath = path.join(__dirname, './ticketLogic');
-const buttonsPath = path.join(__dirname, './ticketLogic'); // Hinzugefügt: Pfad für Buttons
+const buttonsPath = path.join(__dirname, './ticketLogic');
 
-// Dateien in den Verzeichnissen einlesen
+// **Dateien einlesen**
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 const selectMenuFiles = fs.readdirSync(selectMenusPath).filter(file => file.endsWith('.js'));
-const buttonFiles = fs.readdirSync(buttonsPath).filter(file => file.endsWith('.js')); // Hinzugefügt: Button-Dateien einlesen
+const buttonFiles = fs.readdirSync(buttonsPath).filter(file => file.endsWith('.js'));
 
-// Laden der Select Menus
+// **Commands laden**
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
+
+    if ('data' in command && 'execute' in command) {
+        client.commands.set(command.data.name, command);
+    } else {
+        console.warn(`[WARN] Der Command in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+    }
+}
+
+// **Select Menus laden**
 for (const file of selectMenuFiles) {
     const filePath = path.join(selectMenusPath, file);
     const selectMenu = require(filePath);
@@ -37,18 +50,11 @@ for (const file of selectMenuFiles) {
     if ('data' in selectMenu && 'execute' in selectMenu) {
         client.selectMenus.set(selectMenu.data.customId, selectMenu);
     } else {
-        console.log(`[WARN] Das Select Menu in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+        console.warn(`[WARN] Das Select Menu in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
-// Laden der Commands
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    client.commands.set(command.data.name, command);
-}
-
-// **Laden der Buttons**
+// **Buttons laden**
 for (const file of buttonFiles) {
     const filePath = path.join(buttonsPath, file);
     const button = require(filePath);
@@ -56,26 +62,24 @@ for (const file of buttonFiles) {
     if ('data' in button && 'execute' in button) {
         client.buttons.set(button.data.name, button);
     } else {
-        console.log(`[WARN] Der Button in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+        console.warn(`[WARN] Der Button in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
-for (const file of selectMenuFiles) {
-    const selectMenu = require(`./ticketlogic/${file}`);
-    client.selectMenus.set(selectMenu.data.name, selectMenu);
-}
+// **Interaktionen verarbeiten**
+client.on(Events.InteractionCreate, interaction => {
+    interactionHandler(client, interaction);
+});
 
-// Interaction handler
-client.on(Events.InteractionCreate, interaction => interactionHandler(client, interaction));
-
-client.on('messageCreate', (message) => {
+// **Nachrichten verarbeiten**
+client.on(Events.MessageCreate, message => {
     messageHandler(client, message);
 });
 
-// Bot ready event
-client.once('ready', () => {
+// **Bot ready Event**
+client.once(Events.ClientReady, () => {
     console.log(`Eingeloggt als ${client.user.tag}`);
 });
 
-// Login
+// **Bot-Login**
 client.login(process.env.DISCORD_BOT_TOKEN);

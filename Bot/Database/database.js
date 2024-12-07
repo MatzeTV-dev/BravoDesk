@@ -15,69 +15,70 @@ const pool = mysql.createPool({
 
 // Funktion: Daten speichern oder aktualisieren
 async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id) {
+  try {
     await pool.query(
       `CALL Save_Server_Information(?, ?, ?, ?, ?)`,
       [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id]
     );
+    console.log('Serverinformationen erfolgreich gespeichert!');
+  } catch (error) {
+    console.error('Fehler beim Speichern der Serverinformationen:', error);
+    throw error; // Fehler weiterwerfen, falls benötigt
   }
-  
+}
 
-// Funktion: Tabelle initialisieren (falls noch nicht vorhanden)
+// Funktion: Serverinformationen abrufen
 async function getServerInformation(discord_server_id) {
   try {
-    const data = await pool.query(
+    const [data] = await pool.query(
       `CALL Get_Server_Information(?)`,
       [discord_server_id]
     );
-    console.log('Daten erhalten!');
-
+    console.log('Serverinformationen erfolgreich abgerufen!');
     return data;
   } catch (error) {
-    console.log("Fehler beim Abrufen der Serverinformationen", error);
+    console.error('Fehler beim Abrufen der Serverinformationen:', error);
+    return null; // Rückgabe von `null` bei Fehlern
   }
 }
 
-// Funktion, um die Existenz zu überprüfen
+// Funktion: Existenz eines Servers prüfen
 async function chefIfServerExists(input_id) {
   try {
-      const [rows] = await pool.query(`CALL Check_If_Server_Exists(?, @exists_flag)`, [input_id]);
+    // Führt die Stored Procedure aus
+    await pool.query(`CALL Check_If_Server_Exists(?, @exists_flag)`, [input_id]);
 
-      const [[result]] = await pool.query('SELECT @exists_flag AS exists_flag');
-      
-      return result.exists_flag;
-  } catch (err) {
-      console.error('Fehler beim Aufruf der Stored Procedure:', err);
-      throw err;
+    // Liest den Ergebniswert aus
+    const [[result]] = await pool.query('SELECT @exists_flag AS exists_flag');
+    console.log(`Existenzprüfung abgeschlossen: ${result.exists_flag}`);
+    return Boolean(result.exists_flag); // Konvertiert zu Boolean
+  } catch (error) {
+    console.error('Fehler bei der Existenzprüfung des Servers:', error);
+    return false; // Rückgabe von `false` bei Fehlern
   }
 }
 
-// Simple Select statement
+// Funktion: Datensätze abrufen
 async function Select(statement, dataInput) {
   try {
-    const data = await pool.query(
-      statement,
-      dataInput
-    );
-    console.log('Daten erhalten!');
-
-    return data;
+    const [rows] = await pool.query(statement, dataInput);
+    console.log('Daten erfolgreich abgerufen!');
+    return rows;
   } catch (error) {
-    console.log("Fehler beim Abrufen der Serverinformationen", error);
+    console.error('Fehler beim Abrufen von Daten:', error);
+    return null; // Rückgabe von `null` bei Fehlern
   }
 }
 
-// Simple Select statement
+// Funktion: Datensätze löschen
 async function Delete(statement, dataInput) {
   try {
-    const data = await pool.query(
-      statement,
-      dataInput
-    );
-    console.log('Daten erhalten!');
-
-    return data;
+    const [result] = await pool.query(statement, dataInput);
+    console.log('Daten erfolgreich gelöscht!');
+    return result; // Gibt das Lösch-Ergebnis zurück
   } catch (error) {
-    console.log("Fehler beim Abrufen der Serverinformationen", error);
+    console.error('Fehler beim Löschen von Daten:', error);
+    return null; // Rückgabe von `null` bei Fehlern
   }
 }
 

@@ -1,12 +1,9 @@
-const { getData } = require('../Database/qdrant.js')
+const { getData } = require('../Database/qdrant.js');
 const axios = require("axios");
 require('dotenv').config();
 
 module.exports = async (client, message) => {
-    if (message.author.bot) {
-        // Ignore messages from all bots, including this bot
-        return;
-    }
+    if (message.author.bot) return; // Ignoriere alle Bots
 
     if (isTicketChannel(message.channel)) {
         try {
@@ -15,10 +12,10 @@ module.exports = async (client, message) => {
             if (!messages.includes("Alles klar, ein Menschlicher Supporter wird das Ticket übernehmen!")) {
                 const aiResponse = await sendMessagesToAI(messages, message);
                 await message.channel.send(aiResponse);
-            }           
+            }
         } catch (error) {
-            console.error('Error handling ticket message:', error);
-            await message.channel.send('There was an error processing your request.');
+            console.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}):`, error);
+            await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
         }
     }
 };
@@ -28,116 +25,106 @@ function isTicketChannel(channel) {
 }
 
 async function collectMessagesFromChannel(channel, client, triggeringMessage) {
-    let collectedMessages = '';
+    const collectedMessages = [];
     const allMessages = new Map();
 
-    const aiBotUserId = client.user.id; // The AI bot's user ID
-
-    // Manually add the triggering message
-    allMessages.set(triggeringMessage.id, triggeringMessage);
+    const aiBotUserId = client.user.id; // AI-Bot-ID
+    allMessages.set(triggeringMessage.id, triggeringMessage); // Triggering-Message hinzufügen
 
     let lastMessageId = null;
-    const maxMessages = 10; // Limit to the last 10 messages
+    const maxMessages = 10; // Limit auf 10 Nachrichten
 
     while (allMessages.size < maxMessages) {
-        const options = { limit: 100 };
+        const options = { limit: 50 }; // Maximal 50 Nachrichten pro Abruf
         if (lastMessageId) {
             options.before = lastMessageId;
         }
 
         const messages = await channel.messages.fetch(options);
-        if (messages.size === 0) {
-            break;
-        }
+        if (messages.size === 0) break;
 
         for (const [id, message] of messages) {
+            if (allMessages.size >= maxMessages) break;
+
+            if (message.author.bot && message.author.id !== aiBotUserId) continue; // Überspringe fremde Bots
             allMessages.set(id, message);
-            if (allMessages.size >= maxMessages) {
-                break;
-            }
         }
 
         lastMessageId = messages.last().id;
 
-        // Optional: Delay between fetches to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 200));        
+        // Verzögerung zur Vermeidung von Rate-Limits
+        await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    // Sort messages by timestamp in ascending order
+    // Nachrichten nach Timestamp sortieren und verarbeiten
     const messageArray = Array.from(allMessages.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-
-    // Process the last 10 messages (sorted array ensures the order)
     for (const message of messageArray) {
         const member = await channel.guild.members.fetch(message.author.id).catch(() => null);
 
         let prefix = '';
-
         if (message.author.id === aiBotUserId) {
-            // Message is from the AI bot
             prefix = 'AI - Support: ';
         } else if (member && member.roles.cache.some(role => role.name === 'Supporter')) {
-            // Message is from a human support member
             prefix = 'Support: ';
         } else if (!message.author.bot) {
-            // Message is from a user
             prefix = 'User: ';
         } else {
-            // Message is from another bot; skip it
-            continue;
+            continue; // Ignoriere andere Bots
         }
 
-        // Ensure message content is properly accessed
         const content = message.content || '';
-
-        collectedMessages += `${prefix}${content}\n`;
+        collectedMessages.push(`${prefix}${content}`);
     }
 
-    return collectedMessages.trim();
+    return collectedMessages.join('\n').trim();
 }
 
 async function sendMessagesToAI(messages, lastMessage) {
-    var data = null;
-    try {
-        const collectionName = 'guild_' +  lastMessage.guild.id;
-        data = await getData(collectionName, lastMessage.content);
-    } catch (error) {
-        console.error(error)
-    }
-    
-    // Verarbeite die Daten
     let knowledgeBaseText = '';
-    if (data && data.length > 0) {
-        knowledgeBaseText = data.map((item) => item.payload.text).join('\n');
-    } else {
-        knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
+    try {
+        const collectionName = `guild_${lastMessage.guild.id}`;
+        const data = await getData(collectionName, lastMessage.content);
+
+        if (data && data.length > 0) {
+            knowledgeBaseText = data.map((item) => item.payload.text).join('\n');
+        } else {
+            knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
+        }
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Wissensdatenbank:', error);
+        knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
     }
 
-    const contentGPT = "Du bist ein AI Supporter der sich auf FiveM spezialisiert. Dein Name ist Bern. Wenn dich jemadn etwas anderes Fragen über den FiveM server stellt antwortest du mit einer passenden antwort. Hier ist der ursprüngliche Nachrichten Verlauf und antworte auf die Frage des Users:" + messages + knowledgeBaseText;
+    const systemPrompt = `
+        Du bist ein AI-Supporter namens Bern, spezialisiert auf FiveM-Server.
+        Deine Aufgabe ist es, Nutzerfragen zu beantworten. Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+        \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+        \n\nAntworte angemessen auf die letzte Nachricht im Kontext.
+    `;
 
-    console.log(knowledgeBaseText);
-    console.log(contentGPT);
+    console.log('Generierter Systemprompt:', systemPrompt);
 
     try {
         const response = await axios.post(
-        process.env.OPENAI_URL,
+            process.env.OPENAI_URL,
             {
-            model: process.env.MODELL,
-            messages: [
-                { role: 'system', content: contentGPT},
-                { role: 'user', content: lastMessage.content },
-            ],
-        },
-        {
-            headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                model: process.env.MODELL,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: lastMessage.content },
+                ],
             },
-        }
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+            }
         );
-        
-        return response.data.choices[0].message.content; // Antwort von OpenAI
+
+        return response.data.choices[0].message.content || 'Entschuldigung, ich konnte keine passende Antwort generieren.';
     } catch (error) {
-        console.error("Fehler bei der Anfrage an die OpenAI API:", error);
-        return "Entschuldigung, es gab ein Problem mit der Anfrage.";
+        console.error('Fehler bei der Anfrage an die OpenAI API:', error);
+        return 'Entschuldigung, es gab ein Problem mit der Anfrage an die KI.';
     }
 }

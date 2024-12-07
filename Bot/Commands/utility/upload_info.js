@@ -1,44 +1,76 @@
+
 const { SlashCommandBuilder } = require('discord.js');
 const { upload } = require('../../Database/qdrant.js');
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('upload')
-		.setDescription('Upload the Information to your AI')
-		.addStringOption(option =>
-            option.setName('data')
-                .setDescription('A simple sentence to give information to the ai.')
-                .setRequired(true),
-			),
+    data: new SlashCommandBuilder()
+        .setName('upload')
+        .setDescription('Lade Informationen in die KI hoch')
+        .addStringOption((option) =>
+            option
+                .setName('daten')
+                .setDescription('Ein einfacher Satz, um Informationen an die KI zu übermitteln.')
+                .setRequired(true)
+        ),
+    async execute(interaction) {
+        try {
+            const roleName = 'KI-Admin';
+            const member = interaction.member;
 
-	async execute(interaction) {
-		//await interaction.reply('Setup process started. Creating roles and channels...');
+            if (!member) {
+                throw new Error('Mitgliedsinformationen konnten nicht abgerufen werden.');
+            }
 
-		const roleName = 'KI-Admin';
-		const member = interaction.member || message.member;
+            const role = member.roles.cache.find((role) => role.name === roleName);
 
-		const role = member.roles.cache.find(role => role.name === roleName);
+            if (!role) {
+                await interaction.reply({
+                    content: 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.',
+                    ephemeral: true,
+                });
 
-		if (role) {
+                const adminChannel = interaction.guild.channels.cache.find(
+                    (channel) => channel.name === 'admin-log'
+                );
+                if (adminChannel) {
+                    await adminChannel.send(
+                        `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/upload\` ohne Berechtigung auszuführen.`
+                    );
+                }
+                return;
+            }
 
-			const string = interaction.options.getString('data');
-			const checkArray = string.split(" ");
+            const string = interaction.options.getString('daten');
+            const checkArray = string.split(' ');
 
-			if (checkArray.length > 10) {
-				interaction.reply("Das Maximale Wort Limit ist 10");
-			} else {
-				await interaction.reply("Daten werden hochgeladen, dies dauert einen kurzen Moment...");
+            if (checkArray.length > 10) {
+                await interaction.reply({
+                    content: 'Das maximale Wortlimit beträgt 10. Bitte kürze deinen Satz.',
+                    ephemeral: true,
+                });
+                return;
+            }
 
-				await upload(interaction.guildId, interaction.options.getString('data'));
-	
-				await interaction.editReply("Daten erfolgreich hochgeladen!");
-			}
-		} else {
-			await interaction.reply({
-				content: 'Whoops! Looks like you do not have the permisson for that. A Administrator was informed!',
-				ephemeral: true,
-			});
-		}
+            await interaction.reply('Daten werden hochgeladen, dies dauert einen kurzen Moment...');
 
-	},
+            try {
+                await upload(interaction.guildId, string);
+                await interaction.editReply('Daten erfolgreich hochgeladen!');
+            } catch (uploadError) {
+                console.error('Fehler beim Hochladen der Daten:', uploadError);
+                await interaction.editReply('Fehler beim Hochladen der Daten. Bitte versuche es erneut.');
+            }
+        } catch (error) {
+            console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+
+            try {
+                await interaction.reply({
+                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    ephemeral: true,
+                });
+            } catch (replyError) {
+                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+            }
+        }
+    },
 };
