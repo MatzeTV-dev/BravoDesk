@@ -20,13 +20,24 @@ module.exports = {
 		const role = member.roles.cache.find(role => role.name === roleName);
 
 		if (role) {
-			//await interaction.editReply("Daten werden hochgeladen, dies dauert einen kurzen Moment...");
 
-			upload(interaction.guildId, interaction.options.getString('data'));
+			const string = interaction.options.getString('data');
+			const checkArray = string.split(" ");
 
-			await interaction.editReply("Daten erfolgreich hochgeladen!");
+			if (checkArray.length > 10) {
+				interaction.reply("Das Maximale Wort Limit ist 10");
+			} else {
+				await interaction.reply("Daten werden hochgeladen, dies dauert einen kurzen Moment...");
+
+				await upload(interaction.guildId, interaction.options.getString('data'));
+	
+				await interaction.editReply("Daten erfolgreich hochgeladen!");
+			}
 		} else {
-			await interaction.reply('Whoops! Looks like you do not have the permisson for that. A Administrator was informed!');
+			await interaction.reply({
+				content: 'Whoops! Looks like you do not have the permisson for that. A Administrator was informed!',
+				ephemeral: true,
+			});
 		}
 
 	},

@@ -59,7 +59,10 @@ module.exports = {
 
 				interaction.editReply("Everything got deleted!");
 			} else {
-				interaction.editReply("This Action can only performed by the Server Owner! A Administrator was informed about your Actions.");
+				await interaction.reply({
+					content: 'This Action can only performed by the Server Owner! A Administrator was informed about your Actions.',
+					ephemeral: true,
+				});
 			}
 
 		} catch (error) {

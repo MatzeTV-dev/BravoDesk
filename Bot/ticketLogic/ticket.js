@@ -9,6 +9,8 @@ module.exports = {
     },
     async execute(interaction) {
 
+        await interaction.deferReply();
+
         const selectedValues = interaction.values;
 
         for (const value of selectedValues) {

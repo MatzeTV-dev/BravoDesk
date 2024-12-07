@@ -14,9 +14,10 @@ module.exports = {
         const hasRole = member.roles.cache.some((role) => role.name === roleName);
 
         if (!hasRole) {
-            await interaction.reply(
-                'Whoops! Looks like you do not have the permission for that. An administrator was informed!'
-            );
+            await interaction.reply({
+				content: 'Whoops! Looks like you do not have the permisson for that. A Administrator was informed!',
+				ephemeral: true,
+			});
             return;
         }
 
