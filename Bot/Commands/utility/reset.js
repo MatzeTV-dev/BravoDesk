@@ -9,6 +9,8 @@ module.exports = {
     async execute(interaction) {
         const guild = interaction.guild;
 
+        await interaction.deferReply();
+
         try {
             // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
             if (guild.ownerId !== interaction.user.id) {
@@ -31,7 +33,7 @@ module.exports = {
             }
 
             // Antwort senden, um die Aktion zu bestätigen
-            await interaction.reply('Starting reset process...');
+            await interaction.editReply('Starting reset process...');
 
             const rawData = await getServerInformation(guild.id);
             if (!rawData || rawData.length === 0) {
@@ -39,9 +41,11 @@ module.exports = {
                 return;
             }
 
-            const data = rawData[0][0][0];
+            const data = rawData[0][0];
 
             // Löschen von Ressourcen (Channels, Kategorien, Rollen)
+
+            console.log(data);
             try {
                 const channel = guild.channels.cache.get(data.ticket_system_channel_id);
                 if (channel) {
@@ -107,7 +111,7 @@ module.exports = {
 
             // Benutzerfreundliche Fehlermeldung
             try {
-                await interaction.reply({
+                await interaction.editReply({
                     content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
                     ephemeral: true,
                 });
