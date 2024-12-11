@@ -1,11 +1,6 @@
-const {
-    SlashCommandBuilder,
-    PermissionsBitField,
-    ChannelType,
-    ActionRowBuilder,
-    StringSelectMenuBuilder,
-} = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
+const { activateKey, CheckKeyStatus} = require('../../helper/activationHelper.js');
 const fs = require('fs');
 
 var guild = null;
@@ -18,13 +13,45 @@ var kiadminRoleID = '';
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setup')
-        .setDescription('Starts the automatic setup of the Discord Bot'),
+        .setDescription('Starts the automatic setup of the Discord Bot')
+        .addStringOption((option) =>
+            option
+                .setName('key')
+                .setDescription('Fügen Sie Ihren Aktivierungsschlüssel ein.')
+                .setRequired(true)
+        ),
     async execute(interaction) {
+
+        await interaction.deferReply();
+
         guild = interaction.guild;
 
         try {
+            var result = await CheckKeyStatus(interaction.options.getString('key'));
+
+            if(!result.exists_in_keys) {
+
+                await interaction.editReply({
+                    content: 'The Key is not valid.',
+                    ephemeral: true,
+                });
+                return;
+            } 
+            
+            if(!result.is_valid) {
+
+                await interaction.editReply({
+                    content: 'The Key is no longer active.',
+                    ephemeral: true,
+                })
+            }
+
+            if(!result.is_activated) {
+                await activateKey(interaction.options.getString('key'), guild.id);
+            }
+
             if (guild.ownerId !== interaction.user.id) {
-                await interaction.reply({
+                await interaction.editReply({
                     content: 'This action can only be performed by the server owner! An administrator has been informed.',
                     ephemeral: true,
                 });
@@ -39,7 +66,10 @@ module.exports = {
                 return;
             }
 
-            await interaction.reply('Setup process started. Creating roles and channels...');
+            await interaction.editReply({
+                content: 'Setup process started. Creating roles and channels...',
+                ephemeral: true,
+            });
 
             guildID = guild.id;
             const returnValue = await chefIfServerExists(guildID);

@@ -82,6 +82,21 @@ async function Delete(statement, dataInput) {
   }
 }
 
+// Funktion: Datensätze löschen
+async function Call(statement, dataInput, SelectStatement) {
+  try {
+    await pool.query(statement, dataInput);
+    console.log('Stored Procedure erfolgreich abgerufen!');
+
+    const [rows] = await pool.query(SelectStatement);
+
+    return rows[0]; // Gibt das Lösch-Ergebnis zurück
+  } catch (error) {
+    console.error('Fehler beim Löschen von Daten:', error);
+    return null; // Rückgabe von `null` bei Fehlern
+  }
+}
+
 // Exportiere Funktionen
 module.exports = {
   saveServerInformation,
@@ -89,4 +104,5 @@ module.exports = {
   chefIfServerExists,
   Select,
   Delete,
+  Call,
 };
