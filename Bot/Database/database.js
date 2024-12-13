@@ -82,17 +82,16 @@ async function Delete(statement, dataInput) {
   }
 }
 
-// Funktion: Datensätze löschen
+// Funktion: Stored Procedure aufrufen
 async function Call(statement, dataInput, SelectStatement) {
   try {
     await pool.query(statement, dataInput);
     console.log('Stored Procedure erfolgreich abgerufen!');
-
     const [rows] = await pool.query(SelectStatement);
-
     return rows[0]; // Gibt das Lösch-Ergebnis zurück
+    
   } catch (error) {
-    console.error('Fehler beim Löschen von Daten:', error);
+    console.error('Fehler beim aufrufen vom stored procedure:', error);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }

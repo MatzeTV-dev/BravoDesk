@@ -10,7 +10,7 @@ const fs = require('fs');
 
 module.exports = {
     data: {
-        customId: 'ticket_category', // Muss exakt mit dem customId des Select Menus übereinstimmen
+        customId: 'create_ticket_ticket_category', // Muss exakt mit dem customId des Select Menus übereinstimmen
     },
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });

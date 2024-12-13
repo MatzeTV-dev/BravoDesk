@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
-const { activateKey, CheckKeyStatus} = require('../../helper/activationHelper.js');
+const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey,} = require('../../helper/keyHelper.js');
 const fs = require('fs');
 
 var guild = null;
@@ -9,7 +9,7 @@ var ticketChannelID = '';
 var ticketCategoryID = '';
 var supportRoleID = '';
 var kiadminRoleID = '';
-
+var emebd = null;
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setup')
@@ -26,33 +26,88 @@ module.exports = {
 
         guild = interaction.guild;
 
-        try {
-            var result = await CheckKeyStatus(interaction.options.getString('key'));
+        const serverOwnerOnlyEmbed = new EmbedBuilder()
+                .setColor('#FF2D00')
+                .setTitle('Error!')
+                .setDescription('This Action is only allowed by the Server Owner!')
+                .setTimestamp();
 
+        try {
+            var result = await checkKeyExists(interaction.options.getString('key'));
+            console.log(result.exists_in_keys)
             if(!result.exists_in_keys) {
 
+                embed = new EmbedBuilder()
+                .setColor('#FF2D00')
+                .setTitle('Key exsistence')
+                .setDescription('The key does not exists.')
+                .setTimestamp();
+
                 await interaction.editReply({
-                    content: 'The Key is not valid.',
+                    embeds: [embed],
                     ephemeral: true,
                 });
+
+                return;
+            }
+            
+            var result = await checkKeyActivated(interaction.options.getString('key'));
+
+            if (!result.is_activated) {
+                await activateKey(interaction.options.getString('key'), guild.id);
+
+                embed = new EmbedBuilder()
+                .setColor('#52FF00')
+                .setTitle('Key activated!')
+                .setDescription('The key has been activated and is 30 Days valid.')
+                .setTimestamp();
+
+                await interaction.editReply({
+                    embeds: [embed],
+                    ephemeral: true,
+                });
+            }
+
+            var result = await checkKeyValidity(interaction.options.getString('key'));
+
+            if(!result.is_valid) {
+
+                embed = new EmbedBuilder()
+                .setColor('#FCFF00')
+                .setTitle('Key Expired')
+                .setDescription('The key has expired.')
+                .setTimestamp();
+
+                await interaction.editReply({
+                    embeds: [embed],
+                    ephemeral: false
+                });
+
+                return;
+            }
+
+            const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
+
+            if(!isMatch.IsMatch) {
+                embed = new EmbedBuilder()
+                .setColor('#FCFF00')
+                .setTitle('Key Mismatch!')
+                .setDescription('The Key does not match the server it was activated originally.')
+                .setTimestamp();
+
+                await interaction.editReply({
+                    embeds: [embed],
+                    ephemeral: false
+                });
+
                 return;
             } 
             
-            if(!result.is_valid) {
-
-                await interaction.editReply({
-                    content: 'The Key is no longer active.',
-                    ephemeral: true,
-                })
-            }
-
-            if(!result.is_activated) {
-                await activateKey(interaction.options.getString('key'), guild.id);
-            }
+            
 
             if (guild.ownerId !== interaction.user.id) {
                 await interaction.editReply({
-                    content: 'This action can only be performed by the server owner! An administrator has been informed.',
+                    embeds: [serverOwnerOnlyEmbed],
                     ephemeral: true,
                 });
 
@@ -66,8 +121,14 @@ module.exports = {
                 return;
             }
 
+            embed = new EmbedBuilder()
+            .setColor('#6B8F71')
+            .setTitle('Setup Process!')
+            .setDescription('Setup process started. Creating roles and channels...')
+            .setTimestamp();
+
             await interaction.editReply({
-                content: 'Setup process started. Creating roles and channels...',
+                embeds: [embed],
                 ephemeral: true,
             });
 
@@ -82,9 +143,29 @@ module.exports = {
 
                 // Speichere in der Datenbank
                 await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
-                await interaction.editReply('Setup completed successfully!');
+
+                embed = new EmbedBuilder()
+                .setColor('#6B8F71')
+                .setTitle('Setup Process!')
+                .setDescription('Setup completed successfully!')
+                .setTimestamp();
+
+                await interaction.editReply({
+                    embeds: [embed],
+                    ephemeral: true,
+                });
             } else {
-                await interaction.editReply('Setup already completed!');
+
+                embed = new EmbedBuilder()
+                .setColor('#6B8F71')
+                .setTitle('Setup Process!')
+                .setDescription('Setup already completed!')
+                .setTimestamp();
+
+                await interaction.editReply({
+                    embeds: [embed],
+                    ephemeral: true,
+                });
             }
         } catch (error) {
             console.error('Error during setup:', error);
@@ -92,7 +173,16 @@ module.exports = {
             // Rollback bei Fehlern
             await rollbackSetup(interaction);
 
-            await interaction.editReply('An error occurred during the setup process. Please try again.');
+            embed = new EmbedBuilder()
+                .setColor('#FCFF00')
+                .setTitle('Setup Process!')
+                .setDescription('An error occurred during the setup process. Please try again.')
+                .setTimestamp();
+
+            await interaction.editReply({
+                embeds: [embed],
+                ephemeral: true,
+            });
         }
     },
 };
@@ -166,16 +256,16 @@ async function createChannel(interaction) {
     }
 
     // Lese Embed-Daten aus JSON
-    const embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
+    embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
 
-    const embeds = embedData.embeds.map((embed) => ({
+    embeds = embedData.embeds.map((embed) => ({
         ...embed,
         color: embed.color || 7049073,
     }));
 
     // Dropdown-Menü erstellen
     const dropdown = new StringSelectMenuBuilder()
-        .setCustomId('ticket_category')
+        .setCustomId('create_ticket_ticket_category')
         .setPlaceholder('Wählen Sie eine Kategorie aus...')
         .addOptions([
             {
