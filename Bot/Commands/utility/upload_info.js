@@ -1,6 +1,7 @@
 
 const { SlashCommandBuilder } = require('discord.js');
 const { upload } = require('../../Database/qdrant.js');
+const { error, info } = require('../../helper/embedHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,6 +15,9 @@ module.exports = {
         ),
     async execute(interaction) {
         try {
+
+            await interaction.deferReply();
+
             const roleName = 'KI-Admin';
             const member = interaction.member;
 
@@ -24,8 +28,8 @@ module.exports = {
             const role = member.roles.cache.find((role) => role.name === roleName);
 
             if (!role) {
-                await interaction.reply({
-                    content: 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.',
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.')],
                     ephemeral: true,
                 });
 
@@ -44,28 +48,37 @@ module.exports = {
             const checkArray = string.split(' ');
 
             if (checkArray.length > 10) {
-                await interaction.reply({
-                    content: 'Das maximale Wortlimit beträgt 10. Bitte kürze deinen Satz.',
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Die Maximale Wortlänge beträgt 10 Wörter.')],
                     ephemeral: true,
                 });
                 return;
             }
 
-            await interaction.reply('Daten werden hochgeladen, dies dauert einen kurzen Moment...');
+            await interaction.editReply({
+                embeds: [info('Hochladen', 'Daten werden hochgeladen, dies kann ein paar Sekunden dauern.')],
+                ephemeral: true,
+            });
 
             try {
                 await upload(interaction.guildId, string);
-                await interaction.editReply('Daten erfolgreich hochgeladen!');
+                await interaction.editReply({
+                    embeds: [info('Hochladen', 'Daten hochladen war erfolgreich.')],
+                    ephemeral: true,
+                });
             } catch (uploadError) {
                 console.error('Fehler beim Hochladen der Daten:', uploadError);
-                await interaction.editReply('Fehler beim Hochladen der Daten. Bitte versuche es erneut.');
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Fehler beim hochladen von Daten.')],
+                    ephemeral: true,
+                });
             }
         } catch (error) {
             console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
 
             try {
-                await interaction.reply({
-                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Ein Unerwarteter Fehler ist aufgetreten.')],
                     ephemeral: true,
                 });
             } catch (replyError) {

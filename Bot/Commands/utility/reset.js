@@ -1,6 +1,7 @@
 const { getServerInformation, Delete } = require('../../Database/database.js');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { deleteAll } = require('../../Database/qdrant.js');
+const { error, info } = require('../../helper/embedHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,9 +15,8 @@ module.exports = {
         try {
             // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
             if (guild.ownerId !== interaction.user.id) {
-                await interaction.reply({
-                    content:
-                        'This action can only be performed by the server owner! An administrator has been informed about your attempt.',
+                await interaction.editReply({
+                    embeds: [error('Error', 'This action can only be performed by the server owner! An administrator has been informed about your attempt.')],
                     ephemeral: true,
                 });
 
@@ -33,11 +33,17 @@ module.exports = {
             }
 
             // Antwort senden, um die Aktion zu bestätigen
-            await interaction.editReply('Starting reset process...');
+            await interaction.editReply({
+                embeds: [info('Reset Process', 'Der Prozess wurde gestartet!')],
+                ephemeral: true,
+            });
 
             const rawData = await getServerInformation(guild.id);
             if (!rawData || rawData.length === 0) {
-                await interaction.editReply('Keine Serverinformationen gefunden. Abbruch.');
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Keine Serverinformationen gefunden!')],
+                    ephemeral: true,
+                });
                 return;
             }
 
@@ -80,32 +86,50 @@ module.exports = {
                 }
             } catch (resourceError) {
                 console.error('Fehler beim Löschen von Ressourcen:', resourceError);
-                await interaction.editReply('Fehler beim Löschen von Ressourcen.');
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Fehler beim löschen von Ressourcen')],
+                    ephemeral: true,
+                });
                 return;
             }
 
             // Datenbankeinträge löschen
             try {
-                await interaction.editReply('Deleting database information...');
+                await interaction.editReply({
+                    embeds: [info('Reset Process', 'Deleting Databaseinformation')],
+                    ephemeral: true,
+                });
                 await Delete('CALL Delete_Server_Information(?)', guild.id);
             } catch (dbError) {
                 console.error('Fehler beim Löschen der Datenbankinformationen:', dbError);
-                await interaction.editReply('Fehler beim Löschen der Datenbankinformationen.');
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Fehler beim löschen von Datenbankinformationen')],
+                    ephemeral: true,
+                });
                 return;
             }
 
             // KI-Wissen löschen
             try {
-                await interaction.editReply('Deleting AI knowledge...');
+                await interaction.editReply({
+                    embeds: [info('Reset Process', 'Deleting AI-Knowledge')],
+                    ephemeral: true,
+                });
                 await deleteAll('guild_' + guild.id);
             } catch (aiError) {
                 console.error('Fehler beim Löschen des KI-Wissens:', aiError);
-                await interaction.editReply('Fehler beim Löschen des KI-Wissens.');
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Fehler beim löschen von KI-Wissen')],
+                    ephemeral: true,
+                });
                 return;
             }
 
             // Abschlussnachricht
-            await interaction.editReply('Reset process completed successfully!');
+            await interaction.editReply({
+                embeds: [info('Reset Process', 'Reset Process completed')],
+                ephemeral: true,
+            });
         } catch (error) {
             console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
 

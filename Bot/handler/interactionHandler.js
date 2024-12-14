@@ -1,6 +1,7 @@
 
 const { EmbedBuilder } = require('discord.js');
 const { editEntry } = require('../Database/qdrant.js');
+const { info } = require('../helper/embedHelper.js');
 
 module.exports = async (client, interaction) => {
     try {
@@ -63,7 +64,7 @@ module.exports = async (client, interaction) => {
                 try {
                     await editEntry(interaction.guildId, id, newContent);
                     await interaction.reply({
-                        content: 'Der Eintrag wurde erfolgreich aktualisiert.',
+                        embeds: [info('Wissenseintrag', 'Der Wissenseintrag wurde aktualisiert')],
                         ephemeral: true,
                     });
 

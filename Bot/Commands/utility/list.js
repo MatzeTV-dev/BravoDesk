@@ -1,15 +1,7 @@
 
-const {
-    SlashCommandBuilder,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
-    EmbedBuilder,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-} = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { getEverythingCollection, deleteEntry } = require('../../Database/qdrant.js');
+const { error, info } = require('../../helper/embedHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,16 +10,17 @@ module.exports = {
 
     async execute(interaction) {
         try {
+
+            await interaction.deferReply();
+
             const roleName = 'KI-Admin';
             const member = interaction.member;
-
-            if (!member) throw new Error('Interaktionsmitglied konnte nicht gefunden werden.');
 
             const hasRole = member.roles.cache.some((role) => role.name === roleName);
 
             if (!hasRole) {
-                await interaction.reply({
-                    content: 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!',
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!')],
                     ephemeral: true,
                 });
 
@@ -42,16 +35,15 @@ module.exports = {
                 return;
             }
 
-            await interaction.reply('Daten werden abgerufen...');
-
             const knowledge = await getEverythingCollection(interaction.guildId);
 
             if (!knowledge || knowledge.length === 0) {
-                await interaction.editReply('Keine Daten gefunden.');
+                await interaction.editReply({
+                    embeds: [error('Error!', 'Keine Daten gefunden!')],
+                    ephemeral: true,
+                });
                 return;
             }
-
-            await interaction.editReply('Daten erfolgreich abgerufen.');
 
             const sendEntryMessages = async () => {
                 for (const item of knowledge) {
@@ -124,18 +116,22 @@ module.exports = {
                             await deleteEntry(interaction.guildId, id);
                             await i.deferUpdate();
                             await i.message.delete();
+                            await interaction.editReply({
+                                embeds: [info('Deleted', "Der Wissenseintrag wurdege erfolgreich gelöscht")],
+                                ephemeral: true,
+                            })
                         } catch (error) {
                             console.error('Error while deleting entry:', error);
-                            await i.reply({
-                                content: 'Es gab einen Fehler beim Löschen des Eintrags.',
+                            await interaction.editReply({
+                                embeds: [error('Error', 'Es gab einne Fehler beim Löschen des Eintrages.')],
                                 ephemeral: true,
                             });
                         }
                     }
                 } catch (error) {
                     console.error('Error while processing button interaction:', error);
-                    await i.reply({
-                        content: 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    await iinteraction.editReply({
+                        embeds: [error('Error', 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                         ephemeral: true,
                     });
                 }
@@ -149,7 +145,7 @@ module.exports = {
 
             try {
                 await interaction.reply({
-                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    embeds: [error('Error', 'Ein Unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                     ephemeral: true,
                 });
             } catch (replyError) {

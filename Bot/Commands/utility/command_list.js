@@ -1,5 +1,6 @@
 
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { error } = require('../../helper/embedHelper.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,12 +8,11 @@ module.exports = {
         .setDescription('Lösche Informationen aus der KI'),
     async execute(interaction) {
         try {
+
+            await interaction.deferReply({ ephemeral: true });
+
             const roleName = 'KI-Admin';
             const member = interaction.member;
-
-            if (!member) {
-                throw new Error('Could not determine the executing user.');
-            }
 
             const role = member.roles.cache.find(role => role.name === roleName);
 
@@ -33,8 +33,9 @@ module.exports = {
                     embeds: [embed],
                 });
             } else {
+
                 await interaction.reply({
-                    content: 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!',
+                    embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!')],
                     ephemeral: true,
                 });
 
@@ -52,7 +53,7 @@ module.exports = {
 
             try {
                 await interaction.reply({
-                    content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
+                    embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                     ephemeral: true,
                 });
             } catch (replyError) {

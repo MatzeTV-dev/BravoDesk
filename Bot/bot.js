@@ -21,24 +21,48 @@ client.selectMenus = new Map();
 client.buttons = new Map(); // Map für Buttons
 
 // **Pfad zu den Verzeichnissen**
-const commandsPath = path.join(__dirname, './Commands');
-const commandFolders = fs.readdirSync(commandsPath);
+const commandsPath = path.join(__dirname, './Commands/utility');
+const selectMenusPath = path.join(__dirname, './ticketLogic');
+const buttonsPath = path.join(__dirname, './ticketLogic');
 
-const commands = [];
-for (const folder of commandFolders) {
-    const folderPath = path.join(commandsPath, folder);
-    const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+// **Dateien einlesen**
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const selectMenuFiles = fs.readdirSync(selectMenusPath).filter(file => file.endsWith('.js'));
+const buttonFiles = fs.readdirSync(buttonsPath).filter(file => file.endsWith('.js'));
 
-    for (const file of commandFiles) {
-        const filePath = path.join(folderPath, file);
-        const command = require(filePath);
+// **Commands laden**
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
 
-        if ('data' in command && 'execute' in command) {
-            commands.push(command.data.toJSON());
-            client.commands.set(command.data.name, command);
-        } else {
-            console.warn(`[WARN] Der Command in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
-        }
+    if ('data' in command && 'execute' in command) {
+        client.commands.set(command.data.name, command);
+    } else {
+        console.warn(`[WARN] Der Command in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+    }
+}
+
+// **Select Menus laden**
+for (const file of selectMenuFiles) {
+    const filePath = path.join(selectMenusPath, file);
+    const selectMenu = require(filePath);
+
+    if ('data' in selectMenu && 'execute' in selectMenu) {
+        client.selectMenus.set(selectMenu.data.customId, selectMenu);
+    } else {
+        console.warn(`[WARN] Das Select Menu in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+    }
+}
+
+// **Buttons laden**
+for (const file of buttonFiles) {
+    const filePath = path.join(buttonsPath, file);
+    const button = require(filePath);
+
+    if ('data' in button && 'execute' in button) {
+        client.buttons.set(button.data.name, button);
+    } else {
+        console.warn(`[WARN] Der Button in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
@@ -106,12 +130,10 @@ async function registerCommands(guildId = null) {
     }
 }
 
-
-// **Bot ready Event**
 client.once(Events.ClientReady, async () => {
     console.log(`Eingeloggt als ${client.user.tag}`);
-    const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
-    await registerCommands(testGuildId);
+    //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
+    //await registerCommands(testGuildId);
 });
 
 // **Server beitreten Event**
@@ -119,6 +141,9 @@ client.on(Events.GuildCreate, async guild => {
     console.log(`Dem Server "${guild.name}" (ID: ${guild.id}) beigetreten.`);
     await registerCommands(guild.id); // Gilden-spezifische Registrierung
 });
+
+
+
 
 // **Bot-Login**
 client.login(process.env.DISCORD_BOT_TOKEN);
