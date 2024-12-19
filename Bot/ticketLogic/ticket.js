@@ -48,7 +48,10 @@ module.exports = {
 async function createTicket(interaction, reason) {
     try {
         const rawData = await getServerInformation(interaction.guild.id);
-        const data = rawData?.[0]?.[0]?.[0];
+
+        console.log(rawData);
+
+        const data = rawData[0][0];
 
         if (!data) {
             console.error('Serverinformationen konnten nicht geladen werden.');
