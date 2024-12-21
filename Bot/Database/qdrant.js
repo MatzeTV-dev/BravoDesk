@@ -131,6 +131,27 @@ async function editEntry(guildID, id, newContent) {
         return false;
     }
 }
+async function getEntry(entryID, guildID) {
+    const collectionName = `guild_${guildID}`;
+    try {
+        const response = await qdrantClient.retrieve(collectionName, {
+            ids: [entryID],
+            withPayload: true
+        });
+
+        console.log('Abfrage-Antwort:', response);
+
+        if (response && response.length > 0) {
+            return response[0].payload;
+        } else {
+            console.warn(`Kein Eintrag mit der ID ${entryID} in Collection "${collectionName}" gefunden.`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`Fehler beim Abrufen des Eintrags mit ID ${entryID}:`, error);
+        return null;
+    }
+}
 
 // Funktion: Ähnlichkeitssuche
 async function getData(collectionName, userQuery) {
@@ -172,6 +193,7 @@ module.exports = {
     deleteEntry,
     deleteAll,
     editEntry,
+    getEntry,
     getData,
     upload,
 };

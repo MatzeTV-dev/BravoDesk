@@ -130,7 +130,7 @@ module.exports = {
                     }
                 } catch (error) {
                     console.error('Error while processing button interaction:', error);
-                    await iinteraction.editReply({
+                    await interaction.editReply({
                         embeds: [error('Error', 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                         ephemeral: true,
                     });
