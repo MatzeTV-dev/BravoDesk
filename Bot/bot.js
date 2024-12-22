@@ -58,7 +58,6 @@ for (const file of selectMenuFiles) {
 
 // **Buttons laden**
 for (const file of buttonFiles) {
-    Logger.info('Gefundene Button-Dateien:', buttonFiles);
     const filePath = path.join(buttonsPath, file);
     const button = require(filePath);
 
@@ -141,15 +140,16 @@ client.on(Events.GuildCreate, async guild => {
 
 client.once(Events.ClientReady, async () => {
     checkDatabaseStatus();
-    Logger.info(`
+    console.log(`
         ______                     ______          _    
-        | ___ \                    |  _  \        | |   
-        | |_/ /_ __ __ ___   _____ | | | |___  ___| | __
-        | ___ \ '__/ _\` \ \ / / _ \| | | / _ \/ __| |/ /
-        | |_/ / | | (_| |\ V / (_) | |/ /  __/\__ \   < 
-        \____/|_|  \__,_| \_/ \___/|___/ \___||___/_|\_\
-                                                        
-        `);
+       | ___ \\                    |  _  \\        | |   
+       | |_/ /_ __ __ ___   _____ | | | |___  ___| | __
+       | ___ \\ '__/ _\` \\ \\ / / _ \\| | | / _ \\/ __| |/ /
+       | |_/ / | | (_| |\\ V / (_) | |/ /  __/\\__ \\   < 
+       \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
+                                                       
+       `);
+       
         Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
