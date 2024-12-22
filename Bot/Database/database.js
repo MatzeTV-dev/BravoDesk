@@ -1,3 +1,4 @@
+const { exec } = require('child_process');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 
@@ -12,6 +13,32 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+
+async function checkDatabaseStatus() {
+  try {
+    const [result] = await pool.query('SELECT 1'); // Testabfrage
+    console.log('Database is online.');
+    return true; // Gibt `true` zurück, wenn die Abfrage erfolgreich ist
+  } catch (error) {
+    console.error('Error at database connection test:', error.message);
+
+    // Versuche, die Datenbank durch eine .bat-Datei zu starten
+    try {
+      console.log('Database offline. Trying to start...');
+      exec('start C:/xampp/mysql_start.bat', (err, stdout, stderr) => {
+        if (err) {
+          console.error('Error opening the .bat-File:', err.message);
+          return;
+        }
+        console.log('Datbase start succesfully:', stdout);
+      });
+    } catch (batError) {
+      console.error('Error at starting the Database:', batError.message);
+    }
+
+    return false; // Fehler beim Prüfen der Datenbankverbindung
+  }
+}
 
 // Funktion: Daten speichern oder aktualisieren
 async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id) {
@@ -101,6 +128,7 @@ module.exports = {
   saveServerInformation,
   getServerInformation,
   chefIfServerExists,
+  checkDatabaseStatus,
   Select,
   Delete,
   Call,

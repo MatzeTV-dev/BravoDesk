@@ -1,6 +1,7 @@
 const { Client, Collection, GatewayIntentBits, Events, REST, Routes } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
+const { checkDatabaseStatus } = require('./Database/database.js')
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
@@ -56,6 +57,7 @@ for (const file of selectMenuFiles) {
 
 // **Buttons laden**
 for (const file of buttonFiles) {
+    console.log('Gefundene Button-Dateien:', buttonFiles);
     const filePath = path.join(buttonsPath, file);
     const button = require(filePath);
 
@@ -130,20 +132,28 @@ async function registerCommands(guildId = null) {
     }
 }
 
-client.once(Events.ClientReady, async () => {
-    console.log(`Eingeloggt als ${client.user.tag}`);
-    //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
-    //await registerCommands(testGuildId);
-});
-
 // **Server beitreten Event**
 client.on(Events.GuildCreate, async guild => {
     console.log(`Dem Server "${guild.name}" (ID: ${guild.id}) beigetreten.`);
     await registerCommands(guild.id); // Gilden-spezifische Registrierung
 });
 
+client.once(Events.ClientReady, async () => {
+    checkDatabaseStatus();
+    console.log(`
+        ______                     ______          _    
+        | ___ \\                    |  _  \\        | |   
+        | |_/ /_ __ __ ___   _____ | | | |___  ___| | __
+        | ___ \\ '__/ _\` \\ \\ / / _ \\| | | / _ \\/ __| |/ /
+        | |_/ / | | (_| |\\ V / (_) | |/ /  __/\\__ \\   < 
+        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
+                                                        
+        `);
+        console.log(`Eingeloggt als ${client.user.tag}`);
 
-
+    //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
+    //await registerCommands(testGuildId);
+});
 
 // **Bot-Login**
 client.login(process.env.DISCORD_BOT_TOKEN);

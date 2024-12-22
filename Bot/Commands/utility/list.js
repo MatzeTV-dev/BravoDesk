@@ -51,10 +51,10 @@ module.exports = {
                         const embed = new EmbedBuilder()
                             .setTitle('Wissenseintrag')
                             .addFields(
-                                { name: '**🆔 ID**', value: item.id },
-                                { name: '**📜 Inhalt**', value: item.payload.text }
+                                { name: '**ID**', value: item.id },
+                                { name: '**Inhalt**', value: item.payload.text }
                             )
-                            .setColor(0x00AE86);
+                            .setColor('#0D2B1D');
 
                         const editButton = new ButtonBuilder()
                             .setCustomId(`edit_${item.id}`)

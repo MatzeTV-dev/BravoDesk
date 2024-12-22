@@ -53,41 +53,51 @@ module.exports = async (client, interaction) => {
             }
 
         } else if (interaction.isButton()) {
-            if (interaction.customId.startsWith('edit')) {
+            const button = client.buttons.get(interaction.customId);
+        
+            if (button) {
+                await button.execute(interaction);
+
+            } else if (interaction.customId.startsWith('edit')) {
                 try {
 
-                    /*if (interaction.deferred || interaction.replied) {
-                        console.warn('Interaktion wurde bereits bearbeitet, kein erneuter showModal möglich.');
+                    console.log(interaction.customId);
+
+                    const button = client.buttons.get(interaction.customId);
+
+                    if (!button) {
+                        console.log(`Kein Button Handler gefunden: ${interaction.customId}`);
                         return;
-                    }*/
+                    }
+                    await button.execute(interaction);
 
                     const entryId = interaction.customId.split('_')[1];
                     const entry = await getEntry(entryId, interaction.guildId);
 
                     console.log('Gefundener Eintrag:', entry);
 
-                    if (!entry) {
-                        //await interaction.reply({ content: 'Eintrag nicht gefunden!', ephemeral: true });
-                        return;
-                    }
-
                     const modal = new ModalBuilder()
-                        .setCustomId(`edit-${entryId}`)
+                        .setCustomId(`edit_modal_${entryId}`)
                         .setTitle('Eintrag bearbeiten');
 
                     const descriptionInput = new TextInputBuilder()
-                        .setCustomId('description')
+                        .setCustomId('description')    // Wichtig: dieser customId muss "description" heißen
                         .setLabel('Beschreibung des Eintrags')
                         .setStyle(TextInputStyle.Paragraph)
                         .setValue(entry.text || '');
 
-                    const row2 = new ActionRowBuilder().addComponents(descriptionInput);
-
-                    modal.addComponents(row2);
+                    // ActionRow + addComponents()
+                    const row = new ActionRowBuilder().addComponents(descriptionInput);
+                    modal.addComponents(row);
                     if (interaction.deferred || interaction.replied) {
                         console.warn('Interaktion wurde kurz vor showModal() doch noch beantwortet, Abbruch.');
                         return;
                     }
+
+                    console.log('ZEIGE Modal an:', {
+                        customId: `edit_modal_${entryId}`,
+                        fields: ['description'],
+                      });
 
                     await interaction.showModal(modal);
 
@@ -99,12 +109,13 @@ module.exports = async (client, interaction) => {
                 console.error(`Kein Button Handler gefunden: ${interaction.customId}`);
             }
 
-        } else if (interaction.isModalSubmit()) {
-            if (interaction.customId.startsWith('edit-entry-')) {
-                const entryId = interaction.customId.split('-')[2];
-                const title = interaction.fields.getTextInputValue('title');
-                const description = interaction.fields.getTextInputValue('description');
-
+        } else if (interaction.isModalSubmit()) { 
+            console.log('Feld-IDs in diesem Modal:', interaction.fields.fields.map(f => f.customId));
+        
+            if (interaction.customId.startsWith('edit_modal_')) {
+                const splitted = interaction.customId.split('_');
+                const entryId = splitted[2];
+                const description = interaction.fields.getTextInputValue('newContent');
                 try {
                     await editEntry(interaction.guildId, entryId, { description });
 

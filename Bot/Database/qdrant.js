@@ -16,15 +16,16 @@ const qdrantClient = new QdrantClient({
 async function getEmbedding(text) {
     try {
         const embedding = await hf.featureExtraction({
-            model: 'intfloat/multilingual-e5-large',
+            model: "intfloat/multilingual-e5-large",
             inputs: text,
         });
-        return embedding; // Liefert Embeddings zurück
+        return embedding;
     } catch (error) {
         console.error('Fehler beim Generieren des Embeddings:', error);
-        return null; // Rückgabe von `null` bei Fehlern
+        return null;
     }
 }
+  
 
 // Funktion: Überprüfen, ob Collection existiert
 async function ensureCollectionExists(guildID) {
@@ -112,7 +113,7 @@ async function deleteEntry(guildID, id) {
 async function editEntry(guildID, id, newContent) {
     const collectionName = `guild_${guildID}`;
     try {
-        const embedding = await getEmbedding(newContent);
+        const embedding = await getEmbedding(newContent.description);
         if (!embedding) {
             console.error('Fehler beim Generieren des Embeddings für das Update.');
             return false;
