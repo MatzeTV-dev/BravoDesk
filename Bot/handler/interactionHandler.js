@@ -7,6 +7,7 @@ const {
 } = require('discord.js');
 const { editEntry, getEntry } = require('../Database/qdrant.js');
 const { info } = require('../helper/embedHelper.js');
+const Logger = require('../helper/loggerHelper.js');
 
 module.exports = async (client, interaction) => {
     try {
@@ -14,14 +15,14 @@ module.exports = async (client, interaction) => {
             const command = client.commands.get(interaction.commandName);
 
             if (!command) {
-                console.error(`Kein Befehl gefunden: ${interaction.commandName}`);
+                Logger.warn(`Kein Befehl gefunden: ${interaction.commandName}`);
                 return;
             }
 
             try {
                 await command.execute(interaction);
             } catch (error) {
-                console.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}:`, error);
+                Logger.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}: ${error.message}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -35,14 +36,14 @@ module.exports = async (client, interaction) => {
             const selectMenu = client.selectMenus.get(interaction.customId);
 
             if (!selectMenu) {
-                console.error(`Kein Select Menu gefunden: ${interaction.customId}`);
+                Logger.warn(`Kein Select Menu gefunden: ${interaction.customId}`);
                 return;
             }
 
             try {
                 await selectMenu.execute(interaction);
             } catch (error) {
-                console.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}:`, error);
+                Logger.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}: ${error.message}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -61,12 +62,12 @@ module.exports = async (client, interaction) => {
             } else if (interaction.customId.startsWith('edit')) {
                 try {
 
-                    console.log(interaction.customId);
+                    Logger.info(`Button Interaction gestartet: ${interaction.customId}`);
 
                     const button = client.buttons.get(interaction.customId);
 
                     if (!button) {
-                        console.log(`Kein Button Handler gefunden: ${interaction.customId}`);
+                        Logger.warn(`Kein Button Handler gefunden: ${interaction.customId}`);
                         return;
                     }
                     await button.execute(interaction);
@@ -74,7 +75,7 @@ module.exports = async (client, interaction) => {
                     const entryId = interaction.customId.split('_')[1];
                     const entry = await getEntry(entryId, interaction.guildId);
 
-                    console.log('Gefundener Eintrag:', entry);
+                    Logger.info('Gefundener Eintrag:', entry);
 
                     const modal = new ModalBuilder()
                         .setCustomId(`edit_modal_${entryId}`)
@@ -90,11 +91,11 @@ module.exports = async (client, interaction) => {
                     const row = new ActionRowBuilder().addComponents(descriptionInput);
                     modal.addComponents(row);
                     if (interaction.deferred || interaction.replied) {
-                        console.warn('Interaktion wurde kurz vor showModal() doch noch beantwortet, Abbruch.');
+                        Logger.warn('Interaktion wurde kurz vor showModal() doch noch beantwortet, Abbruch.');
                         return;
                     }
 
-                    console.log('ZEIGE Modal an:', {
+                    Logger.info('ZEIGE Modal an:', {
                         customId: `edit_modal_${entryId}`,
                         fields: ['description'],
                       });
@@ -102,15 +103,15 @@ module.exports = async (client, interaction) => {
                     await interaction.showModal(modal);
 
                 } catch (error) {
-                    console.error('Fehler im edit-Button-Handler:', error);
+                    Logger.error(`Fehler im edit-Button-Handler: ${error.message}`);
                 }
 
             } else {
-                console.error(`Kein Button Handler gefunden: ${interaction.customId}`);
+                Logger.warn(`Kein Button Handler gefunden: ${interaction.customId}`);
             }
 
         } else if (interaction.isModalSubmit()) { 
-            console.log('Feld-IDs in diesem Modal:', interaction.fields.fields.map(f => f.customId));
+            Logger.info('Feld-IDs in diesem Modal:', interaction.fields.fields.map(f => f.customId));
         
             if (interaction.customId.startsWith('edit_modal_')) {
                 const splitted = interaction.customId.split('_');
@@ -124,7 +125,7 @@ module.exports = async (client, interaction) => {
                         ephemeral: true,
                     });
                 } catch (error) {
-                    console.error('Fehler beim Aktualisieren des Eintrags:', error);
+                    Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}`);
 
                     if (!interaction.deferred && !interaction.replied) {
                         await interaction.reply({
@@ -134,7 +135,7 @@ module.exports = async (client, interaction) => {
                     }
                 }
             } else {
-                console.warn(`Unbekannte Modal-Interaktion mit customId: ${interaction.customId}`);
+                Logger.warn(`Unbekannte Modal-Interaktion mit customId: ${interaction.customId}`);
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
                         content: 'Unbekannte Interaktion verarbeitet.',
@@ -144,11 +145,11 @@ module.exports = async (client, interaction) => {
             }
 
         } else {
-            console.warn(`Unhandled interaction type: ${interaction.type}`);
+            Logger.warn(`Unhandled interaction type: ${interaction.type}`);
         }
 
     } catch (error) {
-        console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+        Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
 
         if (!interaction.deferred && !interaction.replied) {
             try {
@@ -157,7 +158,7 @@ module.exports = async (client, interaction) => {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }
         }
     }

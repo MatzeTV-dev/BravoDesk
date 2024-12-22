@@ -1,5 +1,6 @@
 const { getData } = require('../Database/qdrant.js');
 const axios = require("axios");
+const Logger = require('../helper/loggerHelper.js');
 require('dotenv').config();
 
 module.exports = async (client, message) => {
@@ -14,7 +15,7 @@ module.exports = async (client, message) => {
                 await message.channel.send(aiResponse);
             }
         } catch (error) {
-            console.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}):`, error);
+            Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}`);
             await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
         }
     }
@@ -91,18 +92,18 @@ async function sendMessagesToAI(messages, lastMessage) {
             knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
         }
     } catch (error) {
-        console.error('Fehler beim Abrufen der Wissensdatenbank:', error);
+        Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}`);
         knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
     }
 
     const systemPrompt = `
-        Du bist ein AI-Supporter namens Bern, spezialisiert auf FiveM-Server.
+        Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf FiveM-Server.
         Deine Aufgabe ist es, Nutzerfragen zu beantworten. Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
         \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
         \n\nAntworte angemessen auf die letzte Nachricht im Kontext.
     `;
 
-    console.log('Generierter Systemprompt:', systemPrompt);
+    Logger.info('Generierter Systemprompt:', systemPrompt);
 
     try {
         const response = await axios.post(
@@ -124,7 +125,7 @@ async function sendMessagesToAI(messages, lastMessage) {
 
         return response.data.choices[0].message.content || 'Entschuldigung, ich konnte keine passende Antwort generieren.';
     } catch (error) {
-        console.error('Fehler bei der Anfrage an die OpenAI API:', error);
+        Logger.error(`Fehler bei der Anfrage an die OpenAI API: ${error.message}`);
         return 'Entschuldigung, es gab ein Problem mit der Anfrage an die KI.';
     }
 }

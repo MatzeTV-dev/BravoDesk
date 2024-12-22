@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+const Logger = require('../helper/loggerHelper');
 
 dotenv.config();
 
@@ -17,23 +18,23 @@ const pool = mysql.createPool({
 async function checkDatabaseStatus() {
   try {
     const [result] = await pool.query('SELECT 1'); // Testabfrage
-    console.log('Database is online.');
+    Logger.success('Database is online.');
     return true; // Gibt `true` zurück, wenn die Abfrage erfolgreich ist
   } catch (error) {
-    console.error('Error at database connection test:', error.message);
+    Logger.error(`Error at database connection test: ${error.message}`);
 
     // Versuche, die Datenbank durch eine .bat-Datei zu starten
     try {
-      console.log('Database offline. Trying to start...');
+      Logger.info('Database offline. Trying to start...');
       exec('start C:/xampp/mysql_start.bat', (err, stdout, stderr) => {
         if (err) {
-          console.error('Error opening the .bat-File:', err.message);
+          Logger.error(`Error opening the .bat-File: ${err.message}`);
           return;
         }
-        console.log('Datbase start succesfully:', stdout);
+        Logger.success(`Database started successfully: ${stdout}`);
       });
     } catch (batError) {
-      console.error('Error at starting the Database:', batError.message);
+      Logger.error(`Error at starting the Database: ${batError.message}`);
     }
 
     return false; // Fehler beim Prüfen der Datenbankverbindung
@@ -47,9 +48,9 @@ async function saveServerInformation(server_id, ticket_system_channel_id, ticket
       `CALL Save_Server_Information(?, ?, ?, ?, ?)`,
       [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id]
     );
-    console.log('Serverinformationen erfolgreich gespeichert!');
+    Logger.success('Serverinformationen erfolgreich gespeichert!');
   } catch (error) {
-    console.error('Fehler beim Speichern der Serverinformationen:', error);
+    Logger.error(`Fehler beim Speichern der Serverinformationen: ${error.message}`);
     throw error; // Fehler weiterwerfen, falls benötigt
   }
 }
@@ -61,10 +62,10 @@ async function getServerInformation(discord_server_id) {
       `CALL Get_Server_Information(?)`,
       [discord_server_id]
     );
-    console.log('Serverinformationen erfolgreich abgerufen!');
+    Logger.success('Serverinformationen erfolgreich abgerufen!');
     return data;
   } catch (error) {
-    console.error('Fehler beim Abrufen der Serverinformationen:', error);
+    Logger.error(`Fehler beim Abrufen der Serverinformationen: ${error.message}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -77,10 +78,10 @@ async function chefIfServerExists(input_id) {
 
     // Liest den Ergebniswert aus
     const [[result]] = await pool.query('SELECT @exists_flag AS exists_flag');
-    console.log(`Existenzprüfung abgeschlossen: ${result.exists_flag}`);
+    Logger.info(`Existenzprüfung abgeschlossen: ${result.exists_flag}`);
     return Boolean(result.exists_flag); // Konvertiert zu Boolean
   } catch (error) {
-    console.error('Fehler bei der Existenzprüfung des Servers:', error);
+    Logger.error(`Fehler bei der Existenzprüfung des Servers: ${error.message}`);
     return false; // Rückgabe von `false` bei Fehlern
   }
 }
@@ -89,10 +90,10 @@ async function chefIfServerExists(input_id) {
 async function Select(statement, dataInput) {
   try {
     const [rows] = await pool.query(statement, dataInput);
-    console.log('Daten erfolgreich abgerufen!');
+    Logger.success('Daten erfolgreich abgerufen!');
     return rows;
   } catch (error) {
-    console.error('Fehler beim Abrufen von Daten:', error);
+    Logger.error(`Fehler beim Abrufen von Daten: ${error.message}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -101,10 +102,10 @@ async function Select(statement, dataInput) {
 async function Delete(statement, dataInput) {
   try {
     const [result] = await pool.query(statement, dataInput);
-    console.log('Daten erfolgreich gelöscht!');
+    Logger.success('Daten erfolgreich gelöscht!');
     return result; // Gibt das Lösch-Ergebnis zurück
   } catch (error) {
-    console.error('Fehler beim Löschen von Daten:', error);
+    Logger.error(`Fehler beim Löschen von Daten: ${error.message}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -113,12 +114,11 @@ async function Delete(statement, dataInput) {
 async function Call(statement, dataInput, SelectStatement) {
   try {
     await pool.query(statement, dataInput);
-    console.log('Stored Procedure erfolgreich abgerufen!');
+    Logger.success('Stored Procedure erfolgreich abgerufen!');
     const [rows] = await pool.query(SelectStatement);
-    return rows[0]; // Gibt das Lösch-Ergebnis zurück
-    
+    return rows[0]; // Gibt das Ergebnis zurück
   } catch (error) {
-    console.error('Fehler beim aufrufen vom stored procedure:', error);
+    Logger.error(`Fehler beim Aufrufen vom Stored Procedure: ${error.message}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }

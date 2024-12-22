@@ -2,6 +2,7 @@ const { QdrantClient } = require("@qdrant/js-client-rest");
 const { HfInference } = require('@huggingface/inference');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
+const Logger = require('../helper/loggerHelper.js');
 dotenv.config();
 
 const qdrantURL = process.env.QDRANT_URL;
@@ -21,12 +22,11 @@ async function getEmbedding(text) {
         });
         return embedding;
     } catch (error) {
-        console.error('Fehler beim Generieren des Embeddings:', error);
+        Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}`);
         return null;
     }
 }
   
-
 // Funktion: Überprüfen, ob Collection existiert
 async function ensureCollectionExists(guildID) {
     const collectionName = `guild_${guildID}`;
@@ -36,19 +36,19 @@ async function ensureCollectionExists(guildID) {
         const collectionNames = collections.map((collection) => collection.name);
 
         if (!collectionNames.includes(collectionName)) {
-            console.log(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
+            Logger.info(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
             await qdrantClient.createCollection(collectionName, {
                 vectors: {
                     size: 1024, // Dimension des Vektorraums
                     distance: 'Cosine', // Ähnlichkeitsmetrik
                 },
             });
-            console.log(`Collection "${collectionName}" erfolgreich erstellt.`);
+            Logger.success(`Collection "${collectionName}" erfolgreich erstellt.`);
         } else {
-            console.log(`Collection "${collectionName}" existiert bereits.`);
+            Logger.info(`Collection "${collectionName}" existiert bereits.`);
         }
     } catch (error) {
-        console.error('Fehler beim Überprüfen oder Erstellen der Collection:', error);
+        Logger.error(`Fehler beim Überprüfen oder Erstellen der Collection: ${error.message}`);
         throw error;
     }
 }
@@ -61,7 +61,7 @@ async function upload(guildID, text) {
 
         const embedding = await getEmbedding(text);
         if (!embedding) {
-            console.error('Embedding konnte nicht generiert werden.');
+            Logger.error('Embedding konnte nicht generiert werden.');
             return false; // Rückgabe von `false` bei Fehlern
         }
 
@@ -72,10 +72,10 @@ async function upload(guildID, text) {
             points: [{ id, vector: embedding, payload }],
         });
 
-        console.log('Daten erfolgreich hochgeladen.');
+        Logger.success('Daten erfolgreich hochgeladen.');
         return true;
     } catch (error) {
-        console.error('Fehler beim Hochladen der Daten:', error);
+        Logger.error(`Fehler beim Hochladen der Daten: ${error.message}`);
         return false;
     }
 }
@@ -89,9 +89,10 @@ async function getEverythingCollection(guildID) {
             with_vectors: true,
             with_payload: true,
         });
+        Logger.success('Daten erfolgreich abgerufen.');
         return scrollResponse.points;
     } catch (error) {
-        console.error('Fehler beim Abrufen der Daten:', error);
+        Logger.error(`Fehler beim Abrufen der Daten: ${error.message}`);
         return null; // Rückgabe von `null` bei Fehlern
     }
 }
@@ -101,10 +102,10 @@ async function deleteEntry(guildID, id) {
     const collectionName = `guild_${guildID}`;
     try {
         await qdrantClient.delete(collectionName, { points: [id] });
-        console.log(`Eintrag mit der ID ${id} erfolgreich gelöscht.`);
+        Logger.success(`Eintrag mit der ID ${id} erfolgreich gelöscht.`);
         return true;
     } catch (error) {
-        console.error('Fehler beim Löschen des Eintrags:', error);
+        Logger.error(`Fehler beim Löschen des Eintrags: ${error.message}`);
         return false;
     }
 }
@@ -115,7 +116,7 @@ async function editEntry(guildID, id, newContent) {
     try {
         const embedding = await getEmbedding(newContent.description);
         if (!embedding) {
-            console.error('Fehler beim Generieren des Embeddings für das Update.');
+            Logger.error('Fehler beim Generieren des Embeddings für das Update.');
             return false;
         }
 
@@ -125,13 +126,14 @@ async function editEntry(guildID, id, newContent) {
             points: [{ id, vector: embedding, payload }],
         });
 
-        console.log(`Eintrag mit der ID ${id} erfolgreich aktualisiert.`);
+        Logger.success(`Eintrag mit der ID ${id} erfolgreich aktualisiert.`);
         return true;
     } catch (error) {
-        console.error('Fehler beim Aktualisieren des Eintrags:', error);
+        Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}`);
         return false;
     }
 }
+
 async function getEntry(entryID, guildID) {
     const collectionName = `guild_${guildID}`;
     try {
@@ -140,16 +142,16 @@ async function getEntry(entryID, guildID) {
             withPayload: true
         });
 
-        console.log('Abfrage-Antwort:', response);
+        Logger.info('Abfrage erfolgreich abgeschlossen.');
 
         if (response && response.length > 0) {
             return response[0].payload;
         } else {
-            console.warn(`Kein Eintrag mit der ID ${entryID} in Collection "${collectionName}" gefunden.`);
+            Logger.warn(`Kein Eintrag mit der ID ${entryID} in Collection "${collectionName}" gefunden.`);
             return null;
         }
     } catch (error) {
-        console.error(`Fehler beim Abrufen des Eintrags mit ID ${entryID}:`, error);
+        Logger.error(`Fehler beim Abrufen des Eintrags mit ID ${entryID}: ${error.message}`);
         return null;
     }
 }
@@ -159,7 +161,7 @@ async function getData(collectionName, userQuery) {
     try {
         const embedding = await getEmbedding(userQuery);
         if (!embedding) {
-            console.error('Fehler beim Generieren des Embeddings für die Suche.');
+            Logger.error('Fehler beim Generieren des Embeddings für die Suche.');
             return null;
         }
 
@@ -169,9 +171,10 @@ async function getData(collectionName, userQuery) {
             with_payload: true,
         });
 
+        Logger.success('Ähnlichkeitssuche erfolgreich abgeschlossen.');
         return searchResult;
     } catch (error) {
-        console.error('Fehler bei der Suche in Qdrant:', error);
+        Logger.error(`Fehler bei der Suche in Qdrant: ${error.message}`);
         return null;
     }
 }
@@ -180,10 +183,10 @@ async function getData(collectionName, userQuery) {
 async function deleteAll(collectionName) {
     try {
         await qdrantClient.deleteCollection(collectionName);
-        console.log(`Collection "${collectionName}" erfolgreich gelöscht.`);
+        Logger.success(`Collection "${collectionName}" erfolgreich gelöscht.`);
         return true;
     } catch (error) {
-        console.error(`Fehler beim Löschen der Collection "${collectionName}":`, error.message);
+        Logger.error(`Fehler beim Löschen der Collection "${collectionName}": ${error.message}`);
         return false;
     }
 }

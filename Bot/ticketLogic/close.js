@@ -1,3 +1,5 @@
+const Logger = require('../helper/loggerHelper.js');
+
 module.exports = {
     data: {
         name: 'close_ticket_button', // Muss mit dem customId des Buttons übereinstimmen
@@ -6,7 +8,7 @@ module.exports = {
         const channel = interaction.channel;
 
         if (!channel) {
-            console.warn('Kanal nicht gefunden. Möglicherweise wurde er bereits gelöscht.');
+            Logger.warn('Kanal nicht gefunden. Möglicherweise wurde er bereits gelöscht.');
             await interaction.reply({
                 content: 'Es scheint, als wäre dieses Ticket bereits geschlossen.',
                 ephemeral: true,
@@ -19,12 +21,12 @@ module.exports = {
             await interaction.reply({ content: 'Das Ticket wird geschlossen...', ephemeral: true });
 
             // Logge den Kanalnamen und die ID, bevor er gelöscht wird
-            console.log(`Ticket-Kanal wird geschlossen: Name="${channel.name}", ID=${channel.id}`);
+            Logger.info(`Ticket-Kanal wird geschlossen: Name="${channel.name}", ID=${channel.id}`);
 
             // Lösche den Kanal
             await channel.delete();
         } catch (error) {
-            console.error(`Fehler beim Schließen des Tickets (Kanal: ${channel.name}, ID: ${channel.id}):`, error);
+            Logger.error(`Fehler beim Schließen des Tickets (Kanal: ${channel.name}, ID: ${channel.id}): ${error.message}`);
 
             // Fehlerantwort an den Benutzer
             try {
@@ -33,7 +35,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }
         }
     },

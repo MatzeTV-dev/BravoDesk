@@ -2,6 +2,7 @@ const { getServerInformation, Delete } = require('../../Database/database.js');
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { deleteAll } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
+const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,44 +51,42 @@ module.exports = {
             const data = rawData[0][0];
 
             // Löschen von Ressourcen (Channels, Kategorien, Rollen)
-
-            console.log(data);
             try {
                 const channel = guild.channels.cache.get(data.ticket_system_channel_id);
                 if (channel) {
                     await channel.delete();
-                    console.log(`Deleted channel with ID: ${data.ticket_system_channel_id}`);
+                    Logger.success(`Channel mit der ID gelöscht: ${data.ticket_system_channel_id}`);
                 } else {
-                    console.log(`Channel with ID ${data.ticket_system_channel_id} not found.`);
+                    Logger.info(`Channel mit der ID ${data.ticket_system_channel_id} wurde nicht gefunden.`);
                 }
 
                 const category = guild.channels.cache.get(data.ticket_category_id);
                 if (category) {
                     await category.delete();
-                    console.log(`Deleted category with ID: ${data.ticket_category_id}`);
+                    Logger.success(`Kategorie mit der ID ${data.ticket_category_id} gelöscht.`);
                 } else {
-                    console.log(`Category with ID ${data.ticket_category_id} not found.`);
+                    Logger.info(`Kategorie mit der ID ${data.ticket_category_id} wurde nicht gefunden.`);
                 }
 
                 let role = guild.roles.cache.get(data.support_role_id);
                 if (role) {
                     await role.delete();
-                    console.log(`Deleted role with ID: ${data.support_role_id}`);
+                    Logger.success(`Rolle mit der ID ${data.support_role_id} gelöscht.`);
                 } else {
-                    console.log(`Role with ID ${data.support_role_id} not found.`);
+                    Logger.info(`Rolle mit der ID ${data.support_role_id} wurde nicht gefunden.`);
                 }
 
                 role = guild.roles.cache.get(data.kiadmin_role_id);
                 if (role) {
                     await role.delete();
-                    console.log(`Deleted role with ID: ${data.kiadmin_role_id}`);
+                    Logger.success(`Rolle mit der ID ${data.kiadmin_role_id} gelöscht.`);
                 } else {
-                    console.log(`Role with ID ${data.kiadmin_role_id} not found.`);
+                    Logger.info(`Rolle mit der ID ${data.kiadmin_role_id} wurde nicht gefunden.`);
                 }
             } catch (resourceError) {
-                console.error('Fehler beim Löschen von Ressourcen:', resourceError);
+                Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}`);
                 await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim löschen von Ressourcen')],
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen')],
                     ephemeral: true,
                 });
                 return;
@@ -100,10 +99,11 @@ module.exports = {
                     ephemeral: true,
                 });
                 await Delete('CALL Delete_Server_Information(?)', guild.id);
+                Logger.success('Datenbankeinträge erfolgreich gelöscht.');
             } catch (dbError) {
-                console.error('Fehler beim Löschen der Datenbankinformationen:', dbError);
+                Logger.error(`Fehler beim Löschen der Datenbankinformationen: ${dbError.message}`);
                 await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim löschen von Datenbankinformationen')],
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von Datenbankinformationen')],
                     ephemeral: true,
                 });
                 return;
@@ -116,10 +116,11 @@ module.exports = {
                     ephemeral: true,
                 });
                 await deleteAll('guild_' + guild.id);
+                Logger.success('KI-Wissen erfolgreich gelöscht.');
             } catch (aiError) {
-                console.error('Fehler beim Löschen des KI-Wissens:', aiError);
+                Logger.error(`Fehler beim Löschen des KI-Wissens: ${aiError.message}`);
                 await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim löschen von KI-Wissen')],
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von KI-Wissen')],
                     ephemeral: true,
                 });
                 return;
@@ -130,8 +131,9 @@ module.exports = {
                 embeds: [info('Reset Process', 'Reset Process completed')],
                 ephemeral: true,
             });
+            Logger.info('Reset-Prozess abgeschlossen.');
         } catch (error) {
-            console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+            Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
 
             // Benutzerfreundliche Fehlermeldung
             try {
@@ -140,7 +142,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }
         }
     },

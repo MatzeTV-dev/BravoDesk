@@ -1,7 +1,8 @@
 const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
-const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey,} = require('../../helper/keyHelper.js');
+const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey, } = require('../../helper/keyHelper.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
 const { error, success, warning, info } = require('../../helper/embedHelper.js');
+const Logger = require('../../helper/loggerHelper.js');
 const fs = require('fs');
 
 var guild = null;
@@ -29,7 +30,7 @@ module.exports = {
 
         try {
 
-            if (guild.ownerId !== interaction.user.id) {
+            if(guild.ownerId !== interaction.user.id) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')],
                     ephemeral: true,
@@ -37,7 +38,7 @@ module.exports = {
 
                 // Optional: Benachrichtigung an Administratoren
                 const adminChannel = guild.channels.cache.find((channel) => channel.name === 'admin-log');
-                if (adminChannel) {
+                if(adminChannel) {
                     await adminChannel.send(
                         `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/setup\` ohne Berechtigung auszuführen.`
                     );
@@ -55,10 +56,10 @@ module.exports = {
 
                 return;
             }
-            
+
             var result = await checkKeyActivated(interaction.options.getString('key'));
 
-            if (!result.is_activated) {
+            if(!result.is_activated) {
                 await activateKey(interaction.options.getString('key'), guild.id);
 
                 await interaction.editReply({
@@ -82,12 +83,12 @@ module.exports = {
 
             if(!isMatch.IsMatch) {
                 await interaction.editReply({
-                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated orifinally.')],
+                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')],
                     ephemeral: false
                 });
 
                 return;
-            } 
+            }
 
             await interaction.editReply({
                 embeds: [info('Setup Process!', 'Setup process started. Creating roles and channels...')],
@@ -97,7 +98,7 @@ module.exports = {
             guildID = guild.id;
             const returnValue = await chefIfServerExists(guildID);
 
-            if (returnValue) {
+            if(returnValue) {
                 // Erstelle Rollen, Kanäle und Kategorien
                 await createRoles(interaction);
                 await createChannel(interaction);
@@ -117,7 +118,7 @@ module.exports = {
                 });
             }
         } catch (error) {
-            console.error('Error during setup:', error);
+            Logger.error(`Error during setup: ${error.message}`);
 
             // Rollback bei Fehlern
             await rollbackSetup(interaction);
@@ -150,25 +151,25 @@ async function createRoles(interaction) {
 
     for (const roleData of roles) {
         const existingRole = guild.roles.cache.find((role) => role.name === roleData.name);
-        if (!existingRole) {
+        if(!existingRole) {
             const createdRole = await guild.roles.create({
                 name: roleData.name,
                 color: roleData.color,
                 permissions: roleData.permissions,
             });
 
-            console.log(`${guild.name}: Created role: ${roleData.name}`);
+            Logger.success(`${guild.name}: Created role: ${roleData.name}`);
 
-            if (roleData.name === 'Supporter') {
+            if(roleData.name === 'Supporter') {
                 supportRoleID = createdRole.id;
-            } else if (roleData.name === 'KI-Admin') {
+            } else if(roleData.name === 'KI-Admin') {
                 kiadminRoleID = createdRole.id;
             }
         } else {
-            console.log(`${guild.name}: Role already exists: ${roleData.name}`);
-            if (roleData.name === 'Supporter') {
+            Logger.info(`${guild.name}: Role already exists: ${roleData.name}`);
+            if(roleData.name === 'Supporter') {
                 supportRoleID = existingRole.id;
-            } else if (roleData.name === 'KI-Admin') {
+            } else if(roleData.name === 'KI-Admin') {
                 kiadminRoleID = existingRole.id;
             }
         }
@@ -180,7 +181,7 @@ async function createChannel(interaction) {
     const channelName = 'Ticket-System';
     let channel = guild.channels.cache.find((channel) => channel.name === channelName);
 
-    if (!channel) {
+    if(!channel) {
         channel = await guild.channels.create({
             name: channelName,
             type: ChannelType.GuildText,
@@ -193,9 +194,9 @@ async function createChannel(interaction) {
             ],
         });
         ticketChannelID = channel.id;
-        console.log(`${guild.name}: Created channel: ${channel.id}`);
+        Logger.success(`${guild.name}: Created channel: ${channel.id}`);
     } else {
-        console.log(`${guild.name}: Channel already exists: ${channel.id}`);
+        Logger.info(`${guild.name}: Channel already exists: ${channel.id}`);
     }
 
     // Lese Embed-Daten aus JSON
@@ -245,9 +246,9 @@ async function createChannel(interaction) {
             embeds,
             components: [row],
         });
-        console.log(`${guild.name}: Embed sent to channel: ${channel.id}`);
+        Logger.success(`${guild.name}: Embed sent to channel: ${channel.id}`);
     } catch (error) {
-        console.error(`${guild.name}: Error sending embed:`, error);
+        Logger.error(`${guild.name}: Error sending embed: ${error.message}`);
     }
 }
 
@@ -259,7 +260,7 @@ async function createCategories(interaction) {
         (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryName
     );
 
-    if (!category) {
+    if(!category) {
         category = await guild.channels.create({
             name: categoryName,
             type: ChannelType.GuildCategory,
@@ -271,9 +272,9 @@ async function createCategories(interaction) {
             ],
         });
         ticketCategoryID = category.id;
-        console.log(`${guild.name}: Created category: ${category.id}`);
+        Logger.success(`${guild.name}: Created category: ${category.id}`);
     } else {
-        console.log(`${guild.name}: Category already exists: ${category.id}`);
+        Logger.info(`${guild.name}: Category already exists: ${category.id}`);
     }
 }
 
@@ -283,31 +284,31 @@ async function rollbackSetup(interaction) {
         const guild = interaction.guild;
 
         // Löschen des Ticket-Kanals
-        if (ticketChannelID) {
+        if(ticketChannelID) {
             const channel = guild.channels.cache.get(ticketChannelID);
-            if (channel) await channel.delete();
+            if(channel) await channel.delete();
         }
 
         // Löschen der Ticket-Kategorie
-        if (ticketCategoryID) {
+        if(ticketCategoryID) {
             const category = guild.channels.cache.get(ticketCategoryID);
-            if (category) await category.delete();
+            if(category) await category.delete();
         }
 
         // Löschen der Rollen
-        if (supportRoleID) {
+        if(supportRoleID) {
             const role = guild.roles.cache.get(supportRoleID);
-            if (role) await role.delete();
+            if(role) await role.delete();
         }
 
-        if (kiadminRoleID) {
+        if(kiadminRoleID) {
             const role = guild.roles.cache.get(kiadminRoleID);
-            if (role) await role.delete();
+            if(role) await role.delete();
         }
 
-        console.log('Rollback completed successfully.');
+        Logger.info('Rollback completed successfully.');
     } catch (error) {
-        console.error('Error during rollback:', error);
+        Logger.error(`Error during rollback: ${error.message}`);
     }
 }
 
@@ -315,8 +316,8 @@ async function rollbackSetup(interaction) {
 async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id) {
     try {
         await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id);
-        console.log(`Database saved for server ID: ${server_id}`);
+        Logger.success(`Database saved for server ID: ${server_id}`);
     } catch (error) {
-        console.error('Error saving to database:', error);
+        Logger.error(`Error saving to database: ${error.message}`);
     }
 }

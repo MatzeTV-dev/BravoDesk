@@ -1,7 +1,7 @@
-
 const { SlashCommandBuilder } = require('discord.js');
 const { upload } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
+const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -66,15 +66,16 @@ module.exports = {
                     embeds: [info('Hochladen', 'Daten hochladen war erfolgreich.')],
                     ephemeral: true,
                 });
+                Logger.success('Daten erfolgreich hochgeladen.');
             } catch (uploadError) {
-                console.error('Fehler beim Hochladen der Daten:', uploadError);
+                Logger.error(`Fehler beim Hochladen der Daten: ${uploadError.message}`);
                 await interaction.editReply({
                     embeds: [error('Error!', 'Fehler beim hochladen von Daten.')],
                     ephemeral: true,
                 });
             }
         } catch (error) {
-            console.error('Ein unerwarteter Fehler ist aufgetreten:', error);
+            Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
 
             try {
                 await interaction.editReply({
@@ -82,7 +83,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }
         }
     },

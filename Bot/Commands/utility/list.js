@@ -2,6 +2,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { getEverythingCollection, deleteEntry } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
+const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -77,7 +78,7 @@ module.exports = {
 
                         await new Promise((resolve) => setTimeout(resolve, 1000));
                     } catch (error) {
-                        console.error('Error while sending a knowledge entry:', error);
+                        Logger.error('Fehler beim Hochladen vom AI Wissen', error);
                     }
                 }
             };
@@ -121,7 +122,7 @@ module.exports = {
                                 ephemeral: true,
                             })
                         } catch (error) {
-                            console.error('Error while deleting entry:', error);
+                            Logger.error('Fehler beim Löschen eines Eintrags', error);
                             await interaction.editReply({
                                 embeds: [error('Error', 'Es gab einne Fehler beim Löschen des Eintrages.')],
                                 ephemeral: true,
@@ -129,7 +130,7 @@ module.exports = {
                         }
                     }
                 } catch (error) {
-                    console.error('Error while processing button interaction:', error);
+                    Logger.error('Fehler beim verabeiten einer Button Aktion', error);
                     await interaction.editReply({
                         embeds: [error('Error', 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                         ephemeral: true,
@@ -138,10 +139,10 @@ module.exports = {
             });
 
             collector.on('end', (collected) => {
-                console.log(`Collected interactions: ${collected.size}`);
+                Logger.debug('Collected interactions:', collected.size);
             });
         } catch (error) {
-            console.error('An unexpected error occurred:', error);
+            Logger.error('Ein unerwarteter Fehler ist aufgetreten', error);
 
             try {
                 await interaction.reply({
@@ -149,7 +150,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Error sending error message:', replyError);
+                Logger.error('Fehler beim senden einer Error Nachricht', replyError);
             }
         }
     },

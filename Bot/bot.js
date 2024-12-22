@@ -1,7 +1,8 @@
 const { Client, Collection, GatewayIntentBits, Events, REST, Routes } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
-const { checkDatabaseStatus } = require('./Database/database.js')
+const { checkDatabaseStatus } = require('./Database/database.js');
+const Logger = require('./helper/loggerHelper.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
@@ -39,7 +40,7 @@ for (const file of commandFiles) {
     if ('data' in command && 'execute' in command) {
         client.commands.set(command.data.name, command);
     } else {
-        console.warn(`[WARN] Der Command in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+        Logger.warn(`[WARN] Der Command in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
@@ -51,20 +52,20 @@ for (const file of selectMenuFiles) {
     if ('data' in selectMenu && 'execute' in selectMenu) {
         client.selectMenus.set(selectMenu.data.customId, selectMenu);
     } else {
-        console.warn(`[WARN] Das Select Menu in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+        Logger.warn(`[WARN] Das Select Menu in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
 // **Buttons laden**
 for (const file of buttonFiles) {
-    console.log('Gefundene Button-Dateien:', buttonFiles);
+    Logger.info('Gefundene Button-Dateien:', buttonFiles);
     const filePath = path.join(buttonsPath, file);
     const button = require(filePath);
 
     if ('data' in button && 'execute' in button) {
         client.buttons.set(button.data.name, button);
     } else {
-        console.warn(`[WARN] Der Button in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
+        Logger.warn(`[WARN] Der Button in ${filePath} hat nicht die erforderlichen Eigenschaften.`);
     }
 }
 
@@ -83,7 +84,7 @@ async function registerCommands(guildId = null) {
 
     try {
         if (guildId) {
-            console.log(`Prüfe und registriere Commands für Guild ID: ${guildId}...`);
+            Logger.info(`Prüfe und registriere Commands für Guild ID: ${guildId}...`);
 
             // Hol die aktuellen Commands für die Guild
             const existingCommands = await rest.get(
@@ -101,12 +102,12 @@ async function registerCommands(guildId = null) {
                     Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
                     { body: newCommands },
                 );
-                console.log(`Neue Commands für Guild ID: ${guildId} registriert.`);
+                Logger.info(`Neue Commands für Guild ID: ${guildId} registriert.`);
             } else {
-                console.log(`Keine neuen Commands für Guild ID: ${guildId} zu registrieren.`);
+                Logger.info(`Keine neuen Commands für Guild ID: ${guildId} zu registrieren.`);
             }
         } else {
-            console.log(`Prüfe und registriere globale Commands...`);
+            Logger.info(`Prüfe und registriere globale Commands...`);
 
             // Hol die aktuellen globalen Commands
             const existingCommands = await rest.get(Routes.applicationCommands(process.env.CLIENT_ID));
@@ -122,34 +123,34 @@ async function registerCommands(guildId = null) {
                     Routes.applicationCommands(process.env.CLIENT_ID),
                     { body: newCommands },
                 );
-                console.log('Neue globale Commands registriert.');
+                Logger.info('Neue globale Commands registriert.');
             } else {
-                console.log('Keine neuen globalen Commands zu registrieren.');
+                Logger.info('Keine neuen globalen Commands zu registrieren.');
             }
         }
     } catch (error) {
-        console.error('Fehler bei der Registrierung der Commands:', error);
+        Logger.error(`Fehler bei der Registrierung der Commands: ${error.message}`);
     }
 }
 
 // **Server beitreten Event**
 client.on(Events.GuildCreate, async guild => {
-    console.log(`Dem Server "${guild.name}" (ID: ${guild.id}) beigetreten.`);
+    Logger.info(`Dem Server "${guild.name}" (ID: ${guild.id}) beigetreten.`);
     await registerCommands(guild.id); // Gilden-spezifische Registrierung
 });
 
 client.once(Events.ClientReady, async () => {
     checkDatabaseStatus();
-    console.log(`
+    Logger.info(`
         ______                     ______          _    
-        | ___ \\                    |  _  \\        | |   
+        | ___ \                    |  _  \        | |   
         | |_/ /_ __ __ ___   _____ | | | |___  ___| | __
-        | ___ \\ '__/ _\` \\ \\ / / _ \\| | | / _ \\/ __| |/ /
-        | |_/ / | | (_| |\\ V / (_) | |/ /  __/\\__ \\   < 
-        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
+        | ___ \ '__/ _\` \ \ / / _ \| | | / _ \/ __| |/ /
+        | |_/ / | | (_| |\ V / (_) | |/ /  __/\__ \   < 
+        \____/|_|  \__,_| \_/ \___/|___/ \___||___/_|\_\
                                                         
         `);
-        console.log(`Eingeloggt als ${client.user.tag}`);
+        Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
     //await registerCommands(testGuildId);

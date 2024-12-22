@@ -1,62 +1,63 @@
 const { Call } = require('../Database/database.js');
+const Logger = require('../helper/loggerHelper.js');
 
-// Aktivert den Key beim erstenmal
+// Aktiviert den Key beim ersten Mal
 async function activateKey(key, guildID) {
     try {
-        var result = await Call("CALL ActivateKey(?, ?)", [key, guildID]);
+        const result = await Call("CALL ActivateKey(?, ?)", [key, guildID]);
         return result;
-    } catch (erorr) {
-        console.erorr(error);
+    } catch (error) {
+        Logger.error(`Fehler bei activateKey: ${error.message}`);
     }
 }
 
-// Überprüft ob der Key Überhaupt exsestiert
+// Überprüft, ob der Key überhaupt existiert
 async function checkKeyExists(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL CheckKeyExists(?, @exists_in_keys)", [key], "SELECT @exists_in_keys AS exists_in_keys");
-        console.log('Ergebnisse:', result); // Debug-Ausgabe
+        Logger.info('Ergebnisse von checkKeyExists:', result);
         return result;
     } catch (error) {
-        console.error('Fehler bei checkKeyExists:', error);
+        Logger.error(`Fehler bei checkKeyExists: ${error.message}`);
         return null; // Fehlerfall
     }
 }
 
-// Überprüft ob der Key schon einmal aktiviert worden ist
+// Überprüft, ob der Key schon einmal aktiviert worden ist
 async function checkKeyActivated(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL checkKeyActivated(?, @is_activated)", [key], "SELECT @is_activated AS is_activated");
-        console.log('Ergebnisse:', result); // Debug-Ausgabe
+        Logger.info('Ergebnisse von checkKeyActivated:', result);
         return result;
     } catch (error) {
-        console.error('Fehler bei checkKeyActivated:', error);
+        Logger.error(`Fehler bei checkKeyActivated: ${error.message}`);
         return null; // Fehlerfall
     }
 }
 
-// Überprüft ob der Key ausgelaufen ist
+// Überprüft, ob der Key ausgelaufen ist
 async function checkKeyValidity(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL CheckKeyValidity(?, @is_valid);", [key], "SELECT @is_valid AS is_valid");
-        console.log('Ergebnisse:', result); // Debug-Ausgabe
+        Logger.info('Ergebnisse von checkKeyValidity:', result);
         return result;
     } catch (error) {
-        console.error('Fehler bei checkKeyValidity:', error);
+        Logger.error(`Fehler bei checkKeyValidity: ${error.message}`);
         return null; // Fehlerfall
     }
 }
 
-// Überprüft ob der Key versucht wird irgendwo auf einem anderne Server einzulösen als bei dem erstmaligen eingelösten.
+// Überprüft, ob der Key versucht wird, irgendwo auf einem anderen Server eingelöst zu werden als bei der erstmaligen Einlösung
 async function CheckDiscordIDWithKey(activationKey, discord_server_id) {
     try {
-        const result = await Call("Call CheckDiscordIDWithKey(?, ?, @is_match)", [activationKey, discord_server_id], "SELECT @is_match AS IsMatch")
-        console.log('Ergebnisse:', result); // Debug-Ausgabe
+        const result = await Call("Call CheckDiscordIDWithKey(?, ?, @is_match)", [activationKey, discord_server_id], "SELECT @is_match AS IsMatch");
+        Logger.info('Ergebnisse von CheckDiscordIDWithKey:', result);
         return result;
     } catch (error) {
-        console.error(erorr);
+        Logger.error(`Fehler bei CheckDiscordIDWithKey: ${error.message}`);
         return null;
     }
 }
@@ -67,4 +68,4 @@ module.exports = {
     checkKeyValidity,
     checkKeyExists,
     CheckDiscordIDWithKey,
-}
+};

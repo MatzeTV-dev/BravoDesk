@@ -1,3 +1,5 @@
+const Logger = require('../helper/loggerHelper.js');
+
 module.exports = {
     data: {
         name: 'talk_to_human', // Muss mit dem customId des Buttons übereinstimmen
@@ -6,7 +8,7 @@ module.exports = {
         const channel = interaction.channel;
 
         if (!channel) {
-            console.warn('Kanal nicht gefunden. Möglicherweise wurde er gelöscht.');
+            Logger.warn('Kanal nicht gefunden. Möglicherweise wurde er gelöscht.');
             await interaction.reply({
                 content: 'Es scheint, als wäre dieses Ticket nicht mehr verfügbar.',
                 ephemeral: true,
@@ -21,7 +23,7 @@ module.exports = {
             // Aktualisiere die Interaktion, um den Button zu deaktivieren oder keine weitere Aktion auszuführen
             await interaction.update({});
         } catch (error) {
-            console.error('Fehler beim Senden der Nachricht an den menschlichen Support:', error);
+            Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}`);
 
             try {
                 // Informiere den Benutzer über den Fehler
@@ -30,7 +32,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Fehler beim Senden der Fehlermeldung:', replyError);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }
         }
     },

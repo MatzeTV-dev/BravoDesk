@@ -1,6 +1,7 @@
 
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { error } = require('../../helper/embedHelper.js')
+const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -49,7 +50,7 @@ module.exports = {
                 }
             }
         } catch (error) {
-            console.error('An error occurred:', error);
+            Logger.error('Ein Fehler ist aufgetreten:', error);
 
             try {
                 await interaction.reply({
@@ -57,7 +58,7 @@ module.exports = {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                console.error('Error sending error message:', replyError);
+                Logger.error('Ein Fehler ist aufgetreten beim antworten:', replyError);
             }
         }
     },

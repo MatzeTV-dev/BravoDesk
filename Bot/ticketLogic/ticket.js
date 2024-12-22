@@ -7,6 +7,7 @@ const {
 } = require('discord.js');
 const { getServerInformation } = require('../Database/database.js');
 const fs = require('fs');
+const Logger = require('../helper/loggerHelper.js');
 
 module.exports = {
     data: {
@@ -33,10 +34,10 @@ module.exports = {
                         await createTicket(interaction, 'Bug Report');
                         break;
                     default:
-                        console.warn(`Unbekannte Kategorie ausgewählt: ${value}`);
+                        Logger.warn(`Unbekannte Kategorie ausgewählt: ${value}`);
                 }
             } catch (error) {
-                console.error(`Fehler beim Erstellen des Tickets für Kategorie "${value}":`, error);
+                Logger.error(`Fehler beim Erstellen des Tickets für Kategorie "${value}": ${error.message}`);
             }
         }
 
@@ -49,12 +50,12 @@ async function createTicket(interaction, reason) {
     try {
         const rawData = await getServerInformation(interaction.guild.id);
 
-        console.log(rawData);
+        Logger.info('Serverinformationen geladen:', rawData);
 
         const data = rawData[0][0];
 
         if (!data) {
-            console.error('Serverinformationen konnten nicht geladen werden.');
+            Logger.error('Serverinformationen konnten nicht geladen werden.');
             await interaction.followUp({
                 content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
                 ephemeral: true,
@@ -66,7 +67,7 @@ async function createTicket(interaction, reason) {
         const supporterRole = guild.roles.cache.get(data.support_role_id);
 
         if (!supporterRole) {
-            console.error('Support-Rolle nicht gefunden.');
+            Logger.error('Support-Rolle nicht gefunden.');
             await interaction.followUp({
                 content: 'Es scheint ein Problem mit der Konfiguration zu geben. Bitte kontaktiere einen Administrator.',
                 ephemeral: true,
@@ -165,9 +166,9 @@ async function createTicket(interaction, reason) {
             `Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein KI-gestützter Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit einem Menschen sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
         );
 
-        console.log(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);
+        Logger.info(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);
     } catch (errorCreatingTicket) {
-        console.error('Fehler beim Erstellen des Tickets:', errorCreatingTicket);
+        Logger.error(`Fehler beim Erstellen des Tickets: ${errorCreatingTicket.message}`);
         await interaction.followUp({
             content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
             ephemeral: true,
