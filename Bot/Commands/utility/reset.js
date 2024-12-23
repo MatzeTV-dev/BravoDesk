@@ -32,7 +32,20 @@ module.exports = {
                 }
                 return;
             }
+            
+            // Suchen des Ticket-Channels
+            const ticket_channel = guild.channels.cache.find(
+                (channel) => channel.name === 'ticket-system'
+            );
 
+            // Vergleich der IDs
+            if (interaction.channel.id === ticket_channel.id) {
+                await interaction.editReply({
+                    embeds: [error('Reset', 'Dieser Befehl kann hier nicht ausgeführt werden.')],
+                    ephemeral: true,
+                });
+                return;
+            }
             // Antwort senden, um die Aktion zu bestätigen
             await interaction.editReply({
                 embeds: [info('Reset Process', 'Der Prozess wurde gestartet!')],

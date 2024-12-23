@@ -16,7 +16,7 @@ async function checkKeyExists(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL CheckKeyExists(?, @exists_in_keys)", [key], "SELECT @exists_in_keys AS exists_in_keys");
-        Logger.info('Ergebnisse von checkKeyExists:', result);
+        Logger.info(`Ergebnisse von checkKeyExists: ${result}`);
         return result;
     } catch (error) {
         Logger.error(`Fehler bei checkKeyExists: ${error.message}`);
@@ -29,7 +29,7 @@ async function checkKeyActivated(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL checkKeyActivated(?, @is_activated)", [key], "SELECT @is_activated AS is_activated");
-        Logger.info('Ergebnisse von checkKeyActivated:', result);
+        Logger.info(`Ergebnisse von checkKeyActivated: ${result}`);
         return result;
     } catch (error) {
         Logger.error(`Fehler bei checkKeyActivated: ${error.message}`);
@@ -42,7 +42,7 @@ async function checkKeyValidity(key) {
     try {
         // Rufe die Stored Procedure auf
         const result = await Call("CALL CheckKeyValidity(?, @is_valid);", [key], "SELECT @is_valid AS is_valid");
-        Logger.info('Ergebnisse von checkKeyValidity:', result);
+        Logger.info(`Ergebnisse von checkKeyValidity: ${result}`);
         return result;
     } catch (error) {
         Logger.error(`Fehler bei checkKeyValidity: ${error.message}`);
@@ -54,7 +54,7 @@ async function checkKeyValidity(key) {
 async function CheckDiscordIDWithKey(activationKey, discord_server_id) {
     try {
         const result = await Call("Call CheckDiscordIDWithKey(?, ?, @is_match)", [activationKey, discord_server_id], "SELECT @is_match AS IsMatch");
-        Logger.info('Ergebnisse von CheckDiscordIDWithKey:', result);
+        Logger.info(`Ergebnisse von CheckDiscordIDWithKey: ${result}`);
         return result;
     } catch (error) {
         Logger.error(`Fehler bei CheckDiscordIDWithKey: ${error.message}`);

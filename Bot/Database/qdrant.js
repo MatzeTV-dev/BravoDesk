@@ -36,7 +36,7 @@ async function ensureCollectionExists(guildID) {
         const collectionNames = collections.map((collection) => collection.name);
 
         if (!collectionNames.includes(collectionName)) {
-            Logger.info(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
+            Logger.warn(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
             await qdrantClient.createCollection(collectionName, {
                 vectors: {
                     size: 1024, // Dimension des Vektorraums

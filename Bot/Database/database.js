@@ -25,7 +25,7 @@ async function checkDatabaseStatus() {
 
     // Versuche, die Datenbank durch eine .bat-Datei zu starten
     try {
-      Logger.info('Database offline. Trying to start...');
+      Logger.warn('Database offline. Trying to start...');
       exec('start C:/xampp/mysql_start.bat', (err, stdout, stderr) => {
         if (err) {
           Logger.error(`Error opening the .bat-File: ${err.message}`);
