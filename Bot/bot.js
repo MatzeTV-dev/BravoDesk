@@ -140,6 +140,13 @@ client.on(Events.GuildCreate, async guild => {
 
 client.once(Events.ClientReady, async () => {
     checkDatabaseStatus();
+    
+    // Status und Aktivität setzen
+    client.user.setPresence({
+        //activities: [{ name: 'other ticket systems', type: 5 }], // type 0 = PLAYING
+        status: 'dnd', // Status: 'online', 'idle', 'dnd', 'invisible'
+    });
+    
     console.log(`
         ______                     ______          _    
        | ___ \\                    |  _  \\        | |   
@@ -149,7 +156,7 @@ client.once(Events.ClientReady, async () => {
        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
                                                        
        `);
-       
+    
         Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
