@@ -1,5 +1,5 @@
 const { getServerInformation, Delete } = require('../../Database/database.js');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { deleteAll } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
 const Logger = require('../../helper/loggerHelper.js');

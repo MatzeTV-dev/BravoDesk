@@ -55,7 +55,7 @@ module.exports = {
                                 { name: '**ID**', value: item.id },
                                 { name: '**Inhalt**', value: item.payload.text }
                             )
-                            .setColor('#0D2B1D');
+                            .setColor('#345635');
 
                         const editButton = new ButtonBuilder()
                             .setCustomId(`edit_${item.id}`)

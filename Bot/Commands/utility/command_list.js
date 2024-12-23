@@ -1,6 +1,5 @@
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { error } = require('../../helper/embedHelper.js')
+const { error } = require('../../helper/embedHelper.js');
 const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
@@ -9,56 +8,43 @@ module.exports = {
         .setDescription('Lösche Informationen aus der KI'),
     async execute(interaction) {
         try {
-
-            await interaction.deferReply({ ephemeral: true });
+            // Nur einmal deferReply
+            await interaction.deferReply();
 
             const roleName = 'KI-Admin';
             const member = interaction.member;
 
+            // Rolle finden
             const role = member.roles.cache.find(role => role.name === roleName);
 
-            if (role) {
-                await interaction.deferReply();
+            // Embed erstellen und als Antwort senden
+            const embed = new EmbedBuilder()
+                .setTitle('**Befehlsliste**')
+                .addFields(
+                    { name: '**/list**', value: 'Zeige alle Daten im Wissensspeicher der KI an' },
+                    { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
+                    { name: '**/setup**', value: 'Initiale Einrichtung' },
+                    { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' },
+                    { name: '**/commands**', value: 'Zeigt diese Information an' }
+                )
+                .setColor("#345635");
 
-                const embed = new EmbedBuilder()
-                    .setTitle('**Befehlsliste**')
-                    .addFields(
-                        { name: '**/list**', value: 'Zeige alle Daten im Wissensspeicher der KI an' },
-                        { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
-                        { name: '**/setup**', value: 'Initiale Einrichtung' },
-                        { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' }
-                    )
-                    .setColor(0x00AE86);
-
-                await interaction.followUp({
-                    embeds: [embed],
-                });
-            } else {
-
-                await interaction.reply({
-                    embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!')],
-                    ephemeral: true,
-                });
-
-                const adminChannel = interaction.guild.channels.cache.find(
-                    (channel) => channel.name === 'admin-log'
-                );
-                if (adminChannel) {
-                    await adminChannel.send(
-                        `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/commands\` ohne die erforderliche Rolle (${roleName}) auszuführen.`
-                    );
-                }
-            }
+            await interaction.followUp({
+                embeds: [embed],
+            });
         } catch (error) {
-            Logger.error('Ein Fehler ist aufgetreten:', error);
+            Logger.error(`Ein Fehler ist aufgetreten: ${error.message}\n${error.stack}`);
 
+            // Fallback: Fehler an den Benutzer melden
             try {
-                await interaction.reply({
-                    embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
-                    ephemeral: true,
-                });
+                if (!interaction.replied) {
+                    await interaction.followUp({
+                        embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
+                        ephemeral: true,
+                    });
+                }
             } catch (replyError) {
-                Logger.error('Ein Fehler ist aufgetreten beim antworten:', replyError);
+                Logger.error(`Ein Fehler ist aufgetreten beim antworten: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },

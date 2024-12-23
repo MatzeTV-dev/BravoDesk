@@ -15,9 +15,15 @@ const formatDate = (date) => {
 const Logger = {
   info: (msg) => console.log(chalk.white(`[INFO] [${formatDate(new Date())}]`), msg),
   warn: (msg) => console.log(chalk.yellow(`[WARN] [${formatDate(new Date())}]`), msg),
-  error: (msg) => console.log(chalk.red.bold(`[ERROR] [${formatDate(new Date())}]`), msg),
+  error: (msg) => {
+    if (msg instanceof Error) {
+      console.log(chalk.red.bold(`[ERROR] [${formatDate(new Date())}]`), msg.message);
+      console.log(chalk.red(msg.stack));
+    } else {
+      console.log(chalk.red.bold(`[ERROR] [${formatDate(new Date())}]`), msg);
+    }
+  },
   debug: (msg) => console.log(chalk.blue(`[DEBUG] [${formatDate(new Date())}]`), msg),
   success: (msg) => console.log(chalk.green(`[SUCCESS] [${formatDate(new Date())}]`), msg),
 };
-
 module.exports = Logger;
