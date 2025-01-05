@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { getEverythingCollection, deleteEntry } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
@@ -11,8 +10,7 @@ module.exports = {
 
     async execute(interaction) {
         try {
-
-            await interaction.deferReply();
+            await interaction.deferReply({ ephemeral: true });
 
             const roleName = 'KI-Admin';
             const member = interaction.member;
@@ -22,7 +20,6 @@ module.exports = {
             if (!hasRole) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert!')],
-                    ephemeral: true,
                 });
 
                 const adminChannel = interaction.guild.channels.cache.find(
@@ -41,7 +38,6 @@ module.exports = {
             if (!knowledge || knowledge.length === 0) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'Keine Daten gefunden!')],
-                    ephemeral: true,
                 });
                 return;
             }
@@ -118,22 +114,19 @@ module.exports = {
                             await i.deferUpdate();
                             await i.message.delete();
                             await interaction.editReply({
-                                embeds: [info('Deleted', "Der Wissenseintrag wurdege erfolgreich gelöscht")],
-                                ephemeral: true,
-                            })
+                                embeds: [info('Deleted', 'Der Wissenseintrag wurde erfolgreich gelöscht')],
+                            });
                         } catch (error) {
                             Logger.error('Fehler beim Löschen eines Eintrags', error);
                             await interaction.editReply({
-                                embeds: [error('Error', 'Es gab einne Fehler beim Löschen des Eintrages.')],
-                                ephemeral: true,
+                                embeds: [error('Error', 'Es gab einen Fehler beim Löschen des Eintrags.')],
                             });
                         }
                     }
                 } catch (error) {
-                    Logger.error('Fehler beim verabeiten einer Button Aktion', error);
+                    Logger.error('Fehler beim Verarbeiten einer Button-Aktion', error);
                     await interaction.editReply({
                         embeds: [error('Error', 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')],
-                        ephemeral: true,
                     });
                 }
             });
@@ -146,11 +139,10 @@ module.exports = {
 
             try {
                 await interaction.reply({
-                    embeds: [error('Error', 'Ein Unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
-                    ephemeral: true,
+                    embeds: [error('Error', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                 });
             } catch (replyError) {
-                Logger.error('Fehler beim senden einer Error Nachricht', replyError);
+                Logger.error('Fehler beim Senden einer Error-Nachricht', replyError);
             }
         }
     },

@@ -30,10 +30,12 @@ module.exports = {
 
             // Fehlerantwort an den Benutzer
             try {
-                await interaction.followUp({
-                    content: 'Es gab einen Fehler beim Markieren des Tickets als abgeschlossen. Bitte versuche es später erneut.',
-                    ephemeral: true,
-                });
+                if (!interaction.deferred && !interaction.replied) {
+                    await interaction.followUp({
+                        content: 'Es gab einen Fehler beim Markieren des Tickets als abgeschlossen. Bitte versuche es später erneut.',
+                        ephemeral: true,
+                    });
+                }
             } catch (replyError) {
                 Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }

@@ -42,7 +42,7 @@ module.exports = {
         }
 
         // Antwort an den Benutzer
-        await interaction.editReply({ content: 'Dein Ticket wurde erstellt!', ephemeral: true });
+        await interaction.editReply({ content: 'Dein Ticket wurde erstellt!' });
     },
 };
 
@@ -58,7 +58,6 @@ async function createTicket(interaction, reason) {
             Logger.error('Serverinformationen konnten nicht geladen werden.');
             await interaction.followUp({
                 content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
-                ephemeral: true,
             });
             return;
         }
@@ -70,7 +69,6 @@ async function createTicket(interaction, reason) {
             Logger.error('Support-Rolle nicht gefunden.');
             await interaction.followUp({
                 content: 'Es scheint ein Problem mit der Konfiguration zu geben. Bitte kontaktiere einen Administrator.',
-                ephemeral: true,
             });
             return;
         }
@@ -171,7 +169,6 @@ async function createTicket(interaction, reason) {
         Logger.error(`Fehler beim Erstellen des Tickets: ${errorCreatingTicket.message}`);
         await interaction.followUp({
             content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
-            ephemeral: true,
         });
     }
 }

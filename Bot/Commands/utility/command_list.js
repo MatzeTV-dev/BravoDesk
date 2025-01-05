@@ -8,8 +8,8 @@ module.exports = {
         .setDescription('Lösche Informationen aus der KI'),
     async execute(interaction) {
         try {
-            // Nur einmal deferReply
-            await interaction.deferReply();
+            // deferReply mit ephemeral: true
+            await interaction.deferReply({ ephemeral: true });
 
             const roleName = 'KI-Admin';
             const member = interaction.member;
@@ -40,7 +40,6 @@ module.exports = {
                 if (!interaction.replied) {
                     await interaction.followUp({
                         embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
-                        ephemeral: true,
                     });
                 }
             } catch (replyError) {

@@ -15,8 +15,7 @@ module.exports = {
         ),
     async execute(interaction) {
         try {
-
-            await interaction.deferReply();
+            await interaction.deferReply({ ephemeral: true });
 
             const roleName = 'KI-Admin';
             const member = interaction.member;
@@ -30,7 +29,6 @@ module.exports = {
             if (!role) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.')],
-                    ephemeral: true,
                 });
 
                 const adminChannel = interaction.guild.channels.cache.find(
@@ -50,28 +48,24 @@ module.exports = {
             if (checkArray.length > 10) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'Die Maximale Wortlänge beträgt 10 Wörter.')],
-                    ephemeral: true,
                 });
                 return;
             }
 
             await interaction.editReply({
                 embeds: [info('Hochladen', 'Daten werden hochgeladen, dies kann ein paar Sekunden dauern.')],
-                ephemeral: true,
             });
 
             try {
                 await upload(interaction.guildId, string);
                 await interaction.editReply({
                     embeds: [info('Hochladen', 'Daten hochladen war erfolgreich.')],
-                    ephemeral: true,
                 });
                 Logger.success('Daten erfolgreich hochgeladen.');
             } catch (uploadError) {
                 Logger.error(`Fehler beim Hochladen der Daten: ${uploadError.message}`);
                 await interaction.editReply({
                     embeds: [error('Error!', 'Fehler beim hochladen von Daten.')],
-                    ephemeral: true,
                 });
             }
         } catch (error) {
@@ -80,7 +74,6 @@ module.exports = {
             try {
                 await interaction.editReply({
                     embeds: [error('Error!', 'Ein Unerwarteter Fehler ist aufgetreten.')],
-                    ephemeral: true,
                 });
             } catch (replyError) {
                 Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);

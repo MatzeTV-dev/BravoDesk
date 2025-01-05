@@ -27,10 +27,12 @@ module.exports = {
 
             try {
                 // Informiere den Benutzer über den Fehler
-                await interaction.reply({
-                    content: 'Es gab einen Fehler beim Weiterleiten an den menschlichen Support.',
-                    ephemeral: true,
-                });
+                if (!interaction.deferred && !interaction.replied) {
+                    await interaction.reply({
+                        content: 'Es gab einen Fehler beim Weiterleiten an den menschlichen Support.',
+                        ephemeral: true,
+                    });
+                }
             } catch (replyError) {
                 Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
             }

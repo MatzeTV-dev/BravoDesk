@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits, Events, REST, Routes } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
 const { checkDatabaseStatus } = require('./Database/database.js');
@@ -82,6 +82,8 @@ async function registerCommands(guildId = null) {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
     try {
+        const commands = Array.from(client.commands.values()).map(command => command.data.toJSON());
+
         if (guildId) {
             Logger.info(`Prüfe und registriere Commands für Guild ID: ${guildId}...`);
 
@@ -101,7 +103,7 @@ async function registerCommands(guildId = null) {
                     Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
                     { body: newCommands },
                 );
-                Logger.info(`Neue Commands für Guild ID: ${guildId} registriert.`);
+                Logger.success(`Neue Commands für Guild ID: ${guildId} registriert.`);
             } else {
                 Logger.info(`Keine neuen Commands für Guild ID: ${guildId} zu registrieren.`);
             }
@@ -132,11 +134,55 @@ async function registerCommands(guildId = null) {
     }
 }
 
+
 // **Server beitreten Event**
 client.on(Events.GuildCreate, async guild => {
     Logger.info(`Dem Server "${guild.name}" (ID: ${guild.id}) beigetreten.`);
-    await registerCommands(guild.id); // Gilden-spezifische Registrierung
+    
+    // Wichtige Berechtigungen definieren
+    const requiredPermissions = [
+        PermissionsBitField.Flags.Administrator
+    ];
+
+    // Berechtigungen des Bots im Server überprüfen
+    const botMember = guild.members.me;
+    const botPermissions = botMember.permissions;
+
+    const missingPermissions = requiredPermissions.filter(perm => !botPermissions.has(perm));
+
+    if (missingPermissions.length > 0) {
+        Logger.warn(`Dem Bot fehlen folgende Berechtigungen auf dem Server "${guild.name}": ${missingPermissions.join(', ')}`);
+        
+        // Server-Inhaber ermitteln
+        try {
+            const owner = await guild.fetchOwner();
+
+            if (owner) {
+                // Fehlende Berechtigungen in Klartext konvertieren
+                const missingPermissionsNames = missingPermissions.map(perm => {
+                    switch (perm) {
+                        case PermissionsBitField.Flags.Administrator: return 'Administrator';
+                        default: return `Unbekannte Berechtigung (${perm})`;
+                    }
+                });
+
+                // Nachricht an den Server-Inhaber senden
+                await owner.send(
+                    `Hallo, ich bin dem Server "${guild.name}" beigetreten, aber mir fehlen folgende Berechtigungen, um ordnungsgemäß zu funktionieren:\n` +
+                    `${missingPermissionsNames.map(name => `- ${name}`).join('\n')}\n` +
+                    `Bitte überprüfe meine Berechtigungen und füge die fehlenden hinzu, damit ich meine Funktionen korrekt ausführen kann. Vielen Dank!`
+                );
+                Logger.info(`Nachricht an den Inhaber des Servers "${guild.name}" gesendet.`);
+            }
+        } catch (error) {
+            Logger.error(`Fehler beim Senden einer Nachricht an den Inhaber des Servers "${guild.name}":`, error);
+        }
+    }
+
+    // Gilden-spezifische Registrierung der Befehle
+    await registerCommands(guild.id);
 });
+
 
 client.once(Events.ClientReady, async () => {
     checkDatabaseStatus();

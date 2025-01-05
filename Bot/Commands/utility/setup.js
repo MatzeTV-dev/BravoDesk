@@ -24,7 +24,7 @@ module.exports = {
         ),
     async execute(interaction) {
 
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
 
         guild = interaction.guild;
 
@@ -32,8 +32,7 @@ module.exports = {
 
             if(guild.ownerId !== interaction.user.id) {
                 await interaction.editReply({
-                    embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')],
-                    ephemeral: true,
+                    embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')]
                 });
 
                 // Optional: Benachrichtigung an Administratoren
@@ -50,8 +49,7 @@ module.exports = {
             if(!result.exists_in_keys) {
 
                 await interaction.editReply({
-                    embeds: [error('Key existence', 'The key does not exists.')],
-                    ephemeral: true,
+                    embeds: [error('Key existence', 'The key does not exists.')]
                 });
 
                 return;
@@ -63,8 +61,7 @@ module.exports = {
                 await activateKey(interaction.options.getString('key'), guild.id);
 
                 await interaction.editReply({
-                    embeds: [success('Key activated', 'The key has been activated and is 30 Days valid.')],
-                    ephemeral: true,
+                    embeds: [success('Key activated', 'The key has been activated and is 30 Days valid.')]
                 });
             }
 
@@ -72,8 +69,7 @@ module.exports = {
 
             if(!result.is_valid) {
                 await interaction.editReply({
-                    embeds: [error('Key Expired', 'The key has expired.')],
-                    ephemeral: false
+                    embeds: [error('Key Expired', 'The key has expired.')]
                 });
 
                 return;
@@ -83,16 +79,14 @@ module.exports = {
 
             if(!isMatch.IsMatch) {
                 await interaction.editReply({
-                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')],
-                    ephemeral: false
+                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')]
                 });
 
                 return;
             }
 
             await interaction.editReply({
-                embeds: [info('Setup Process!', 'Setup process started. Creating roles and channels...')],
-                ephemeral: true,
+                embeds: [info('Setup Process!', 'Setup process started. Creating roles and channels...')]
             });
 
             guildID = guild.id;
@@ -108,13 +102,11 @@ module.exports = {
                 await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
 
                 await interaction.editReply({
-                    embeds: [info('Setup Process!', 'Setup completed successfully!')],
-                    ephemeral: true,
+                    embeds: [info('Setup Process!', 'Setup completed successfully!')]
                 });
             } else {
                 await interaction.editReply({
-                    embeds: [warning('Setup Process!', 'Setup already completed!')],
-                    ephemeral: true,
+                    embeds: [warning('Setup Process!', 'Setup already completed!')]
                 });
             }
         } catch (error) {
@@ -124,8 +116,7 @@ module.exports = {
             await rollbackSetup(interaction);
 
             await interaction.editReply({
-                embeds: [error('Setup Process!', 'An error occurred during the setup process. Please try again.')],
-                ephemeral: true,
+                embeds: [error('Setup Process!', 'An error occurred during the setup process. Please try again.')]
             });
         }
     },

@@ -11,14 +11,13 @@ module.exports = {
     async execute(interaction) {
         const guild = interaction.guild;
 
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
 
         try {
             // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
             if (guild.ownerId !== interaction.user.id) {
                 await interaction.editReply({
                     embeds: [error('Error', 'This action can only be performed by the server owner! An administrator has been informed about your attempt.')],
-                    ephemeral: true,
                 });
 
                 // Optionale Benachrichtigung für Admins
@@ -42,21 +41,18 @@ module.exports = {
             if (interaction.channel.id === ticket_channel.id) {
                 await interaction.editReply({
                     embeds: [error('Reset', 'Dieser Befehl kann hier nicht ausgeführt werden.')],
-                    ephemeral: true,
                 });
                 return;
             }
             // Antwort senden, um die Aktion zu bestätigen
             await interaction.editReply({
                 embeds: [info('Reset Process', 'Der Prozess wurde gestartet!')],
-                ephemeral: true,
             });
 
             const rawData = await getServerInformation(guild.id);
             if (!rawData || rawData.length === 0) {
                 await interaction.editReply({
                     embeds: [error('Reset Process', 'Keine Serverinformationen gefunden!')],
-                    ephemeral: true,
                 });
                 return;
             }
@@ -100,7 +96,6 @@ module.exports = {
                 Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}`);
                 await interaction.editReply({
                     embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen')],
-                    ephemeral: true,
                 });
                 return;
             }
@@ -109,7 +104,6 @@ module.exports = {
             try {
                 await interaction.editReply({
                     embeds: [info('Reset Process', 'Deleting Databaseinformation')],
-                    ephemeral: true,
                 });
                 await Delete('CALL Delete_Server_Information(?)', guild.id);
                 Logger.success('Datenbankeinträge erfolgreich gelöscht.');
@@ -117,7 +111,6 @@ module.exports = {
                 Logger.error(`Fehler beim Löschen der Datenbankinformationen: ${dbError.message}`);
                 await interaction.editReply({
                     embeds: [error('Reset Process', 'Fehler beim Löschen von Datenbankinformationen')],
-                    ephemeral: true,
                 });
                 return;
             }
@@ -126,7 +119,6 @@ module.exports = {
             try {
                 await interaction.editReply({
                     embeds: [info('Reset Process', 'Deleting AI-Knowledge')],
-                    ephemeral: true,
                 });
                 await deleteAll('guild_' + guild.id);
                 Logger.success('KI-Wissen erfolgreich gelöscht.');
@@ -134,7 +126,6 @@ module.exports = {
                 Logger.error(`Fehler beim Löschen des KI-Wissens: ${aiError.message}`);
                 await interaction.editReply({
                     embeds: [error('Reset Process', 'Fehler beim Löschen von KI-Wissen')],
-                    ephemeral: true,
                 });
                 return;
             }
@@ -142,7 +133,6 @@ module.exports = {
             // Abschlussnachricht
             await interaction.editReply({
                 embeds: [info('Reset Process', 'Reset Process completed')],
-                ephemeral: true,
             });
             Logger.info('Reset-Prozess abgeschlossen.');
         } catch (error) {
@@ -152,7 +142,6 @@ module.exports = {
             try {
                 await interaction.editReply({
                     content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
-                    ephemeral: true,
                 });
             } catch (replyError) {
                 Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);

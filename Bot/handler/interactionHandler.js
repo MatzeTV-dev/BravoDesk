@@ -61,16 +61,7 @@ module.exports = async (client, interaction) => {
 
             } else if (interaction.customId.startsWith('edit')) {
                 try {
-
                     Logger.info(`Button Interaction gestartet: ${interaction.customId}`);
-
-                    const button = client.buttons.get(interaction.customId);
-
-                    if (!button) {
-                        Logger.warn(`Kein Button Handler gefunden: ${interaction.customId}`);
-                        return;
-                    }
-                    await button.execute(interaction);
 
                     const entryId = interaction.customId.split('_')[1];
                     const entry = await getEntry(entryId, interaction.guildId);
@@ -82,23 +73,23 @@ module.exports = async (client, interaction) => {
                         .setTitle('Eintrag bearbeiten');
 
                     const descriptionInput = new TextInputBuilder()
-                        .setCustomId('description')    // Wichtig: dieser customId muss "description" heißen
+                        .setCustomId('description')
                         .setLabel('Beschreibung des Eintrags')
                         .setStyle(TextInputStyle.Paragraph)
                         .setValue(entry.text || '');
 
-                    // ActionRow + addComponents()
                     const row = new ActionRowBuilder().addComponents(descriptionInput);
                     modal.addComponents(row);
+
                     if (interaction.deferred || interaction.replied) {
-                        Logger.warn('Interaktion wurde kurz vor showModal() doch noch beantwortet, Abbruch.');
+                        Logger.warn('Interaktion wurde kurz vor showModal() beantwortet, Abbruch.');
                         return;
                     }
 
                     Logger.info('ZEIGE Modal an:', {
                         customId: `edit_modal_${entryId}`,
                         fields: ['description'],
-                      });
+                    });
 
                     await interaction.showModal(modal);
 
@@ -116,7 +107,7 @@ module.exports = async (client, interaction) => {
             if (interaction.customId.startsWith('edit_modal_')) {
                 const splitted = interaction.customId.split('_');
                 const entryId = splitted[2];
-                const description = interaction.fields.getTextInputValue('newContent');
+                const description = interaction.fields.getTextInputValue('description');
                 try {
                     await editEntry(interaction.guildId, entryId, { description });
 
