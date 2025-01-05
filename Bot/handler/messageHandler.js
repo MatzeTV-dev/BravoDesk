@@ -10,8 +10,9 @@ module.exports = async (client, message) => {
         try {
             const messages = await collectMessagesFromChannel(message.channel, client, message);
 
-            if (!messages.includes("Alles klar, ein Menschlicher Supporter wird das Ticket übernehmen!")) {
-                const aiResponse = await sendMessagesToAI(messages, message);
+            if (!messages.includes("Alles klar, ein menschlicher Supporter wird das Ticket übernehmen!")) {
+                const category = getCategoryFromChannelTopic(message.channel);
+                const aiResponse = await sendMessagesToAI(messages, message, category);
                 await message.channel.send(aiResponse);
             }
         } catch (error) {
@@ -23,6 +24,16 @@ module.exports = async (client, message) => {
 
 function isTicketChannel(channel) {
     return channel.name.endsWith('s-ticket');
+}
+
+function getCategoryFromChannelTopic(channel) {
+    const topic = channel.topic || '';
+
+    if (topic.includes('Technischer Support')) return 'technical_support';
+    if (topic.includes('Allgemeine Frage')) return 'general_questions';
+    if (topic.includes('Verbesserungsvorschlag')) return 'suggestions';
+    if (topic.includes('Bug Report')) return 'bug_report';
+    return 'unknown';
 }
 
 async function collectMessagesFromChannel(channel, client, triggeringMessage) {
@@ -80,7 +91,7 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     return collectedMessages.join('\n').trim();
 }
 
-async function sendMessagesToAI(messages, lastMessage) {
+async function sendMessagesToAI(messages, lastMessage, category) {
     let knowledgeBaseText = '';
     try {
         const collectionName = `guild_${lastMessage.guild.id}`;
@@ -96,13 +107,50 @@ async function sendMessagesToAI(messages, lastMessage) {
         knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
     }
 
-    const systemPrompt = `
-        Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf FiveM-Server.
-        Deine Aufgabe ist es, Nutzerfragen zu beantworten. Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
-        \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
-        \n\nAntworte angemessen auf die letzte Nachricht im Kontext.
-    `;
+    const prompts = {
+        technical_support: `
+            Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf technischen Support für FiveM-Server.
+            Bei Fragen die nichts mit FiveM zu tun haben sei höflich und sag dem user das du ihm dabei nicht weiterhelfen kannst
+            NUR FIVEM KEIN ANDERES SPIEL ODER PROGRAMM
+            Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+            \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+            \n\nAntworte auf technische Fragen und biete technische Unterstützung für FiveM an.
+        `,
+        general_questions: `
+            Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf allgemeine Fragen.
+            Bei Fragen die nichts mit FiveM zu tun haben sei höflich und sag dem user das du ihm dabei nicht weiterhelfen kannst
+            NUR FIVEM KEIN ANDERES SPIEL ODER PROGRAMM
+            Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+            \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+            \n\nAntworte höflich und hilfsbereit auf allgemeine Fragen.
+        `,
+        suggestions: `
+            Du bist ein AI-Supporter namens BravoDesk, der Verbesserungsvorschläge für FiveM-Server sammelt.
+            Bei Fragen die nichts mit FiveM zu tun haben sei höflich und sag dem user das du ihm dabei nicht weiterhelfen kannst
+            NUR FIVEM KEIN ANDERES SPIEL ODER PROGRAMM
+            Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+            \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+            \n\nAntworte höflich und ermutige den Benutzer, weitere Vorschläge zu machen.
+        `,
+        bug_report: `
+            Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf die Bearbeitung von Bug Reports.
+            Bei Fragen die nichts mit FiveM zu tun haben sei höflich und sag dem user das du ihm dabei nicht weiterhelfen kannst
+            NUR FIVEM KEIN ANDERES SPIEL ODER PROGRAMM
+            Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+            \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+            \n\nHilf dabei, Bugs zu identifizieren und leite den Benutzer, wie er weitere Details bereitstellen kann.
+        `,
+        unknown: `
+            Du bist ein AI-Supporter namens BravoDesk. Ich bin mir nicht sicher, welche Kategorie dieses Ticket hat.
+            Bei Fragen die nichts mit FiveM zu tun haben sei höflich und sag dem user das du ihm dabei nicht weiterhelfen kannst
+            NUR FIVEM KEIN ANDERES SPIEL ODER PROGRAMM
+            Hier sind die letzten Nachrichten im Ticket und relevantes Wissen:
+            \n\n${messages}\n\nZusätzliches Wissen:\n${knowledgeBaseText}
+            \n\nAntworte höflich und versuche, weitere Details vom Benutzer zu erfragen.
+        `,
+    };
 
+    const systemPrompt = prompts[category] || prompts.unknown;
     Logger.info('Generierter Systemprompt:', systemPrompt);
 
     try {

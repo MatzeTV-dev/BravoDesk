@@ -4,7 +4,7 @@ const Logger = require('../../helper/loggerHelper.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('commands')
+        .setName('help')
         .setDescription('Lösche Informationen aus der KI'),
     async execute(interaction) {
         try {
@@ -25,7 +25,7 @@ module.exports = {
                     { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
                     { name: '**/setup**', value: 'Initiale Einrichtung' },
                     { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' },
-                    { name: '**/commands**', value: 'Zeigt diese Information an' }
+                    { name: '**/help**', value: 'Zeigt diese Information an' }
                 )
                 .setColor("#345635");
 
