@@ -25,5 +25,6 @@ const Logger = {
   },
   debug: (msg) => console.log(chalk.blue(`[DEBUG] [${formatDate(new Date())}]`), msg),
   success: (msg) => console.log(chalk.green(`[SUCCESS] [${formatDate(new Date())}]`), msg),
+  report: (msg) => console.log(chalk.bgRed(`[REPORT] [${formatDate(new Date())} ${msg}]`)),
 };
 module.exports = Logger;

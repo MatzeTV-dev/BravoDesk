@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField, Partials } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
 const { checkDatabaseStatus } = require('./Database/database.js');
@@ -14,8 +14,10 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
     ],
+    partials: [Partials.Channel],
 });
 
 client.commands = new Collection();

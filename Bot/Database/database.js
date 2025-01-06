@@ -1,3 +1,4 @@
+// Datei: database.js
 const { exec } = require('child_process');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
@@ -73,13 +74,10 @@ async function getServerInformation(discord_server_id) {
 // Funktion: Existenz eines Servers prüfen
 async function chefIfServerExists(input_id) {
   try {
-    // Führt die Stored Procedure aus
     await pool.query(`CALL Check_If_Server_Exists(?, @exists_flag)`, [input_id]);
-
-    // Liest den Ergebniswert aus
     const [[result]] = await pool.query('SELECT @exists_flag AS exists_flag');
     Logger.info(`Existenzprüfung abgeschlossen: ${result.exists_flag}`);
-    return Boolean(result.exists_flag); // Konvertiert zu Boolean
+    return Boolean(result.exists_flag);
   } catch (error) {
     Logger.error(`Fehler bei der Existenzprüfung des Servers: ${error.message}`);
     return false; // Rückgabe von `false` bei Fehlern
@@ -116,10 +114,22 @@ async function Call(statement, dataInput, SelectStatement) {
     await pool.query(statement, dataInput);
     Logger.success('Stored Procedure erfolgreich abgerufen!');
     const [rows] = await pool.query(SelectStatement);
-    return rows[0]; // Gibt das Ergebnis zurück
+    return rows[0];
   } catch (error) {
     Logger.error(`Fehler beim Aufrufen vom Stored Procedure: ${error.message}`);
     return null; // Rückgabe von `null` bei Fehlern
+  }
+}
+
+// NEUE FUNKTION: Daten einfügen (z.B. für Keys)
+async function Insert(statement, dataInput) {
+  try {
+    const [result] = await pool.query(statement, dataInput);
+    Logger.success('Neuer Datensatz erfolgreich eingefügt!');
+    return result; // Enthält u. a. insertId
+  } catch (error) {
+    Logger.error(`Fehler beim Einfügen von Daten: ${error.message}`);
+    return null;
   }
 }
 
@@ -132,4 +142,5 @@ module.exports = {
   Select,
   Delete,
   Call,
+  Insert
 };
