@@ -27,7 +27,7 @@ module.exports = async (client, message) => {
     // 3. DM-Check: Key-Generierung
     //    (Nur, wenn keine Guild vorhanden: !message.guild und User-ID stimmt)
     if (!message.guild) {
-        if (message.author.id === '639759741555310612') Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`)
+        if (!message.author.id === '639759741555310612') Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`)
         try {
             if (message.content.startsWith('!generate')) {
                 const args = message.content.trim().split(/\s+/);
