@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder,
 const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey, } = require('../../helper/keyHelper.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
 const { error, success, warning, info } = require('../../helper/embedHelper.js');
+const { generateCollection } = require('../../Database/qdrant.js');
 const Logger = require('../../helper/loggerHelper.js');
 const fs = require('fs');
 
@@ -97,7 +98,8 @@ module.exports = {
                 await createRoles(interaction);
                 await createChannel(interaction);
                 await createCategories(interaction);
-
+                await generateCollection("guild_" + interaction.guild.id);
+                
                 // Speichere in der Datenbank
                 await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
 

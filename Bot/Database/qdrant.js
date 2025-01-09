@@ -37,13 +37,7 @@ async function ensureCollectionExists(guildID) {
 
         if (!collectionNames.includes(collectionName)) {
             Logger.warn(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
-            await qdrantClient.createCollection(collectionName, {
-                vectors: {
-                    size: 1024, // Dimension des Vektorraums
-                    distance: 'Cosine', // Ähnlichkeitsmetrik
-                },
-            });
-            Logger.success(`Collection "${collectionName}" erfolgreich erstellt.`);
+            generateCollection(collectionName);
         } else {
             Logger.info(`Collection "${collectionName}" existiert bereits.`);
         }
@@ -191,6 +185,19 @@ async function deleteAll(collectionName) {
     }
 }
 
+async function generateCollection(collectionname) {
+    try {
+        await qdrantClient.createCollection(collectionname, {
+            vectors: {
+                size: 1024, // Dimension des Vektorraums
+                distance: 'Cosine', // Ähnlichkeitsmetrik
+            },
+        });
+    } catch(error) {
+        Logger.error(error);
+    }
+}
+
 // Exportiere Funktionen
 module.exports = {
     getEverythingCollection,
@@ -200,4 +207,5 @@ module.exports = {
     getEntry,
     getData,
     upload,
+    generateCollection,
 };

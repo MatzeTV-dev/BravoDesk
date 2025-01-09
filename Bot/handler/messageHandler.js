@@ -81,7 +81,7 @@ module.exports = async (client, message) => {
                 Logger.success(`Es wurden ${amountToGenerate} neue keys erstellt`)
             } 
         } catch (error) {
-            Logger.debug(error)
+            Logger.error(error)
         }
     }
 };
