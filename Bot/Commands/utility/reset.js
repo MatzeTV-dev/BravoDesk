@@ -77,6 +77,36 @@ module.exports = {
                     Logger.info(`Kategorie mit der ID ${data.ticket_category_id} wurde nicht gefunden.`);
                 }
 
+                    // Datenbankeinträge löschen
+                try {
+                    await interaction.editReply({
+                        embeds: [info('Reset Process', 'Deleting Databaseinformation')],
+                    });
+                    await Delete('CALL Delete_Server_Information(?)', guild.id);
+                    Logger.success('Datenbankeinträge erfolgreich gelöscht.');
+                } catch (dbError) {
+                    Logger.error(`Fehler beim Löschen der Datenbankinformationen: ${dbError.message}`);
+                    await interaction.editReply({
+                        embeds: [error('Reset Process', 'Fehler beim Löschen von Datenbankinformationen')],
+                    });
+                    return;
+                }
+
+                // KI-Wissen löschen
+                try {
+                    await interaction.editReply({
+                        embeds: [info('Reset Process', 'Deleting AI-Knowledge')],
+                    });
+                    await deleteAll('guild_' + guild.id);
+                    Logger.success('KI-Wissen erfolgreich gelöscht.');
+                } catch (aiError) {
+                    Logger.error(`Fehler beim Löschen des KI-Wissens: ${aiError.message}`);
+                    await interaction.editReply({
+                        embeds: [error('Reset Process', 'Fehler beim Löschen von KI-Wissen')],
+                    });
+                    return;
+                }
+
                 let role = guild.roles.cache.get(data.support_role_id);
                 if (role) {
                     await role.delete();
@@ -95,37 +125,7 @@ module.exports = {
             } catch (resourceError) {
                 Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}`);
                 await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen')],
-                });
-                return;
-            }
-
-            // Datenbankeinträge löschen
-            try {
-                await interaction.editReply({
-                    embeds: [info('Reset Process', 'Deleting Databaseinformation')],
-                });
-                await Delete('CALL Delete_Server_Information(?)', guild.id);
-                Logger.success('Datenbankeinträge erfolgreich gelöscht.');
-            } catch (dbError) {
-                Logger.error(`Fehler beim Löschen der Datenbankinformationen: ${dbError.message}`);
-                await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim Löschen von Datenbankinformationen')],
-                });
-                return;
-            }
-
-            // KI-Wissen löschen
-            try {
-                await interaction.editReply({
-                    embeds: [info('Reset Process', 'Deleting AI-Knowledge')],
-                });
-                await deleteAll('guild_' + guild.id);
-                Logger.success('KI-Wissen erfolgreich gelöscht.');
-            } catch (aiError) {
-                Logger.error(`Fehler beim Löschen des KI-Wissens: ${aiError.message}`);
-                await interaction.editReply({
-                    embeds: [error('Reset Process', 'Fehler beim Löschen von KI-Wissen')],
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen, bitte lösch die Rollen KI-Admin und Support selbständig!')],
                 });
                 return;
             }
@@ -140,6 +140,7 @@ module.exports = {
 
             // Benutzerfreundliche Fehlermeldung
             try {
+                
                 await interaction.editReply({
                     content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
                 });

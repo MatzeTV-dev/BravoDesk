@@ -10,6 +10,14 @@ module.exports = async (client, message) => {
 
     // 2. Ticket-Logik
     if (isTicketChannel(message.channel)) {
+        
+        const isAiTicket = await isAiSupportTicket(message.channel);
+        if (!isAiTicket) {
+            // Wenn es kein KI-Ticket ist (also 'Mensch'),
+            // dann soll die AI nicht mehr antworten oder was immer du hier vorhast.
+            return;
+        }
+        
         try {
             const messages = await collectMessagesFromChannel(message.channel, client, message);
 
@@ -85,6 +93,29 @@ module.exports = async (client, message) => {
         }
     }
 };
+
+async function isAiSupportTicket(channel) {
+    try {
+        const fetchedMessages = await channel.messages.fetch({ limit: 10 });
+        const oldestMessage = fetchedMessages.last();
+
+        const embed = oldestMessage.embeds[0];
+        const embedData = embed.toJSON();
+
+        if (embedData.fields) {
+            const supportField = embedData.fields.find(f => f.name === 'Support');
+            if (supportField && supportField.value === 'KI') {
+                return true;
+            }
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Fehler in isAiSupportTicket:', error);
+        return false;
+    }
+}
+
 
 // Prüfen, ob ein Kanal ein Ticket-Kanal ist
 function isTicketChannel(channel) {

@@ -117,6 +117,7 @@ async function createTicket(interaction, reason) {
                 '{category}': reason,
                 '{user_ID}': interaction.user.id,
                 '{username}': interaction.user.username,
+                '{support_type}': "KI",
             };
 
             processedEmbed.title = replacePlaceholders(processedEmbed.title, placeholders);

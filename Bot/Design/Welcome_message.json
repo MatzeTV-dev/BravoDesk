@@ -13,6 +13,10 @@
         {
           "name": "User ID",
           "value": "{user_ID}"
+        },
+        {
+          "name": "Support",
+          "value": "{support_type}"
         }
       ],
       "author": {
