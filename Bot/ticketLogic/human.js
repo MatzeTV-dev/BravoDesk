@@ -49,7 +49,7 @@ module.exports = {
 
             await interaction.update({});
         } catch (error) {
-            Logger.error(`Fehler beim Bearbeiten der ersten Nachricht oder beim Senden der Info: ${error.message}`);
+            Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}\n${error.stack}`);
 
             try {
                 if (!interaction.deferred && !interaction.replied) {
@@ -59,7 +59,7 @@ module.exports = {
                     });
                 }
             } catch (replyError) {
-                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },

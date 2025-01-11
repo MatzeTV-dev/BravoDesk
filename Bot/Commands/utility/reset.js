@@ -123,7 +123,37 @@ module.exports = {
                     Logger.info(`Rolle mit der ID ${data.kiadmin_role_id} wurde nicht gefunden.`);
                 }
             } catch (resourceError) {
-                Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}`);
+                Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}\n${resourceError.stack}`);
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen')],
+                });
+                return;
+            }
+
+            // Datenbankeinträge löschen
+            try {
+                await interaction.editReply({
+                    embeds: [info('Reset Process', 'Deleting Databaseinformation')],
+                });
+                await Delete('CALL Delete_Server_Information(?)', guild.id);
+                Logger.success('Datenbankeinträge erfolgreich gelöscht.');
+            } catch (dbError) {
+                Logger.error(`Fehler beim Löschen der Datenbankinformationen: ${dbError.message}\n${dbError.stack}`);
+                await interaction.editReply({
+                    embeds: [error('Reset Process', 'Fehler beim Löschen von Datenbankinformationen')],
+                });
+                return;
+            }
+
+            // KI-Wissen löschen
+            try {
+                await interaction.editReply({
+                    embeds: [info('Reset Process', 'Deleting AI-Knowledge')],
+                });
+                await deleteAll('guild_' + guild.id);
+                Logger.success('KI-Wissen erfolgreich gelöscht.');
+            } catch (aiError) {
+                Logger.error(`Fehler beim Löschen des KI-Wissens: ${aiError.message}\n${aiError.stack}`);
                 await interaction.editReply({
                     embeds: [error('Reset Process', 'Fehler beim Löschen von Ressourcen, bitte lösch die Rollen KI-Admin und Support selbständig!')],
                 });
@@ -136,7 +166,7 @@ module.exports = {
             });
             Logger.info('Reset-Prozess abgeschlossen.');
         } catch (error) {
-            Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
+            Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}\n${error.stack}`);
 
             // Benutzerfreundliche Fehlermeldung
             try {
@@ -145,7 +175,7 @@ module.exports = {
                     content: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.',
                 });
             } catch (replyError) {
-                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },
