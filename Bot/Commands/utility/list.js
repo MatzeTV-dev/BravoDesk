@@ -100,7 +100,7 @@ module.exports = {
                             .setTitle('Eintrag bearbeiten');
 
                         const textInput = new TextInputBuilder()
-                            .setCustomId('newContent')
+                            .setCustomId('description')
                             .setLabel('Neuer Inhalt')
                             .setStyle(TextInputStyle.Paragraph)
                             .setRequired(true);
