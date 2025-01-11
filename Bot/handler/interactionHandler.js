@@ -108,8 +108,9 @@ module.exports = async (client, interaction) => {
                 const splitted = interaction.customId.split('_');
                 const entryId = splitted[2];
                 const description = interaction.fields.getTextInputValue('description');
+                console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", description)
                 try {
-                    await editEntry(interaction.guildId, entryId, { description });
+                    await editEntry(interaction.guildId, entryId, description);
 
                     await interaction.reply({
                         embeds: [info('Wissenseintrag', 'Der Wissenseintrag wurde erfolgreich aktualisiert')],

@@ -105,16 +105,16 @@ async function deleteEntry(guildID, id) {
 }
 
 // Funktion: Aktualisieren eines Eintrags
-async function editEntry(guildID, id, newContent) {
+async function editEntry(guildID, id, description) {
     const collectionName = `guild_${guildID}`;
     try {
-        const embedding = await getEmbedding(newContent.description);
+        const embedding = await getEmbedding(description);
         if (!embedding) {
             Logger.error('Fehler beim Generieren des Embeddings für das Update.');
             return false;
         }
 
-        const payload = { guildID, text: newContent };
+        const payload = { guildID, text: description };
 
         await qdrantClient.upsert(collectionName, {
             points: [{ id, vector: embedding, payload }],
