@@ -43,11 +43,21 @@ module.exports = {
             }
 
             const string = interaction.options.getString('daten');
-            const checkArray = string.split(' ');
 
-            if (checkArray.length > 10) {
+            // Maximal 10 Wörter prüfen
+            const wordCount = string.split(/\s+/).length;
+            if (wordCount > 10) {
                 await interaction.editReply({
-                    embeds: [error('Error!', `Die Maximale Wortlänge beträgt 10 Wörter. \n ${interaction.options.getString('daten')}`)],
+                    embeds: [error('Error!', 'Die maximale Wortanzahl beträgt 10 Wörter.')],
+                });
+                return;
+            }
+
+            // Regex: Kein Wort länger als 20 Zeichen erlaubt
+            const longWordMatch = string.match(/\b\w{21,}\b/);
+            if (longWordMatch) {
+                await interaction.editReply({
+                    embeds: [error('Error!', `Ein Wort ist zu lang: "${longWordMatch[0]}". Maximale Wortlänge beträgt 10 Zeichen. \n ${interaction.options.getString('daten')`)],
                 });
                 return;
             }
@@ -65,7 +75,7 @@ module.exports = {
             } catch (uploadError) {
                 Logger.error(`Fehler beim Hochladen der Daten: ${uploadError.message}`);
                 await interaction.editReply({
-                    embeds: [error('Error!', 'Fehler beim hochladen von Daten.')],
+                    embeds: [error('Error!', 'Fehler beim Hochladen von Daten.')],
                 });
             }
         } catch (error) {
@@ -73,7 +83,7 @@ module.exports = {
 
             try {
                 await interaction.editReply({
-                    embeds: [error('Error!', 'Ein Unerwarteter Fehler ist aufgetreten.')],
+                    embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten.')],
                 });
             } catch (replyError) {
                 Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
