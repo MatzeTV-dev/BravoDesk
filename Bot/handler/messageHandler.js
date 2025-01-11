@@ -1,13 +1,12 @@
-const { getData } = require('../Database/qdrant.js');
-const axios = require('axios');
+const { getData, upload } = require('../Database/qdrant.js');
 const Logger = require('../helper/loggerHelper.js');
 const { Insert } = require('../Database/database.js');
+const axios = require('axios');
 require('dotenv').config(); 
 
 module.exports = async (client, message) => {
     // 1. Bots ignorieren
     if (message.author.bot) return;
-
     // 2. Ticket-Logik
     if (isTicketChannel(message.channel)) {
         try {
@@ -84,6 +83,35 @@ module.exports = async (client, message) => {
             Logger.debug(error)
         }
     }
+
+    // 4. DM-Check: Upload für daten zur GeneralInformation Collection
+    if (!message.guild) {
+        if (!message.author.id === '639759741555310612') {
+            Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
+        }
+    
+        try {
+            if (message.content.startsWith('!upload')) {
+                try {
+                    // Entfernt den Befehl '!upload' und speichert nur den Text danach
+                    const content = message.content.slice('!upload'.length).trim();
+                    
+                    await upload('GeneralInformation', content);
+
+                    // Hier kannst du den Code einfügen, der die Daten speichert
+                    Logger.info(`Gespeicherter Text: ${content}`);
+    
+                    await message.reply('Deine Daten wurden erfolgreich gespeichert.');
+                } catch (error) {
+                    Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);
+                    await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
+                }
+            }
+        } catch (error) {
+            Logger.debug(error);
+        }
+    }
+    
 };
 
 // Prüfen, ob ein Kanal ein Ticket-Kanal ist
@@ -168,7 +196,10 @@ async function sendMessagesToAI(messages, lastMessage, category) {
         if (data && data.length > 0) {
             knowledgeBaseText = data.map(item => item.payload.text).join('\n');
         } else {
-            knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
+            Logger.debug("Keine Daten über den server gefunden probiere Daten von GenerallInformation zu holen")
+            data = await getData("GeneralInformation", lastMessage.content);
+            knowledgeBaseText = data.map(item => item.payload.text).join('\n');
+            Logger.debug("Returned Daten sind: ", knowledgeBaseText);
         }
     } catch (error) {
         Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}`);

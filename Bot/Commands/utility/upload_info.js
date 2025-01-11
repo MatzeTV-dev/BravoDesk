@@ -57,7 +57,7 @@ module.exports = {
             });
 
             try {
-                await upload(interaction.guildId, string);
+                await upload("guild_" + interaction.guildId, string);
                 await interaction.editReply({
                     embeds: [info('Hochladen', 'Daten hochladen war erfolgreich.')],
                 });

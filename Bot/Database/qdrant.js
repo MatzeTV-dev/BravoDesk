@@ -29,7 +29,7 @@ async function getEmbedding(text) {
   
 // Funktion: Überprüfen, ob Collection existiert
 async function ensureCollectionExists(guildID) {
-    const collectionName = `guild_${guildID}`;
+    const collectionName = `${guildID}`;
     try {
         const collectionsResponse = await qdrantClient.getCollections();
         const collections = collectionsResponse.collections || [];
@@ -55,7 +55,7 @@ async function ensureCollectionExists(guildID) {
 
 // Funktion: Daten hochladen
 async function upload(guildID, text) {
-    const collectionName = `guild_${guildID}`;
+    const collectionName = `${guildID}`;
     try {
         await ensureCollectionExists(guildID);
 
