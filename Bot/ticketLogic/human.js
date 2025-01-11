@@ -23,7 +23,7 @@ module.exports = {
             // Aktualisiere die Interaktion, um den Button zu deaktivieren oder keine weitere Aktion auszuführen
             await interaction.update({});
         } catch (error) {
-            Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}`);
+            Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}\n${error.stack}`);
 
             try {
                 // Informiere den Benutzer über den Fehler
@@ -34,7 +34,7 @@ module.exports = {
                     });
                 }
             } catch (replyError) {
-                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },

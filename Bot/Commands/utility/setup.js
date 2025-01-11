@@ -110,7 +110,7 @@ module.exports = {
                 });
             }
         } catch (error) {
-            Logger.error(`Error during setup: ${error.message}`);
+            Logger.error(`Error during setup: ${error.message}\n${error.stack}`);
 
             // Rollback bei Fehlern
             await rollbackSetup(interaction);
@@ -239,7 +239,7 @@ async function createChannel(interaction) {
         });
         Logger.success(`${guild.name}: Embed sent to channel: ${channel.id}`);
     } catch (error) {
-        Logger.error(`${guild.name}: Error sending embed: ${error.message}`);
+        Logger.error(`${guild.name}: Error sending embed: ${error.message}\n${error.stack}`);
     }
 }
 
@@ -299,7 +299,7 @@ async function rollbackSetup(interaction) {
 
         Logger.info('Rollback completed successfully.');
     } catch (error) {
-        Logger.error(`Error during rollback: ${error.message}`);
+        Logger.error(`Error during rollback: ${error.message}\n${error.stack}`);
     }
 }
 
@@ -309,6 +309,6 @@ async function saveDatabase(server_id, ticket_system_channel_id, ticket_category
         await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id);
         Logger.success(`Database saved for server ID: ${server_id}`);
     } catch (error) {
-        Logger.error(`Error saving to database: ${error.message}`);
+        Logger.error(`Error saving to database: ${error.message}\n${error.stack}`);
     }
 }

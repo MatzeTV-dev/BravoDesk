@@ -22,7 +22,7 @@ async function getEmbedding(text) {
         });
         return embedding;
     } catch (error) {
-        Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}`);
+        Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}\n${error.stack}`);
         return null;
     }
 }
@@ -48,7 +48,7 @@ async function ensureCollectionExists(guildID) {
             Logger.info(`Collection "${collectionName}" existiert bereits.`);
         }
     } catch (error) {
-        Logger.error(`Fehler beim Überprüfen oder Erstellen der Collection: ${error.message}`);
+        Logger.error(`Fehler beim Überprüfen oder Erstellen der Collection: ${error.message}\n${error.stack}`);
         throw error;
     }
 }
@@ -75,7 +75,7 @@ async function upload(guildID, text) {
         Logger.success('Daten erfolgreich hochgeladen.');
         return true;
     } catch (error) {
-        Logger.error(`Fehler beim Hochladen der Daten: ${error.message}`);
+        Logger.error(`Fehler beim Hochladen der Daten: ${error.message}\n${error.stack}`);
         return false;
     }
 }
@@ -92,7 +92,7 @@ async function getEverythingCollection(guildID) {
         Logger.success('Daten erfolgreich abgerufen.');
         return scrollResponse.points;
     } catch (error) {
-        Logger.error(`Fehler beim Abrufen der Daten: ${error.message}`);
+        Logger.error(`Fehler beim Abrufen der Daten: ${error.message}\n${error.stack}`);
         return null; // Rückgabe von `null` bei Fehlern
     }
 }
@@ -105,7 +105,7 @@ async function deleteEntry(guildID, id) {
         Logger.success(`Eintrag mit der ID ${id} erfolgreich gelöscht.`);
         return true;
     } catch (error) {
-        Logger.error(`Fehler beim Löschen des Eintrags: ${error.message}`);
+        Logger.error(`Fehler beim Löschen des Eintrags: ${error.message}\n${error.stack}`);
         return false;
     }
 }
@@ -129,7 +129,7 @@ async function editEntry(guildID, id, newContent) {
         Logger.success(`Eintrag mit der ID ${id} erfolgreich aktualisiert.`);
         return true;
     } catch (error) {
-        Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}`);
+        Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}\n${error.stack}`);
         return false;
     }
 }
@@ -151,7 +151,7 @@ async function getEntry(entryID, guildID) {
             return null;
         }
     } catch (error) {
-        Logger.error(`Fehler beim Abrufen des Eintrags mit ID ${entryID}: ${error.message}`);
+        Logger.error(`Fehler beim Abrufen des Eintrags mit ID ${entryID}: ${error.message}\n${error.stack}`);
         return null;
     }
 }
@@ -174,7 +174,7 @@ async function getData(collectionName, userQuery) {
         Logger.success('Ähnlichkeitssuche erfolgreich abgeschlossen.');
         return searchResult;
     } catch (error) {
-        Logger.error(`Fehler bei der Suche in Qdrant: ${error.message}`);
+        Logger.error(`Fehler bei der Suche in Qdrant: ${error.message}\n${error.stack}`);
         return null;
     }
 }
@@ -186,7 +186,7 @@ async function deleteAll(collectionName) {
         Logger.success(`Collection "${collectionName}" erfolgreich gelöscht.`);
         return true;
     } catch (error) {
-        Logger.error(`Fehler beim Löschen der Collection "${collectionName}": ${error.message}`);
+        Logger.error(`Fehler beim Löschen der Collection "${collectionName}": ${error.message}\n${error.stack}`);
         return false;
     }
 }

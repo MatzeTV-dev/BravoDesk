@@ -74,7 +74,7 @@ module.exports = {
 
                         await new Promise((resolve) => setTimeout(resolve, 1000));
                     } catch (error) {
-                        Logger.error('Fehler beim Hochladen vom AI Wissen', error);
+                        Logger.error(`Fehler beim Hochladen vom AI Wissen: ${error.message}\n${error.stack}`);
                     }
                 }
             };
@@ -117,14 +117,14 @@ module.exports = {
                                 embeds: [info('Deleted', 'Der Wissenseintrag wurde erfolgreich gelöscht')],
                             });
                         } catch (error) {
-                            Logger.error('Fehler beim Löschen eines Eintrags', error);
+                            Logger.error(`Fehler beim Löschen eines Eintrags: ${error.message}\n${error.stack}`);
                             await interaction.editReply({
                                 embeds: [error('Error', 'Es gab einen Fehler beim Löschen des Eintrags.')],
                             });
                         }
                     }
                 } catch (error) {
-                    Logger.error('Fehler beim Verarbeiten einer Button-Aktion', error);
+                    Logger.error(`Fehler beim Verarbeiten einer Button-Aktion: ${error.message}\n${error.stack}`);
                     await interaction.editReply({
                         embeds: [error('Error', 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                     });
@@ -135,14 +135,14 @@ module.exports = {
                 Logger.debug('Collected interactions:', collected.size);
             });
         } catch (error) {
-            Logger.error('Ein unerwarteter Fehler ist aufgetreten', error);
+            Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}\n${error.stack}`);
 
             try {
                 await interaction.reply({
                     embeds: [error('Error', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
                 });
             } catch (replyError) {
-                Logger.error('Fehler beim Senden einer Error-Nachricht', replyError);
+                Logger.error(`Fehler beim Senden einer Error-Nachricht: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },

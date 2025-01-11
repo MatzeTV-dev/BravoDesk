@@ -19,7 +19,7 @@ module.exports = async (client, message) => {
                 await message.channel.send(aiResponse);
             }
         } catch (error) {
-            Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}`);
+            Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}\n${error.stack}`);
             await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
         }
     }  
@@ -75,13 +75,13 @@ module.exports = async (client, message) => {
                     // Antwort an dich mit den erzeugten Keys
                     await message.reply(`Ich habe dir ${amountToGenerate} Key(s) erstellt:\n` + keysArray.join('\n'));
                 } catch (error) {
-                    Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}`);
+                    Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}\n${error.stack}`);
                     await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
                 }
                 Logger.success(`Es wurden ${amountToGenerate} neue keys erstellt`)
             } 
         } catch (error) {
-            Logger.debug(error)
+            Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
         }
     }
 };
@@ -171,7 +171,7 @@ async function sendMessagesToAI(messages, lastMessage, category) {
             knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
         }
     } catch (error) {
-        Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}`);
+        Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}\n${error.stack}`);
         knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
     }
 
@@ -262,7 +262,7 @@ async function sendMessagesToAI(messages, lastMessage, category) {
 
         return response.data.choices[0].message.content || 'Entschuldigung, keine passende Antwort gefunden.';
     } catch (error) {
-        Logger.error(`Fehler bei der Anfrage an die OpenAI API: ${error.message}`);
+        Logger.error(`Fehler bei der Anfrage an die OpenAI API: ${error.message}\n${error.stack}`);
         return 'Entschuldigung, es gab ein Problem mit der Anfrage an die KI.';
     }
 }
