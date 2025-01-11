@@ -164,7 +164,6 @@ module.exports = async (client, interaction) => {
 
                 // Den neuen Text aus dem Modal
                 const description = interaction.fields.getTextInputValue('description');
-
                 try {
                     // In der editEntry-Funktion nun **nur** den String weitergeben
                     await editEntry(interaction.guildId, entryId, description);
