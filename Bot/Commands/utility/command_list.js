@@ -25,6 +25,7 @@ module.exports = {
                     { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
                     { name: '**/setup**', value: 'Initiale Einrichtung' },
                     { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' },
+                    { name: '**/search**', value: 'Bestimmte Daten suchen' },
                     { name: '**/help**', value: 'Zeigt diese Information an' }
                 )
                 .setColor("#345635");
