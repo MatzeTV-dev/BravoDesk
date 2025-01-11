@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('discord.js');
 const Logger = require('../helper/loggerHelper.js');
 
 module.exports = {
@@ -17,16 +18,40 @@ module.exports = {
         }
 
         try {
-            // Sende Nachricht in den Kanal
+            const fetchedMessages = await channel.messages.fetch({ limit: 10 });
+            const oldestMessage = fetchedMessages.last();
+
+            if (!oldestMessage) {
+                Logger.warn('Keine Nachrichten im Kanal gefunden.');
+            } else {
+                if (oldestMessage.embeds && oldestMessage.embeds.length > 0) {
+                    const oldEmbed = oldestMessage.embeds[0];
+
+                    const embedData = oldEmbed.toJSON();
+
+                    if (embedData.fields) {
+                        const supportFieldIndex = embedData.fields.findIndex(
+                            (field) => field.name === 'Support'
+                        );
+
+                        if (supportFieldIndex !== -1) {
+                            embedData.fields[supportFieldIndex].value = 'Mensch';
+                        }
+                    }
+
+                    const newEmbed = new EmbedBuilder(embedData);
+
+                    await oldestMessage.edit({ embeds: [newEmbed] });
+                }
+            }
+
             await channel.send('Alles klar, ein menschlicher Supporter wird das Ticket übernehmen!');
 
-            // Aktualisiere die Interaktion, um den Button zu deaktivieren oder keine weitere Aktion auszuführen
             await interaction.update({});
         } catch (error) {
             Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}\n${error.stack}`);
 
             try {
-                // Informiere den Benutzer über den Fehler
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
                         content: 'Es gab einen Fehler beim Weiterleiten an den menschlichen Support.',
