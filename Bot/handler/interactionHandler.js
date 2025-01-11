@@ -22,7 +22,7 @@ module.exports = async (client, interaction) => {
             try {
                 await command.execute(interaction);
             } catch (error) {
-                Logger.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}: ${error.message}`);
+                Logger.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}: ${error.message}\n${error.stack}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -43,7 +43,7 @@ module.exports = async (client, interaction) => {
             try {
                 await selectMenu.execute(interaction);
             } catch (error) {
-                Logger.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}: ${error.message}`);
+                Logger.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}: ${error.message}\n${error.stack}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -94,7 +94,7 @@ module.exports = async (client, interaction) => {
                     await interaction.showModal(modal);
 
                 } catch (error) {
-                    Logger.error(`Fehler im edit-Button-Handler: ${error.message}`);
+                    Logger.error(`Fehler im edit-Button-Handler: ${error.message}\n${error.stack}`);
                 }
 
             } else {
@@ -108,15 +108,16 @@ module.exports = async (client, interaction) => {
                 const splitted = interaction.customId.split('_');
                 const entryId = splitted[2];
                 const description = interaction.fields.getTextInputValue('description');
+                console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", description)
                 try {
-                    await editEntry(interaction.guildId, entryId, { description });
+                    await editEntry(interaction.guildId, entryId, description);
 
                     await interaction.reply({
                         embeds: [info('Wissenseintrag', 'Der Wissenseintrag wurde erfolgreich aktualisiert')],
                         ephemeral: true,
                     });
                 } catch (error) {
-                    Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}`);
+                    Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}\n${error.stack}`);
 
                     if (!interaction.deferred && !interaction.replied) {
                         await interaction.reply({
@@ -140,7 +141,7 @@ module.exports = async (client, interaction) => {
         }
 
     } catch (error) {
-        Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}`);
+        Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}\n${error.stack}`);
 
         if (!interaction.deferred && !interaction.replied) {
             try {
@@ -149,7 +150,7 @@ module.exports = async (client, interaction) => {
                     ephemeral: true,
                 });
             } catch (replyError) {
-                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
             }
         }
     }

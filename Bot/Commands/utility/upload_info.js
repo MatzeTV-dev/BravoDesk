@@ -57,7 +57,7 @@ module.exports = {
             const longWordMatch = string.match(/\b\w{21,}\b/);
             if (longWordMatch) {
                 await interaction.editReply({
-                    embeds: [error('Error!', `Ein Wort ist zu lang: "${longWordMatch[0]}". Maximale Wortlänge beträgt 10 Zeichen.`)],
+                    embeds: [error('Error!', `Ein Wort ist zu lang: "${longWordMatch[0]}". Maximale Wortlänge beträgt 10 Zeichen. \n ${interaction.options.getString('daten')`)],
                 });
                 return;
             }
@@ -67,7 +67,7 @@ module.exports = {
             });
 
             try {
-                await upload(interaction.guildId, string);
+                await upload("guild_" + interaction.guildId, string);
                 await interaction.editReply({
                     embeds: [info('Hochladen', 'Daten hochladen war erfolgreich.')],
                 });
