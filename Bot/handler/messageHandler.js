@@ -192,14 +192,14 @@ async function sendMessagesToAI(messages, lastMessage, category) {
     try {
         const collectionName = `guild_${lastMessage.guild.id}`;
         const data = await getData(collectionName, lastMessage.content);
+        const dataTwo = await getData("GeneralInformation", lastMessage.content);
 
         if (data && data.length > 0) {
             knowledgeBaseText = data.map(item => item.payload.text).join('\n');
+            knowledgeBaseText = dataTwo.map(item => item.payload.text).join('\n');
+            Logger.debug(knowledgeBaseText);
         } else {
-            Logger.debug("Keine Daten über den server gefunden probiere Daten von GenerallInformation zu holen")
-            data = await getData("GeneralInformation", lastMessage.content);
-            knowledgeBaseText = data.map(item => item.payload.text).join('\n');
-            Logger.debug("Returned Daten sind: ", knowledgeBaseText);
+            knowledgeBaseText = "Nichts passendes gefunden!";
         }
     } catch (error) {
         Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}`);
