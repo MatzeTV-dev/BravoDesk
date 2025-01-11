@@ -7,6 +7,7 @@ module.exports = {
     },
     async execute(interaction) {
         const channel = interaction.channel;
+        const guild = interaction.guild;
 
         if (!channel) {
             Logger.warn('Kanal nicht gefunden. Möglicherweise wurde er gelöscht.');
@@ -45,7 +46,10 @@ module.exports = {
                 }
             }
 
-            await channel.send('Alles klar, ein menschlicher Supporter wird das Ticket übernehmen!');
+            const roleName = 'Supporter';  // Beispiel: 'Admin'
+            const role = guild.roles.cache.find(r => r.name === roleName);
+
+            await channel.send(`Alles klar, ein menschlicher <@&${role.id}> wird das Ticket übernehmen!`);
 
             await interaction.update({});
         } catch (error) {
