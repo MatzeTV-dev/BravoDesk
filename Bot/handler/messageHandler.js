@@ -1,13 +1,12 @@
-const { getData } = require('../Database/qdrant.js');
-const axios = require('axios');
+const { getData, upload } = require('../Database/qdrant.js');
 const Logger = require('../helper/loggerHelper.js');
 const { Insert } = require('../Database/database.js');
+const axios = require('axios');
 require('dotenv').config(); 
 
 module.exports = async (client, message) => {
     // 1. Bots ignorieren
     if (message.author.bot) return;
-
     // 2. Ticket-Logik
     if (isTicketChannel(message.channel)) {
         
@@ -92,7 +91,33 @@ module.exports = async (client, message) => {
             Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
         }
     }
-  
+    // 4. DM-Check: Upload für daten zur GeneralInformation Collection
+    if (!message.guild) {
+        if (!message.author.id === '639759741555310612') {
+            Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
+        }
+    
+        try {
+            if (message.content.startsWith('!upload')) {
+                try {
+                    // Entfernt den Befehl '!upload' und speichert nur den Text danach
+                    const content = message.content.slice('!upload'.length).trim();
+                    
+                    await upload('GeneralInformation', content);
+
+                    // Hier kannst du den Code einfügen, der die Daten speichert
+                    Logger.info(`Gespeicherter Text: ${content}`);
+    
+                    await message.reply('Deine Daten wurden erfolgreich gespeichert.');
+                } catch (error) {
+                    Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);
+                    await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
+                }
+            }
+        } catch (error) {
+            Logger.debug(error);
+        }
+    }
 };
 
 async function isAiSupportTicket(channel) {
@@ -196,11 +221,14 @@ async function sendMessagesToAI(messages, lastMessage, category) {
     try {
         const collectionName = `guild_${lastMessage.guild.id}`;
         const data = await getData(collectionName, lastMessage.content);
+        const dataTwo = await getData("GeneralInformation", lastMessage.content);
 
         if (data && data.length > 0) {
             knowledgeBaseText = data.map(item => item.payload.text).join('\n');
+            knowledgeBaseText = dataTwo.map(item => item.payload.text).join('\n');
+            Logger.debug(knowledgeBaseText);
         } else {
-            knowledgeBaseText = 'Keine zusätzlichen Serverdaten gefunden.';
+            knowledgeBaseText = "Nichts passendes gefunden!";
         }
     } catch (error) {
         Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}\n${error.stack}`);
