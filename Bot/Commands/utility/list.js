@@ -1,200 +1,346 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder,
+    ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    ActionRowBuilder,
-    ComponentType,
+    EmbedBuilder,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    ComponentType
   } = require('discord.js');
+  const { getEverythingCollection, deleteEntry } = require('../../Database/qdrant.js');
   const { error, info } = require('../../helper/embedHelper.js');
   const Logger = require('../../helper/loggerHelper.js');
-  const { getData, deleteEntry, getEntry, editEntry } = require('../../Database/qdrant.js');
   
   module.exports = {
     data: new SlashCommandBuilder()
-      .setName('search')
-      .setDescription('Durchsuche die KI nach ähnlichen Informationen')
-      .addStringOption(option =>
-        option
-          .setName('query')
-          .setDescription('Der Suchbegriff oder deine Frage an die KI')
-          .setRequired(true)
-      ),
+      .setName('list')
+      .setDescription('Listet alle Wissenseinträge der KI auf'),
   
     async execute(interaction) {
       try {
-        // Nur der ausführende User sieht das Ergebnis
         await interaction.deferReply({ ephemeral: true });
   
+        // Rollen-Check
         const roleName = 'KI-Admin';
         const member = interaction.member;
-        const role = member.roles.cache.find(r => r.name === roleName);
+        const hasRole = member.roles.cache.some((role) => role.name === roleName);
   
-        // Rollen-Check
-        if (!role) {
+        if (!hasRole) {
           await interaction.editReply({
-            embeds: [
-              error(
-                'Error!',
-                'Hoppla! Du hast keine Berechtigung für diesen Befehl. Ein Admin wurde informiert.'
-              )
-            ]
+            embeds: [error('Error!', 'Du hast keine Berechtigung für diesen Befehl!')],
+          });
+  
+          const adminChannel = interaction.guild.channels.cache.find(
+            (channel) => channel.name === 'admin-log'
+          );
+          if (adminChannel) {
+            await adminChannel.send(
+              `⚠️ Benutzer ${interaction.user.tag} hat versucht, /list ohne entsprechende Rolle (${roleName}) auszuführen.`
+            );
+          }
+          return;
+        }
+  
+        // Datenbank-Abfrage
+        const knowledge = await getEverythingCollection(interaction.guildId);
+        if (!knowledge || knowledge.length === 0) {
+          await interaction.editReply({
+            embeds: [error('Error!', 'Keine Daten gefunden!')],
           });
           return;
         }
   
-        // Suchbegriff aus dem Command
-        const userQuery = interaction.options.getString('query', true);
+        // --------------------------------------------------
+        // 1) Mapping von "globalem Index" => DB-ID
+        // --------------------------------------------------
+        //  knowledge[0] -> globalIndex = 0
+        //  knowledge[1] -> globalIndex = 1
+        //  ...
+        //  => globalIndexIdMap[0] = knowledge[0].id
+        const globalIndexIdMap = knowledge.map((item) => item.id);
   
-        // Qdrant-Collection: "guild_<GuildID>"
-        const collectionName = `guild_${interaction.guild.id}`;
+        // --------------------------------------------------
+        // PAGINATION SETUP
+        // --------------------------------------------------
+        let currentPage = 1;
+        const itemsPerPage = 6;
+        let totalEntries = knowledge.length;
+        let totalPages = Math.ceil(totalEntries / itemsPerPage);
   
-        // Ähnlichkeitssuche
-        const searchResult = await getData(collectionName, userQuery);
-        if (!searchResult || searchResult.length === 0) {
-          await interaction.editReply({
-            embeds: [
-              error(
-                'Keine Ergebnisse',
-                'Es wurden keine Einträge gefunden, die deiner Suche entsprechen.'
-              )
-            ]
-          });
-          return;
+        // Gibt die Einträge zurück, die auf Seite X angezeigt werden
+        function getPageEntries(page) {
+          const startIndex = (page - 1) * itemsPerPage;
+          return knowledge.slice(startIndex, startIndex + itemsPerPage);
         }
   
-        // Embed vorbereiten
-        const embed = new EmbedBuilder()
-          .setTitle('Suchergebnisse')
-          .setDescription(`Suchbegriff: \`${userQuery}\``)
-          .setColor('#3465a4');
+        // Embed erstellen
+        function createEmbed(page, pageEntries) {
+          const embed = new EmbedBuilder()
+            .setTitle(`Wissenseinträge – Seite ${page}/${totalPages}`)
+            .setColor('#345635');
   
-        // Wir zeigen max. 3 Ergebnisse
-        const maxResults = 3;
-        const actionRows = [];
+          // startIndex nötig, um aus globalIndexIdMap den richtigen Index zu errechnen
+          const startIndex = (page - 1) * itemsPerPage;
   
-        for (let i = 0; i < searchResult.length && i < maxResults; i++) {
-          const item = searchResult[i];
-          // Qdrant liefert item.id, item.score, item.payload, ...
-          const text = item.payload?.text || '*Kein Text*';
-          const score = item.score ? item.score.toFixed(3) : 'Keine';
-          const entryId = item.id; // Zum Bearbeiten/Löschen
-  
-          // Embed-Feld hinzufügen
-          embed.addFields({
-            name: `Ergebnis ${i + 1} (Genauigkeit: ${score})`,
-            value: text
+          pageEntries.forEach((item, idx) => {
+            const globalIndex = startIndex + idx;  // 0, 1, 2, ...
+            const displayIndex = globalIndex + 1;  // 1, 2, 3, ...
+            
+            embed.addFields({
+              name: `**Eintrag #${displayIndex}**`, 
+              value: item.payload.text && item.payload.text.length > 0
+                ? item.payload.text
+                : '*(Kein Inhalt)*'
+            });
           });
   
-          // Zwei Buttons pro Ergebnis:
-          const editButton = new ButtonBuilder()
-            .setCustomId(`edit_${entryId}`) // z. B. "edit_123"
-            .setLabel(`Bearbeiten`)
-            .setEmoji('✏️')
-            .setStyle(ButtonStyle.Primary);
-  
-          const deleteButton = new ButtonBuilder()
-            .setCustomId(`delete_${entryId}`) // z. B. "delete_123"
-            .setLabel(`Löschen`)
-            .setEmoji('❕')
-            .setStyle(ButtonStyle.Danger);
-  
-          const row = new ActionRowBuilder().addComponents(editButton, deleteButton);
-          actionRows.push(row);
+          return embed;
         }
   
-        // Nachricht mit Embed + Buttons (ephemeral)
-        // => Wir holen uns die Message zurück, um einen Collector dranzuhängen.
-        const msg = await interaction.editReply({
-          embeds: [embed],
-          components: actionRows
-        });
+        // Action Rows: pro Eintrag 1 Button + Navigationsbuttons
+        function createActionRows(page, pageEntries) {
+          const rows = [];
+          let row = new ActionRowBuilder();
+          let buttonsInRow = 0;
   
-        // ---------------------------------------------
-        // LOKALER COLLECTOR: Buttons "edit_" und "delete_"
-        // ---------------------------------------------
+          // startIndex wieder berechnen
+          const startIndex = (page - 1) * itemsPerPage;
+  
+          pageEntries.forEach((item, idx) => {
+            const globalIndex = startIndex + idx;
+            const displayIndex = globalIndex + 1;
+  
+            const actionButton = new ButtonBuilder()
+              .setCustomId(`action_${globalIndex}`)
+              .setLabel(`Eintrag #${displayIndex}`)
+              .setStyle(ButtonStyle.Secondary);
+  
+            row.addComponents(actionButton);
+            buttonsInRow++;
+  
+            // Max. 5 Buttons pro Row
+            if (buttonsInRow >= 5) {
+              rows.push(row);
+              row = new ActionRowBuilder();
+              buttonsInRow = 0;
+            }
+          });
+  
+          if (buttonsInRow > 0) {
+            rows.push(row);
+          }
+  
+          // Navigations-Row
+          const navRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId('prev_page')
+              .setLabel('Zurück')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(currentPage === 1),
+            new ButtonBuilder()
+              .setCustomId('next_page')
+              .setLabel('Weiter')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(currentPage === totalPages)
+          );
+          rows.push(navRow);
+  
+          return rows;
+        }
+  
+        // Seite aktualisieren
+        async function updatePage(page) {
+          currentPage = page;
+  
+          const pageEntries = getPageEntries(page);
+          const embed = createEmbed(page, pageEntries);
+          const components = createActionRows(page, pageEntries);
+  
+          await interaction.editReply({ embeds: [embed], components });
+        }
+  
+        // ------------------------
+        // Erste Seite laden
+        // ------------------------
+        await updatePage(currentPage);
+  
+        // Collector für Buttons
+        const msg = await interaction.fetchReply();
         const collector = msg.createMessageComponentCollector({
           componentType: ComponentType.Button,
-          time: 5 * 60 * 1000, // 5 Minuten
+          time: 5 * 60 * 1000 // 5 Minuten
         });
   
-        collector.on('collect', async (btnInteraction) => {
-          try {
-            // Nur der User, der den Command ausführte, darf klicken
-            if (btnInteraction.user.id !== interaction.user.id) {
-              return btnInteraction.reply({
-                content: 'Nur der ausführende User kann das nutzen.',
-                ephemeral: true
-              });
-            }
+        collector.on('collect', async (i) => {
+          // Nur der aufrufende User darf
+          if (i.user.id !== interaction.user.id) {
+            return i.reply({
+              content: 'Nur der ausführende User kann das nutzen.',
+              ephemeral: true
+            });
+          }
   
-            const customId = btnInteraction.customId;
-            
-            if (customId.startsWith('delete_')) {
-              // Hier kannst du .deferUpdate() oder .reply() verwenden
-              await btnInteraction.deferUpdate();
+          const { customId } = i;
   
-              const [entryId] = customId.split('_');
-              try {
-                await deleteEntry(interaction.guildId, entryId);
-                // Feedback an ephemeral-Message
-                await interaction.editReply({
-                  embeds: [info('Gelöscht', `Eintrag \`${entryId}\` wurde erfolgreich gelöscht.`)],
-                  components: [] // Buttons entfernen oder nur diesen Eintrag entfernen
-                });
-              } catch (err) {
-                Logger.error(`Fehler beim Löschen: ${err.message}`);
-                await interaction.editReply({
-                  embeds: [error('Fehler', 'Es gab einen Fehler beim Löschen.')],
-                });
+          // PAGINATION
+          if (customId === 'prev_page') {
+            // Achtung: Nicht showModal => wir können hier deferUpdate() machen
+            await i.deferUpdate();
+            if (currentPage > 1) await updatePage(currentPage - 1);
+            return;
+          }
+          if (customId === 'next_page') {
+            await i.deferUpdate();
+            if (currentPage < totalPages) await updatePage(currentPage + 1);
+            return;
+          }
+  
+          // Aktion-Button
+          if (customId.startsWith('action_')) {
+            // Bsp.: action_12  =>  globalIndex = 12
+            const [, globalIndexStr] = customId.split('_');
+            const globalIndex = parseInt(globalIndexStr, 10);
+  
+            // Aus dem Mapping die echte ID holen
+            const dbId = globalIndexIdMap[globalIndex];
+  
+            // Ephemeres Select-Menü schicken
+            // KEIN deferUpdate hier, weil wir gleich reply()n
+            const selectMenu = new StringSelectMenuBuilder()
+              .setCustomId(`select_${globalIndex}`)
+              .setPlaceholder('Wähle eine Aktion aus ...')
+              .addOptions(
+                new StringSelectMenuOptionBuilder({
+                  label: 'Bearbeiten',
+                  value: 'edit',
+                  emoji: '✏️'
+                }),
+                new StringSelectMenuOptionBuilder({
+                  label: 'Löschen',
+                  value: 'delete',
+                  emoji: '❕'
+                })
+              );
+  
+            const row = new ActionRowBuilder().addComponents(selectMenu);
+  
+            await i.reply({
+              content: `Aktionen für **Eintrag #${globalIndex + 1}**`,
+              components: [row],
+              ephemeral: true
+            });
+  
+            // Collector für das Select-Menü
+            const selectCollector = i.channel.createMessageComponentCollector({
+              componentType: ComponentType.StringSelect,
+              time: 60 * 1000 // 1 Minute
+            });
+  
+            selectCollector.on('collect', async (selectInteraction) => {
+              if (
+                selectInteraction.customId === `select_${globalIndex}` &&
+                selectInteraction.user.id === i.user.id
+              ) {
+                const chosen = selectInteraction.values[0]; // 'edit' oder 'delete'
+  
+                // ============= BEARBEITEN =============
+                if (chosen === 'edit') {
+                  const shortIndex = (globalIndex + 1).toString().padStart(2, '0'); 
+                  // Ersetzt: setTitle(`Bearbeiten #${dbId}`), da dbId zu lang sein könnte
+                  // Title max 45 Zeichen
+                  const modal = new ModalBuilder()
+                    .setCustomId(`edit_modal_${dbId}`)
+                    .setTitle(`Bearbeiten #${shortIndex}`);
+  
+                  const textInput = new TextInputBuilder()
+                    .setCustomId('description')
+                    .setLabel('Neuer Inhalt')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setRequired(true);
+  
+                  const modalRow = new ActionRowBuilder().addComponents(textInput);
+                  modal.addComponents(modalRow);
+  
+                  await selectInteraction.showModal(modal);
+  
+                // ============= LÖSCHEN =============
+                } else if (chosen === 'delete') {
+                  // showModal wäre hier egal, wir löschen direkt
+                  await selectInteraction.deferUpdate(); 
+                  try {
+                    await deleteEntry(interaction.guildId, dbId);
+  
+                    // Lokal auch löschen
+                    // Wir wissen, dass knowledge[globalIndex] = { id: dbId }
+                    knowledge.splice(globalIndex, 1);
+                    globalIndexIdMap.splice(globalIndex, 1);
+  
+                    totalEntries = knowledge.length;
+                    totalPages = Math.ceil(totalEntries / itemsPerPage);
+  
+                    // Seite anpassen, falls wir "über das Ziel" hinausschauen
+                    if (currentPage > totalPages && totalPages > 0) {
+                      currentPage = totalPages;
+                    }
+  
+                    // Info
+                    await interaction.editReply({
+                      embeds: [info('Deleted', `Eintrag #${globalIndex + 1} erfolgreich gelöscht.`)]
+                    });
+                    await updatePage(currentPage);
+  
+                  } catch (err) {
+                    Logger.error(`Fehler beim Löschen: ${err.message}`);
+                    await interaction.editReply({
+                      embeds: [error('Fehler', 'Konnte Eintrag nicht löschen.')],
+                    });
+                  }
+                }
+                // Select-Collector stoppen
+                selectCollector.stop();
               }
-            }
-          } catch (error) {
-            Logger.error(`Fehler in Collector-Interaktion: ${error.message}\n${error.stack}`);
-            if (!btnInteraction.deferred && !btnInteraction.replied) {
-              await btnInteraction.reply({
-                content: 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.',
-                ephemeral: true,
-              });
-            }
+            });
           }
         });
   
         collector.on('end', async () => {
-          // Alle Buttons deaktivieren, wenn Zeit abgelaufen
-          const disabledRows = actionRows.map((row) => {
+          // Buttons disablen, wenn Collector abgelaufen ist
+          const pageEntries = getPageEntries(currentPage);
+          const oldRows = createActionRows(currentPage, pageEntries);
+  
+          const disabledRows = oldRows.map((r) => {
             const newRow = new ActionRowBuilder();
-            row.components.forEach((comp) => {
-              const disabledBtn = ButtonBuilder.from(comp).setDisabled(true);
-              newRow.addComponents(disabledBtn);
+            r.components.forEach((component) => {
+              if (component.data && component.data.custom_id) {
+                const disabledBtn = ButtonBuilder.from(component).setDisabled(true);
+                newRow.addComponents(disabledBtn);
+              } else {
+                newRow.addComponents(component);
+              }
             });
             return newRow;
           });
   
           try {
-            await interaction.editReply({
-              components: disabledRows
-            });
+            await interaction.editReply({ components: disabledRows });
           } catch (err) {
             Logger.error(`Fehler beim Deaktivieren der Buttons: ${err.message}`);
           }
         });
   
       } catch (err) {
-        Logger.error(`Ein Fehler ist aufgetreten: ${err.message}\n${err.stack}`);
+        Logger.error(`Ein unerwarteter Fehler: ${err.message}\n${err.stack}`);
         try {
-          if (!interaction.replied) {
-            await interaction.editReply({
-              embeds: [
-                error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')
-              ]
-            });
-          }
+          await interaction.reply({
+            embeds: [error('Error', 'Ein unerwarteter Fehler ist aufgetreten.')],
+            ephemeral: true
+          });
         } catch (replyError) {
-          Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
+          Logger.error(`Fehler beim Error-Reply: ${replyError.message}`);
         }
       }
     },
