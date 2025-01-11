@@ -1,17 +1,13 @@
-const {
+const { 
     SlashCommandBuilder,
     EmbedBuilder,
     ButtonBuilder,
     ButtonStyle,
-    ActionRowBuilder,
-    ComponentType,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle
+    ActionRowBuilder
   } = require('discord.js');
-  const { error, info } = require('../../helper/embedHelper.js');
+  const { error } = require('../../helper/embedHelper.js');
   const Logger = require('../../helper/loggerHelper.js');
-  const { getData, deleteEntry, getEntry, editEntry } = require('../../Database/qdrant.js');
+  const { getData } = require('../../Database/qdrant.js');
   
   module.exports = {
     data: new SlashCommandBuilder()
@@ -19,7 +15,7 @@ const {
       .setDescription('Durchsuche die KI nach ähnlichen Informationen')
       .addStringOption(option =>
         option
-          .setName('query')
+          .setName('keyword')
           .setDescription('Der Suchbegriff oder deine Frage an die KI')
           .setRequired(true)
       ),
@@ -47,13 +43,16 @@ const {
         }
   
         // Suchbegriff aus dem Command
-        const userQuery = interaction.options.getString('query', true);
+        const userQuery = interaction.options.getString('keyword', true);
   
         // Qdrant-Collection: "guild_<GuildID>"
         const collectionName = `guild_${interaction.guild.id}`;
   
         // Ähnlichkeitssuche
         const searchResult = await getData(collectionName, userQuery);
+        // getData(...) gibt in deinem qdrant.js ein Array zurück (points)
+  
+        // Kein Ergebnis?
         if (!searchResult || searchResult.length === 0) {
           await interaction.editReply({
             embeds: [
@@ -74,18 +73,20 @@ const {
   
         // Wir zeigen max. 3 Ergebnisse
         const maxResults = 3;
+        // Array für unsere Action Rows
         const actionRows = [];
   
         for (let i = 0; i < searchResult.length && i < maxResults; i++) {
           const item = searchResult[i];
-          // Qdrant liefert item.id, item.score, item.payload, ...
+          // Qdrant liefert dir item.id, item.score, item.payload, ...
+          // Falls dein Text in item.payload.text steckt:
           const text = item.payload?.text || '*Kein Text*';
           const score = item.score ? item.score.toFixed(3) : 'Keine';
           const entryId = item.id; // Zum Bearbeiten/Löschen
   
           // Embed-Feld hinzufügen
           embed.addFields({
-            name: `Ergebnis ${i + 1} (Genauigkeit: ${score})`,
+            name: `Ergebnis ${i + 1} (Score: ${score})`,
             value: text
           });
   
@@ -93,13 +94,11 @@ const {
           const editButton = new ButtonBuilder()
             .setCustomId(`edit_${entryId}`) // z. B. "edit_123"
             .setLabel(`Bearbeiten`)
-            .setEmoji('✏️')
             .setStyle(ButtonStyle.Primary);
   
           const deleteButton = new ButtonBuilder()
             .setCustomId(`delete_${entryId}`) // z. B. "delete_123"
             .setLabel(`Löschen`)
-            .setEmoji('❕')
             .setStyle(ButtonStyle.Danger);
   
           const row = new ActionRowBuilder().addComponents(editButton, deleteButton);
@@ -107,85 +106,33 @@ const {
         }
   
         // Nachricht mit Embed + Buttons (ephemeral)
-        // => Wir holen uns die Message zurück, um einen Collector dranzuhängen.
-        const msg = await interaction.editReply({
+        await interaction.editReply({
           embeds: [embed],
           components: actionRows
         });
   
-        // ---------------------------------------------
-        // LOKALER COLLECTOR: Buttons "edit_" und "delete_"
-        // ---------------------------------------------
-        const collector = msg.createMessageComponentCollector({
-          componentType: ComponentType.Button,
-          time: 5 * 60 * 1000, // 5 Minuten
-        });
-  
-        collector.on('collect', async (btnInteraction) => {
-          try {
-            // Nur der User, der den Command ausführte, darf klicken
-            if (btnInteraction.user.id !== interaction.user.id) {
-              return btnInteraction.reply({
-                content: 'Nur der ausführende User kann das nutzen.',
-                ephemeral: true
-              });
-            }
-  
-            const customId = btnInteraction.customId;
-            
-            if (customId.startsWith('delete_')) {
-              // Hier kannst du .deferUpdate() oder .reply() verwenden
-              await btnInteraction.deferUpdate();
-  
-              const [entryId] = customId.split('_');
-              try {
-                await deleteEntry(interaction.guildId, entryId);
-                // Feedback an ephemeral-Message
-                await interaction.editReply({
-                  embeds: [info('Gelöscht', `Eintrag \`${entryId}\` wurde erfolgreich gelöscht.`)],
-                  components: [] // Buttons entfernen oder nur diesen Eintrag entfernen
-                });
-              } catch (err) {
-                Logger.error(`Fehler beim Löschen: ${err.message}`);
-                await interaction.editReply({
-                  embeds: [error('Fehler', 'Es gab einen Fehler beim Löschen.')],
-                });
-              }
-            }
-          } catch (error) {
-            Logger.error(`Fehler in Collector-Interaktion: ${error.message}\n${error.stack}`);
-            if (!btnInteraction.deferred && !btnInteraction.replied) {
-              await btnInteraction.reply({
-                content: 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.',
-                ephemeral: true,
-              });
-            }
-          }
-        });
-  
-        collector.on('end', async () => {
-          // Alle Buttons deaktivieren, wenn Zeit abgelaufen
-          const disabledRows = actionRows.map((row) => {
-            const newRow = new ActionRowBuilder();
-            row.components.forEach((comp) => {
-              const disabledBtn = ButtonBuilder.from(comp).setDisabled(true);
-              newRow.addComponents(disabledBtn);
-            });
-            return newRow;
-          });
-  
-          try {
-            await interaction.editReply({
-              components: disabledRows
-            });
-          } catch (err) {
-            Logger.error(`Fehler beim Deaktivieren der Buttons: ${err.message}`);
-          }
-        });
-  
+        // ------------------------------
+        // HINWEIS ZUM BUTTON-HANDLING:
+        // ------------------------------
+        // Du hast in deinem globalen Handler (interactionCreate oder ähnlich)
+        // etwa:
+        //
+        // else if (interaction.isButton()) {
+        //    if (interaction.customId.startsWith('edit_')) { ... }
+        //    if (interaction.customId.startsWith('delete_')) { ... }
+        // }
+        //
+        // Dort rufst du z.B. `editEntry`, zeigst ein Modal, usw.
+        // oder `deleteEntry`, um den Datensatz zu löschen.
+        // 
+        // --> Siehe dein existing "edit" / "delete" Button-Handler-Code.
+        // 
       } catch (err) {
         Logger.error(`Ein Fehler ist aufgetreten: ${err.message}\n${err.stack}`);
+  
+        // Fallback: Fehler an den Benutzer melden
         try {
+          // Falls noch nichts gesendet wurde
           if (!interaction.replied) {
             await interaction.editReply({
               embeds: [

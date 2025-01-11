@@ -5,12 +5,15 @@ const {
     TextInputStyle,
     ActionRowBuilder
 } = require('discord.js');
-const { editEntry, getEntry } = require('../Database/qdrant.js');
-const { info } = require('../helper/embedHelper.js');
+const { editEntry, getEntry, deleteEntry } = require('../Database/qdrant.js');
+const { info, error } = require('../helper/embedHelper.js');  // ggf. 'error' falls du Fehlermeldungen nutzen willst
 const Logger = require('../helper/loggerHelper.js');
 
 module.exports = async (client, interaction) => {
     try {
+        // ---------------------------------------
+        // 1) Slash Commands
+        // ---------------------------------------
         if (interaction.isCommand()) {
             const command = client.commands.get(interaction.commandName);
 
@@ -21,8 +24,8 @@ module.exports = async (client, interaction) => {
 
             try {
                 await command.execute(interaction);
-            } catch (error) {
-                Logger.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}: ${error.message}\n${error.stack}`);
+            } catch (err) {
+                Logger.error(`Fehler beim Ausführen des Befehls ${interaction.commandName}: ${err.message}\n${err.stack}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -32,6 +35,9 @@ module.exports = async (client, interaction) => {
                 }
             }
 
+        // ---------------------------------------
+        // 2) Select Menus
+        // ---------------------------------------
         } else if (interaction.isStringSelectMenu()) {
             const selectMenu = client.selectMenus.get(interaction.customId);
 
@@ -42,8 +48,8 @@ module.exports = async (client, interaction) => {
 
             try {
                 await selectMenu.execute(interaction);
-            } catch (error) {
-                Logger.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}: ${error.message}\n${error.stack}`);
+            } catch (err) {
+                Logger.error(`Fehler beim Ausführen des Select Menus ${interaction.customId}: ${err.message}\n${err.stack}`);
 
                 if (!interaction.deferred && !interaction.replied) {
                     await interaction.reply({
@@ -53,30 +59,42 @@ module.exports = async (client, interaction) => {
                 }
             }
 
+        // ---------------------------------------
+        // 3) Buttons
+        // ---------------------------------------
         } else if (interaction.isButton()) {
-            const button = client.buttons.get(interaction.customId);
-        
+            const { customId } = interaction;
+
+            // Falls du ein eigenes Buttons-Command-Objekt-Handling hast:
+            const button = client.buttons.get(customId);
             if (button) {
                 await button.execute(interaction);
+                return;
+            }
 
-            } else if (interaction.customId.startsWith('edit')) {
+            // ------ BEARBEITEN ------
+            if (customId.startsWith('edit_')) {
                 try {
-                    Logger.info(`Button Interaction gestartet: ${interaction.customId}`);
+                    Logger.info(`Button Interaction gestartet: ${customId}`);
 
-                    const entryId = interaction.customId.split('_')[1];
+                    const entryId = customId.split('_')[1];
                     const entry = await getEntry(entryId, interaction.guildId);
-
                     Logger.info('Gefundener Eintrag:', entry);
 
+                    // Modal erzeugen
                     const modal = new ModalBuilder()
                         .setCustomId(`edit_modal_${entryId}`)
                         .setTitle('Eintrag bearbeiten');
+
+                    const oldText = typeof entry?.text === 'string' 
+                        ? entry.text 
+                        : '';
 
                     const descriptionInput = new TextInputBuilder()
                         .setCustomId('description')
                         .setLabel('Beschreibung des Eintrags')
                         .setStyle(TextInputStyle.Paragraph)
-                        .setValue(entry.text || '');
+                        .setValue(oldText);
 
                     const row = new ActionRowBuilder().addComponents(descriptionInput);
                     modal.addComponents(row);
@@ -93,31 +111,69 @@ module.exports = async (client, interaction) => {
 
                     await interaction.showModal(modal);
 
-                } catch (error) {
-                    Logger.error(`Fehler im edit-Button-Handler: ${error.message}\n${error.stack}`);
+                } catch (err) {
+                    Logger.error(`Fehler im edit-Button-Handler: ${err.message}\n${err.stack}`);
+                    if (!interaction.deferred && !interaction.replied) {
+                        await interaction.reply({
+                            embeds: [error('Fehler', 'Beim Bearbeiten ist ein Fehler aufgetreten.')],
+                            ephemeral: true,
+                        });
+                    }
                 }
 
+            // ------ LÖSCHEN ------
+            } else if (customId.startsWith('delete_')) {
+                try {
+                    Logger.info(`Delete-Button geklickt: ${customId}`);
+                    const entryId = customId.split('_')[1];
+
+                    // Eintrag löschen
+                    await deleteEntry(interaction.guildId, entryId);
+
+                    // Evtl. willst du die Nachricht "aktualisieren" oder "löschen" usw.
+                    // Hier ein einfaches Feedback:
+                    await interaction.reply({
+                        embeds: [info('Gelöscht', `Der Eintrag mit ID \`${entryId}\` wurde erfolgreich gelöscht.`)],
+                        ephemeral: true,
+                    });
+                } catch (err) {
+                    Logger.error(`Fehler beim Löschen: ${err.message}\n${err.stack}`);
+                    if (!interaction.deferred && !interaction.replied) {
+                        await interaction.reply({
+                            embeds: [error('Fehler', 'Beim Löschen ist ein Fehler aufgetreten.')],
+                            ephemeral: true,
+                        });
+                    }
+                }
+
+            // ----- UNBEKANNTER BUTTON -----
             } else {
-                Logger.warn(`Kein Button Handler gefunden: ${interaction.customId}`);
+                Logger.warn(`Kein Button Handler gefunden: ${customId}`);
             }
 
-        } else if (interaction.isModalSubmit()) { 
+        // ---------------------------------------
+        // 4) Modals
+        // ---------------------------------------
+        } else if (interaction.isModalSubmit()) {
             Logger.info('Feld-IDs in diesem Modal:', interaction.fields.fields.map(f => f.customId));
-        
+
+            // BEARBEITEN: edit_modal_<ID>
             if (interaction.customId.startsWith('edit_modal_')) {
                 const splitted = interaction.customId.split('_');
                 const entryId = splitted[2];
+
+                // Den neuen Text aus dem Modal
                 const description = interaction.fields.getTextInputValue('description');
-                console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", description)
                 try {
+                    // In der editEntry-Funktion nun **nur** den String weitergeben
                     await editEntry(interaction.guildId, entryId, description);
 
                     await interaction.reply({
                         embeds: [info('Wissenseintrag', 'Der Wissenseintrag wurde erfolgreich aktualisiert')],
                         ephemeral: true,
                     });
-                } catch (error) {
-                    Logger.error(`Fehler beim Aktualisieren des Eintrags: ${error.message}\n${error.stack}`);
+                } catch (err) {
+                    Logger.error(`Fehler beim Aktualisieren des Eintrags: ${err.message}\n${err.stack}`);
 
                     if (!interaction.deferred && !interaction.replied) {
                         await interaction.reply({
@@ -136,12 +192,15 @@ module.exports = async (client, interaction) => {
                 }
             }
 
+        // ---------------------------------------
+        // 5) Unhandled Interaction
+        // ---------------------------------------
         } else {
             Logger.warn(`Unhandled interaction type: ${interaction.type}`);
         }
 
-    } catch (error) {
-        Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${error.message}\n${error.stack}`);
+    } catch (err) {
+        Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${err.message}\n${err.stack}`);
 
         if (!interaction.deferred && !interaction.replied) {
             try {
