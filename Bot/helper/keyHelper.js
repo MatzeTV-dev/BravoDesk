@@ -7,7 +7,7 @@ async function activateKey(key, guildID) {
         const result = await Call("CALL ActivateKey(?, ?)", [key, guildID]);
         return result;
     } catch (error) {
-        Logger.error(`Fehler bei activateKey: ${error.message}`);
+        Logger.error(`Fehler bei activateKey: ${error.message}\n${error.stack}`);
     }
 }
 
@@ -19,7 +19,7 @@ async function checkKeyExists(key) {
         Logger.info(`Ergebnisse von checkKeyExists: ${result}`);
         return result;
     } catch (error) {
-        Logger.error(`Fehler bei checkKeyExists: ${error.message}`);
+        Logger.error(`Fehler bei checkKeyExists: ${error.message}\n${error.stack}`);
         return null; // Fehlerfall
     }
 }
@@ -32,7 +32,7 @@ async function checkKeyActivated(key) {
         Logger.info(`Ergebnisse von checkKeyActivated: ${result}`);
         return result;
     } catch (error) {
-        Logger.error(`Fehler bei checkKeyActivated: ${error.message}`);
+        Logger.error(`Fehler bei checkKeyActivated: ${error.message}\n${error.stack}`);
         return null; // Fehlerfall
     }
 }
@@ -45,7 +45,7 @@ async function checkKeyValidity(key) {
         Logger.info(`Ergebnisse von checkKeyValidity: ${result}`);
         return result;
     } catch (error) {
-        Logger.error(`Fehler bei checkKeyValidity: ${error.message}`);
+        Logger.error(`Fehler bei checkKeyValidity: ${error.message}\n${error.stack}`);
         return null; // Fehlerfall
     }
 }
@@ -57,7 +57,7 @@ async function CheckDiscordIDWithKey(activationKey, discord_server_id) {
         Logger.info(`Ergebnisse von CheckDiscordIDWithKey: ${result}`);
         return result;
     } catch (error) {
-        Logger.error(`Fehler bei CheckDiscordIDWithKey: ${error.message}`);
+        Logger.error(`Fehler bei CheckDiscordIDWithKey: ${error.message}\n${error.stack}`);
         return null;
     }
 }

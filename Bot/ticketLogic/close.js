@@ -26,7 +26,7 @@ module.exports = {
             // Lösche den Kanal
             await channel.delete();
         } catch (error) {
-            Logger.error(`Fehler beim Schließen des Tickets (Kanal: ${channel.name}, ID: ${channel.id}): ${error.message}`);
+            Logger.error(`Fehler beim Schließen des Tickets (Kanal: ${channel.name}, ID: ${channel.id}): ${error.message}\n${error.stack}`);
 
             // Fehlerantwort an den Benutzer
             try {
@@ -37,7 +37,7 @@ module.exports = {
                     });
                 }
             } catch (replyError) {
-                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}`);
+                Logger.error(`Fehler beim Senden der Fehlermeldung: ${replyError.message}\n${replyError.stack}`);
             }
         }
     },

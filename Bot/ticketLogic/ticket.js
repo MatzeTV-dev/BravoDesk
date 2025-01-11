@@ -37,7 +37,7 @@ module.exports = {
                         Logger.warn(`Unbekannte Kategorie ausgewählt: ${value}`);
                 }
             } catch (error) {
-                Logger.error(`Fehler beim Erstellen des Tickets für Kategorie "${value}": ${error.message}`);
+                Logger.error(`Fehler beim Erstellen des Tickets für Kategorie "${value}": ${error.message}\n${error.stack}`);
             }
         }
 
@@ -117,6 +117,7 @@ async function createTicket(interaction, reason) {
                 '{category}': reason,
                 '{user_ID}': interaction.user.id,
                 '{username}': interaction.user.username,
+                '{support_type}': "KI",
             };
 
             processedEmbed.title = replacePlaceholders(processedEmbed.title, placeholders);
@@ -166,7 +167,7 @@ async function createTicket(interaction, reason) {
 
         Logger.info(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);
     } catch (errorCreatingTicket) {
-        Logger.error(`Fehler beim Erstellen des Tickets: ${errorCreatingTicket.message}`);
+        Logger.error(`Fehler beim Erstellen des Tickets: ${errorCreatingTicket.message}\n${errorCreatingTicket.stack}`);
         await interaction.followUp({
             content: 'Es gab einen Fehler beim Erstellen deines Tickets. Bitte kontaktiere einen Administrator.',
         });

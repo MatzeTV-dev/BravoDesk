@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder,
 const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey, } = require('../../helper/keyHelper.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
 const { error, success, warning, info } = require('../../helper/embedHelper.js');
+const { generateCollection } = require('../../Database/qdrant.js');
 const Logger = require('../../helper/loggerHelper.js');
 const fs = require('fs');
 
@@ -97,7 +98,8 @@ module.exports = {
                 await createRoles(interaction);
                 await createChannel(interaction);
                 await createCategories(interaction);
-
+                await generateCollection("guild_" + interaction.guild.id);
+                
                 // Speichere in der Datenbank
                 await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
 
@@ -110,7 +112,7 @@ module.exports = {
                 });
             }
         } catch (error) {
-            Logger.error(`Error during setup: ${error.message}`);
+            Logger.error(`Error during setup: ${error.message}\n${error.stack}`);
 
             // Rollback bei Fehlern
             await rollbackSetup(interaction);
@@ -239,7 +241,7 @@ async function createChannel(interaction) {
         });
         Logger.success(`${guild.name}: Embed sent to channel: ${channel.id}`);
     } catch (error) {
-        Logger.error(`${guild.name}: Error sending embed: ${error.message}`);
+        Logger.error(`${guild.name}: Error sending embed: ${error.message}\n${error.stack}`);
     }
 }
 
@@ -299,7 +301,7 @@ async function rollbackSetup(interaction) {
 
         Logger.info('Rollback completed successfully.');
     } catch (error) {
-        Logger.error(`Error during rollback: ${error.message}`);
+        Logger.error(`Error during rollback: ${error.message}\n${error.stack}`);
     }
 }
 
@@ -309,6 +311,6 @@ async function saveDatabase(server_id, ticket_system_channel_id, ticket_category
         await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id);
         Logger.success(`Database saved for server ID: ${server_id}`);
     } catch (error) {
-        Logger.error(`Error saving to database: ${error.message}`);
+        Logger.error(`Error saving to database: ${error.message}\n${error.stack}`);
     }
 }

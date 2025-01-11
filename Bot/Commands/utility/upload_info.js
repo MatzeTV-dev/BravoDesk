@@ -47,7 +47,7 @@ module.exports = {
 
             if (checkArray.length > 10) {
                 await interaction.editReply({
-                    embeds: [error('Error!', 'Die Maximale Wortlänge beträgt 10 Wörter.')],
+                    embeds: [error('Error!', `Die Maximale Wortlänge beträgt 10 Wörter. \n ${interaction.options.getString('daten')}`)],
                 });
                 return;
             }
