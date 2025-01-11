@@ -57,7 +57,7 @@ module.exports = {
             const longWordMatch = string.match(/\b\w{21,}\b/);
             if (longWordMatch) {
                 await interaction.editReply({
-                    embeds: [error('Error!', `Ein Wort ist zu lang: "${longWordMatch[0]}". Maximale Wortlänge beträgt 10 Zeichen. \n ${interaction.options.getString('daten')`)],
+                    embeds: [error('Error!', `Ein Wort ist zu lang: "${longWordMatch[0]}". Maximale Wortlänge beträgt 10 Zeichen. \n ${interaction.options.getString('daten')}`)],
                 });
                 return;
             }
