@@ -1,5 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const Logger = require('../helper/loggerHelper.js');
+const { info } = require('../helper/embedHelper.js');
+
 
 module.exports = {
     data: {
@@ -19,7 +21,21 @@ module.exports = {
         }
 
         try {
-            const fetchedMessages = await channel.messages.fetch({ limit: 10 });
+            // Überprüfung, ob die Nachricht bereits im Kanal existiert
+            const fetchedMessages = await channel.messages.fetch({ limit: 100 });
+            const existingMessage = fetchedMessages.find(msg => 
+                msg.content.includes('Alles klar, ein menschlicher') // Prüft auf den eindeutigen Text
+            );
+
+            if (existingMessage) {
+                await interaction.reply({
+                    embeds: [info('Achtung', 'Es wurde bereits ein menschlicher Supporter informiert, bitte habe etwas geduld!')],
+                    ephemeral: true,
+                });
+                return;
+            }
+
+            // Nachrichten abrufen und das älteste bearbeiten
             const oldestMessage = fetchedMessages.last();
 
             if (!oldestMessage) {
@@ -46,8 +62,7 @@ module.exports = {
                 }
             }
 
-            const roleName = 'Supporter';  // Beispiel: 'Admin'
-            const role = guild.roles.cache.find(r => r.name === roleName);
+            const role = guild.roles.cache.find(r => r.name === 'Supporter');
 
             await channel.send(`Alles klar, ein menschlicher <@&${role.id}> wird das Ticket übernehmen!`);
 
