@@ -205,7 +205,8 @@ client.once(Events.ClientReady, async () => {
                                                        
        `);
     
-        Logger.info(`Eingeloggt als ${client.user.tag}`);
+    Logger.info("Version: 1.0.0");
+    Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
     //await registerCommands(testGuildId);
