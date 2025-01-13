@@ -62,7 +62,7 @@ module.exports = {
                 await activateKey(interaction.options.getString('key'), guild.id);
 
                 await interaction.editReply({
-                    embeds: [success('Key activated', 'The key has been activated and is 30 Days valid.')]
+                    embeds: [success('Key activated', 'The key has been activated.')]
                 });
             }
 
