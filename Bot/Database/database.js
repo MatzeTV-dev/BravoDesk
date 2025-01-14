@@ -1,4 +1,3 @@
-// Datei: database.js
 const { exec } = require('child_process');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
@@ -22,20 +21,20 @@ async function checkDatabaseStatus() {
     Logger.success('Database is online.');
     return true; // Gibt `true` zurück, wenn die Abfrage erfolgreich ist
   } catch (error) {
-    Logger.error(`Error at database connection test: ${error.message}`);
+    Logger.error(`Error at database connection test: ${error.message}\n${error.stack}`);
 
     // Versuche, die Datenbank durch eine .bat-Datei zu starten
     try {
       Logger.warn('Database offline. Trying to start...');
       exec('start C:/xampp/mysql_start.bat', (err, stdout, stderr) => {
         if (err) {
-          Logger.error(`Error opening the .bat-File: ${err.message}`);
+          Logger.error(`Error opening the .bat-File: ${err.message}\n${err.stack}`);
           return;
         }
         Logger.success(`Database started successfully: ${stdout}`);
       });
     } catch (batError) {
-      Logger.error(`Error at starting the Database: ${batError.message}`);
+      Logger.error(`Error at starting the Database: ${batError.message}\n${batError.stack}`);
     }
 
     return false; // Fehler beim Prüfen der Datenbankverbindung
@@ -51,7 +50,7 @@ async function saveServerInformation(server_id, ticket_system_channel_id, ticket
     );
     Logger.success('Serverinformationen erfolgreich gespeichert!');
   } catch (error) {
-    Logger.error(`Fehler beim Speichern der Serverinformationen: ${error.message}`);
+    Logger.error(`Fehler beim Speichern der Serverinformationen: ${error.message}\n${error.stack}`);
     throw error; // Fehler weiterwerfen, falls benötigt
   }
 }
@@ -66,7 +65,7 @@ async function getServerInformation(discord_server_id) {
     Logger.success('Serverinformationen erfolgreich abgerufen!');
     return data;
   } catch (error) {
-    Logger.error(`Fehler beim Abrufen der Serverinformationen: ${error.message}`);
+    Logger.error(`Fehler beim Abrufen der Serverinformationen: ${error.message}\n${error.stack}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -79,7 +78,7 @@ async function chefIfServerExists(input_id) {
     Logger.info(`Existenzprüfung abgeschlossen: ${result.exists_flag}`);
     return Boolean(result.exists_flag);
   } catch (error) {
-    Logger.error(`Fehler bei der Existenzprüfung des Servers: ${error.message}`);
+    Logger.error(`Fehler bei der Existenzprüfung des Servers: ${error.message}\n${error.stack}`);
     return false; // Rückgabe von `false` bei Fehlern
   }
 }
@@ -91,7 +90,7 @@ async function Select(statement, dataInput) {
     Logger.success('Daten erfolgreich abgerufen!');
     return rows;
   } catch (error) {
-    Logger.error(`Fehler beim Abrufen von Daten: ${error.message}`);
+    Logger.error(`Fehler beim Abrufen von Daten: ${error.message}\n${error.stack}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -103,7 +102,7 @@ async function Delete(statement, dataInput) {
     Logger.success('Daten erfolgreich gelöscht!');
     return result; // Gibt das Lösch-Ergebnis zurück
   } catch (error) {
-    Logger.error(`Fehler beim Löschen von Daten: ${error.message}`);
+    Logger.error(`Fehler beim Löschen von Daten: ${error.message}\n${error.stack}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -116,7 +115,7 @@ async function Call(statement, dataInput, SelectStatement) {
     const [rows] = await pool.query(SelectStatement);
     return rows[0];
   } catch (error) {
-    Logger.error(`Fehler beim Aufrufen vom Stored Procedure: ${error.message}`);
+    Logger.error(`Fehler beim Aufrufen vom Stored Procedure: ${error.message}\n${error.stack}`);
     return null; // Rückgabe von `null` bei Fehlern
   }
 }
@@ -128,7 +127,7 @@ async function Insert(statement, dataInput) {
     Logger.success('Neuer Datensatz erfolgreich eingefügt!');
     return result; // Enthält u. a. insertId
   } catch (error) {
-    Logger.error(`Fehler beim Einfügen von Daten: ${error.message}`);
+    Logger.error(`Fehler beim Einfügen von Daten: ${error.message}\n${error.stack}`);
     return null;
   }
 }
