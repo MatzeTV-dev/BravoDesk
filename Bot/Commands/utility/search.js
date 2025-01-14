@@ -12,7 +12,7 @@ const {
   module.exports = {
     data: new SlashCommandBuilder()
       .setName('search')
-      .setDescription('Durchsuche die KI nach ähnlichen Informationen')
+      .setDescription('Durchsucht die KI nach bestimmten Informationen')
       .addStringOption(option =>
         option
           .setName('keyword')
