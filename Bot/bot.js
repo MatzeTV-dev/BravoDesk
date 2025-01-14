@@ -9,6 +9,11 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+  
+
 // Discord-Client initialisieren
 const client = new Client({
     intents: [
