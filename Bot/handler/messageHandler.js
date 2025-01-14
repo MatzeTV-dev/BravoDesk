@@ -217,6 +217,7 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 // Nachricht an die AI schicken
 async function sendMessagesToAI(messages, lastMessage, category) {
     let knowledgeBaseText = '';
+    let knowledgebasetextTwo = '';
 
     try {
         const collectionName = `guild_${lastMessage.guild.id}`;
@@ -225,7 +226,7 @@ async function sendMessagesToAI(messages, lastMessage, category) {
 
         if (data && data.length > 0) {
             knowledgeBaseText = data.map(item => item.payload.text).join('\n');
-            knowledgeBaseText = dataTwo.map(item => item.payload.text).join('\n');
+            knowledgebasetextTwo = dataTwo.map(item => item.payload.text).join('\n');
             Logger.debug(knowledgeBaseText);
         } else {
             knowledgeBaseText = "Nichts passendes gefunden!";
@@ -246,6 +247,7 @@ async function sendMessagesToAI(messages, lastMessage, category) {
             
             Zusätzliches Wissen:
             ${knowledgeBaseText}
+            ${knowledgebasetextTwo}
             
             Antworte auf technische Fragen und biete technische Unterstützung für FiveM an.
         `,
@@ -300,7 +302,8 @@ async function sendMessagesToAI(messages, lastMessage, category) {
     };
 
     const systemPrompt = prompts[category] || prompts.unknown;
-    Logger.info('Generierter Systemprompt:', systemPrompt);
+    Logger.info('Generierter Systemprompt:');
+    Logger.info (systemPrompt);
 
     try {
         const response = await axios.post(
