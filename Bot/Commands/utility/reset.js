@@ -7,7 +7,7 @@ const Logger = require('../../helper/loggerHelper.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('reset')
-        .setDescription('Delete Everything from the AI and all channels + roles'),
+        .setDescription('Löscht alle Wissenseinträge, Rollen und erstellen channel von BravoDesk.'),
     async execute(interaction) {
         const guild = interaction.guild;
 

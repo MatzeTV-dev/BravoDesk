@@ -16,7 +16,7 @@ var kiadminRoleID = '';
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setup')
-        .setDescription('Starts the automatic setup of the Discord Bot')
+        .setDescription('Startet den automatischen setup Prozess.')
         .addStringOption((option) =>
             option
                 .setName('key')
