@@ -1,7 +1,7 @@
 const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField, Partials } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
-const { checkDatabaseStatus } = require('./Database/database.js');
+const { initializeDatabaseConnection } = require('./Database/database.js');
 const Logger = require('./helper/loggerHelper.js');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -186,15 +186,16 @@ client.on(Events.GuildCreate, async guild => {
 });
 
 
-client.once(Events.ClientReady, async () => {
-    checkDatabaseStatus();
-    
+client.once(Events.ClientReady, async () => {    
     // Status und Aktivität setzen
     client.user.setPresence({
         //activities: [{ name: 'other ticket systems', type: 5 }], // type 0 = PLAYING
         status: 'dnd', // Status: 'online', 'idle', 'dnd', 'invisible'
     });
     
+    //Herstellung der DB Verbindung
+    initializeDatabaseConnection();
+
     console.log(`
         ______                     ______          _    
        | ___ \\                    |  _  \\        | |   
