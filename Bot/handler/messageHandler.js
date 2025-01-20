@@ -218,8 +218,8 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 async function sendMessagesToAI(messages, lastMessage, category) {
     let knowledgeBaseText = '';
     let knowledgebasetextTwo = '';
-
     try {
+        lastMessage.channel.sendTyping();
         const collectionName = `guild_${lastMessage.guild.id}`;
         const data = await getData(collectionName, lastMessage.content);
         const dataTwo = await getData("GeneralInformation", lastMessage.content);
