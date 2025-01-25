@@ -8,18 +8,20 @@ const openAiApiKey = process.env.OPENAI_API_KEY;
 const makeApiRequest = async () => {
     try {
         const response = await axios.post(
-            process.env.OPENAI_URL,
-            {
-                model: 'text-davinci-003',
-                prompt: 'Dies ist ein Testaufruf.',
-                max_tokens: 50,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${openAiApiKey}`,
-                },
-            }
-        );
+                    process.env.OPENAI_URL,
+                    {
+                        model: process.env.MODELL,
+                        messages: [
+                            { role: 'user', content: "Test" },
+                        ],
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                        },
+                    }
+                );
 
         const message = response.data.choices[0].text.trim();
         parentPort.postMessage(`API Antwort: ${message}`);
