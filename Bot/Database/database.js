@@ -54,9 +54,9 @@ async function executeQuery(query, params = []) {
 }
 
 // Funktion: Daten speichern oder aktualisieren
-async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id) {
-  const query = `CALL Save_Server_Information(?, ?, ?, ?, ?)`;
-  await executeQuery(query, [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id]);
+async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id) {
+  const query = `CALL Save_Server_Information(?, ?, ?, ?, ?, ?)`;
+  await executeQuery(query, [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id]);
   Logger.success('Server information saved successfully!');
 }
 
@@ -73,7 +73,9 @@ async function chefIfServerExists(input_id) {
   const queryCheck = `CALL Check_If_Server_Exists(?, @exists_flag)`;
   const queryResult = `SELECT @exists_flag AS exists_flag`;
   await executeQuery(queryCheck, [input_id]);
-  const [[result]] = await executeQuery(queryResult);
+  console.log(await executeQuery(queryResult));
+  const [result] = await executeQuery(queryResult);
+  
   Logger.info(`Server existence check: ${result.exists_flag}`);
   return Boolean(result.exists_flag);
 }
