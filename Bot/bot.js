@@ -13,12 +13,12 @@ const worker = new Worker('../Bot/Threads/openai-keep-alive.js');
 
 // Nachrichten vom Worker empfangen
 worker.on('message', (message) => {
-    Logger.info('Nachricht vom OpenAI Keep Alive thread:', message);
+    Logger.info(`Nachricht vom OpenAI Keep Alive thread: ${message}`);
 });
 
 // Fehler im Worker-Thread behandeln
 worker.on('error', (err) => {
-    Logger.error('Error vom OpenAI Keep Alive thread:', err);
+    Logger.error(`Error vom OpenAI Keep Alive thread: ${err}`);
 });
 
 // Wenn der Worker beendet wird
@@ -224,7 +224,7 @@ client.once(Events.ClientReady, async () => {
                                                        
        `);
     
-    Logger.info("Version: 1.0.1");
+    Logger.info("Version: 1.0.5");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
