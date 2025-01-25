@@ -16,8 +16,6 @@ async function initializeDatabaseConnection() {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      connectTimeout: 10000, // 10 Sekunden Verbindungs-Timeout
-      acquireTimeout: 10000, // 10 Sekunden Wartezeit beim Abrufen einer Verbindung
     });
 
     // Event-Handler für neue Verbindungen
