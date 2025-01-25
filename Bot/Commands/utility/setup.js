@@ -11,6 +11,7 @@ var guildID = '';
 var ticketChannelID = '';
 var ticketCategoryID = '';
 var supportRoleID = '';
+var ticketArchivCategoryID = '';
 var kiadminRoleID = '';
 
 module.exports = {
@@ -101,7 +102,7 @@ module.exports = {
                 await generateCollection("guild_" + interaction.guild.id);
                 
                 // Speichere in der Datenbank
-                await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID);
+                await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID, ticketArchivCategoryID);
 
                 await interaction.editReply({
                     embeds: [info('Setup Process!', 'Setup completed successfully!')]
@@ -248,7 +249,7 @@ async function createChannel(interaction) {
 // Funktion: Kategorien erstellen
 async function createCategories(interaction) {
     const guild = interaction.guild;
-    const categoryName = 'tickets';
+    var categoryName = 'tickets';
     let category = guild.channels.cache.find(
         (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryName
     );
@@ -269,6 +270,31 @@ async function createCategories(interaction) {
     } else {
         Logger.info(`${guild.name}: Category already exists: ${category.id}`);
     }
+
+    var categoryArchivName = 'archiv';
+    let categoryArchiv = guild.channels.cache.find(
+        (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryArchivName
+    );
+
+    if(!categoryArchiv) {
+        categoryArchiv = await guild.channels.create({
+            name: categoryArchivName,
+            type: ChannelType.GuildCategory,
+            permissionOverwrites: [
+                {
+                    id: guild.roles.everyone,
+                    deny: [
+                        PermissionsBitField.Flags.ViewChannel,
+                        PermissionsBitField.Flags.SendMessages,
+                    ],
+                },
+            ],
+        });
+        ticketArchivCategoryID = categoryArchiv.id;
+        Logger.success(`${guild.name}: Created category: ${categoryArchiv.id}`);
+    } else {
+        Logger.info(`${guild.name}: Category already exists: ${categoryArchiv.id}`);
+    }
 }
 
 // Funktion: Rollback bei Fehlern
@@ -286,6 +312,11 @@ async function rollbackSetup(interaction) {
         if(ticketCategoryID) {
             const category = guild.channels.cache.get(ticketCategoryID);
             if(category) await category.delete();
+        }
+
+        if(ticketArchivCategoryID) {
+            const categoryArchiv = guild.channels.cache.get(ticketArchivCategoryID);
+            if(categoryArchiv) await categoryArchiv.delete();
         }
 
         // Löschen der Rollen
@@ -306,9 +337,9 @@ async function rollbackSetup(interaction) {
 }
 
 // Funktion: Datenbank speichern
-async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id) {
+async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id, ticket_archiv_category_id) {
     try {
-        await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id);
+        await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id, ticket_archiv_category_id);
         Logger.success(`Database saved for server ID: ${server_id}`);
     } catch (error) {
         Logger.error(`Error saving to database: ${error.message}\n${error.stack}`);
