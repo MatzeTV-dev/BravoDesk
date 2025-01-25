@@ -3,11 +3,29 @@ const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
 const { initializeDatabaseConnection } = require('./Database/database.js');
 const Logger = require('./helper/loggerHelper.js');
+const { Worker } = require('worker_threads');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
 
 dotenv.config();
+const worker = new Worker('../Bot/Threads/openai-keep-alive.js');
+
+// Nachrichten vom Worker empfangen
+worker.on('message', (message) => {
+    Logger.info('Nachricht vom OpenAI Keep Alive thread:', message);
+});
+
+// Fehler im Worker-Thread behandeln
+worker.on('error', (err) => {
+    Logger.error('Error vom OpenAI Keep Alive thread:', err);
+});
+
+// Wenn der Worker beendet wird
+worker.on('exit', (code) => {
+    Logger.warn(`Exit vom OpenAI Keep Alive thread: ${code}`);
+});
+
 
 // Discord-Client initialisieren
 const client = new Client({
