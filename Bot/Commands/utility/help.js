@@ -5,7 +5,7 @@ const Logger = require('../../helper/loggerHelper.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('help')
-        .setDescription('Lösche Informationen aus der KI'),
+        .setDescription('zeigt alle commands und deren Beschreibungen an'),
     async execute(interaction) {
         try {
             // deferReply mit ephemeral: true
@@ -21,12 +21,12 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setTitle('**Befehlsliste**')
                 .addFields(
-                    { name: '**/list**', value: 'Zeige alle Daten im Wissensspeicher der KI an' },
-                    { name: '**/reset**', value: 'Löscht alles und setzt es zurück' },
-                    { name: '**/setup**', value: 'Initiale Einrichtung' },
-                    { name: '**/upload**', value: 'Daten in den Wissensspeicher der KI eintragen' },
-                    { name: '**/search**', value: 'Bestimmte Daten suchen' },
-                    { name: '**/help**', value: 'Zeigt diese Information an' }
+                    { name: '**/list**', value: 'Listet alle Wissenseinträge der KI auf.' },
+                    { name: '**/reset**', value: 'Löscht alle Wissenseinträge, Rollen und erstellten cahnnel von BravoDesk.' },
+                    { name: '**/setup**', value: 'Startet den automatischen setup Prozess.' },
+                    { name: '**/upload**', value: 'Ladet neues Wissen in das KI Brain hoch.' },
+                    { name: '**/search**', value: 'Durchsucht die KI nach bestimmten Informationen' },
+                    { name: '**/help**', value: 'zeigt alle commands und deren Beschreibungen an.' }
                 )
                 .setColor("#345635");
 

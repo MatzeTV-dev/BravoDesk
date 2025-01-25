@@ -1,13 +1,31 @@
 const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField, Partials } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
-const { checkDatabaseStatus } = require('./Database/database.js');
+const { initializeDatabaseConnection } = require('./Database/database.js');
 const Logger = require('./helper/loggerHelper.js');
+const { Worker } = require('worker_threads');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
 
 dotenv.config();
+const worker = new Worker('../Bot/Threads/openai-keep-alive.js');
+
+// Nachrichten vom Worker empfangen
+worker.on('message', (message) => {
+    Logger.info(`Nachricht vom OpenAI Keep Alive thread: ${message}`);
+});
+
+// Fehler im Worker-Thread behandeln
+worker.on('error', (err) => {
+    Logger.error(`Error vom OpenAI Keep Alive thread: ${err}`);
+});
+
+// Wenn der Worker beendet wird
+worker.on('exit', (code) => {
+    Logger.warn(`Exit vom OpenAI Keep Alive thread: ${code}`);
+});
+
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -191,15 +209,16 @@ client.on(Events.GuildCreate, async guild => {
 });
 
 
-client.once(Events.ClientReady, async () => {
-    checkDatabaseStatus();
-    
+client.once(Events.ClientReady, async () => {    
     // Status und Aktivität setzen
     client.user.setPresence({
         //activities: [{ name: 'other ticket systems', type: 5 }], // type 0 = PLAYING
         status: 'dnd', // Status: 'online', 'idle', 'dnd', 'invisible'
     });
     
+    //Herstellung der DB Verbindung
+    initializeDatabaseConnection();
+
     console.log(`
         ______                     ______          _    
        | ___ \\                    |  _  \\        | |   
@@ -210,7 +229,7 @@ client.once(Events.ClientReady, async () => {
                                                        
        `);
     
-    Logger.info("Version: 1.0.0");
+    Logger.info("Version: 1.0.7");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID

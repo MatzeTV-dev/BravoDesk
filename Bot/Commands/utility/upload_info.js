@@ -6,7 +6,7 @@ const Logger = require('../../helper/loggerHelper.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('upload')
-        .setDescription('Lade Informationen in die KI hoch')
+        .setDescription('Ladet neues Wissen in das KI Brain hoch.')
         .addStringOption((option) =>
             option
                 .setName('daten')

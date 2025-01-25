@@ -7,7 +7,7 @@ const Logger = require('../../helper/loggerHelper.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('reset')
-        .setDescription('Delete Everything from the AI and all channels + roles'),
+        .setDescription('Löscht alle Wissenseinträge, Rollen und erstellen channel von BravoDesk.'),
     async execute(interaction) {
         const guild = interaction.guild;
 
@@ -122,6 +122,15 @@ module.exports = {
                 } else {
                     Logger.info(`Rolle mit der ID ${data.kiadmin_role_id} wurde nicht gefunden.`);
                 }
+
+                const categoryArchiv = guild.channels.cache.get(data.ticket_archiv_category_id);
+                if (category) {
+                    await categoryArchiv.delete();
+                    Logger.success(`Kategorie mit der ID ${data.ticket_archiv_category_id} gelöscht.`);
+                } else {
+                    Logger.info(`Kategorie mit der ID ${data.ticket_archiv_category_id} wurde nicht gefunden.`);
+                }
+
             } catch (resourceError) {
                 Logger.error(`Fehler beim Löschen von Ressourcen: ${resourceError.message}\n${resourceError.stack}`);
                 await interaction.editReply({
