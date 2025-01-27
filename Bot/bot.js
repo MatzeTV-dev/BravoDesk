@@ -27,6 +27,11 @@ worker.on('exit', (code) => {
 });
 
 
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+  
+
 // Discord-Client initialisieren
 const client = new Client({
     intents: [
@@ -223,7 +228,7 @@ client.once(Events.ClientReady, async () => {
        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
                                                        
        `);
-    
+
     Logger.info("Version: 1.1.7");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 

@@ -348,8 +348,6 @@ async function sendMessagesToAI(messages, lastMessage, category) {
 
     const systemPrompt = prompts[category] || prompts.unknown;
 
-    console.log(systemPrompt)
-
     try {
         const response = await axios.post(
             process.env.OPENAI_URL,
