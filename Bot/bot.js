@@ -228,8 +228,8 @@ client.once(Events.ClientReady, async () => {
        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
                                                        
        `);
-    
-    Logger.info("Version: 1.1.0");
+  
+    Logger.info("Version: 1.1.7");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID

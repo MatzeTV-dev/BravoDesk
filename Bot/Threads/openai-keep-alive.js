@@ -8,25 +8,38 @@ const openAiApiKey = process.env.OPENAI_API_KEY;
 const makeApiRequest = async () => {
     try {
         const response = await axios.post(
-                    process.env.OPENAI_URL,
-                    {
-                        model: process.env.MODELL,
-                        messages: [
-                            { role: 'user', content: "Test" },
-                        ],
-                    },
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                        },
-                    }
-                );
+            process.env.OPENAI_URL,
+            {
+                model: process.env.MODELL,
+                messages: [
+                    { role: 'user', content: "Test" },
+                ],
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+            }
+        );
 
-        const message = response.data.choices[0].text.trim();
-        parentPort.postMessage(`API Antwort: ${message}`);
+        // API-Antwort prüfen und extrahieren
+        if (
+            response.data &&
+            response.data.choices &&
+            response.data.choices.length > 0 &&
+            response.data.choices[0].message &&
+            typeof response.data.choices[0].message.content === 'string'
+        ) {
+            const message = response.data.choices[0].message.content.trim();
+            parentPort.postMessage(`API Antwort: ${message}`);
+        } else {
+            parentPort.postMessage('Fehler: Unerwartetes API-Antwortformat.');
+            console.error('Unerwartetes API-Antwortformat:', response.data);
+        }
     } catch (error) {
         parentPort.postMessage(`Fehler bei der API-Anfrage: ${error.message}`);
+        console.error('Fehlerdetails:', error.response ? error.response.data : error.message);
     }
 };
 
