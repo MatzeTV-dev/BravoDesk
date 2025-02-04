@@ -122,10 +122,15 @@ module.exports = async (client, message) => {
 
 async function isAiSupportTicket(channel) {
     try {
-        const fetchedMessages = await channel.messages.fetch({ limit: 10 });
-        const oldestMessage = fetchedMessages.last();
+        // Nachrichtenverlauf abrufen und die erste Nachricht bestimmen
+        const fetchedMessages = await channel.messages.fetch({ limit: 1, after: "0" });
+        const firstMessage = fetchedMessages.first();
 
-        const embed = oldestMessage.embeds[0];
+        if (!firstMessage || firstMessage.embeds.length === 0) {
+            return false;
+        }
+
+        const embed = firstMessage.embeds[0];
         const embedData = embed.toJSON();
 
         if (embedData.fields) {
