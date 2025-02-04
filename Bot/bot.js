@@ -166,7 +166,12 @@ client.on(Events.GuildCreate, async guild => {
     
     // Wichtige Berechtigungen definieren
     const requiredPermissions = [
-        PermissionsBitField.Flags.Administrator
+        PermissionsBitField.Flags.ManageRoles,
+        PermissionsBitField.Flags.ManageChannels,
+        PermissionsBitField.Flags.ViewChannel,
+        PermissionsBitField.Flags.SendMessages,
+        PermissionsBitField.Flags.ManageMessages,
+        PermissionsBitField.Flags.EmbedLinks,
     ];
 
     // Berechtigungen des Bots im Server überprüfen
@@ -186,16 +191,21 @@ client.on(Events.GuildCreate, async guild => {
                 // Fehlende Berechtigungen in Klartext konvertieren
                 const missingPermissionsNames = missingPermissions.map(perm => {
                     switch (perm) {
-                        case PermissionsBitField.Flags.Administrator: return 'Administrator';
+                        case PermissionsBitField.Flags.ManageRoles: return 'Manage Roles';
+                        case PermissionsBitField.Flags.ManageChannels: return 'Manage Channels';
+                        case PermissionsBitField.Flags.ViewChannel: return 'View Channels';
+                        case PermissionsBitField.Flags.SendMessages: return 'Send Messages';
+                        case PermissionsBitField.Flags.ManageMessages: return 'Manage Messages';
+                        case PermissionsBitField.Flags.EmbedLinks: return 'Embed Links';
                         default: return `Unbekannte Berechtigung (${perm})`;
                     }
                 });
 
                 // Nachricht an den Server-Inhaber senden
                 await owner.send(
-                    `Hallo, ich bin dem Server "${guild.name}" beigetreten, aber mir fehlen folgende Berechtigungen, um ordnungsgemäß zu funktionieren:\n` +
-                    `${missingPermissionsNames.map(name => `- ${name}`).join('\n')}\n` +
-                    `Bitte überprüfe meine Berechtigungen und füge die fehlenden hinzu, damit ich meine Funktionen korrekt ausführen kann. Vielen Dank!`
+                    `Hallo, ich bin dem Server "${guild.name}" beigetreten, aber mir fehlen ein paar Berechtigungen, um ordnungsgemäß zu funktionieren\n` +
+                    `Kick mich nocheinmal und gib mir alle Notwendigen Rechte damit ich funktioniere! Hier ist eine List mit den fehlenden Rechten: \n\n` +
+                    `${missingPermissionsNames.map(name => `- ${name}`).join('\n')}`
                 );
                 Logger.info(`Nachricht an den Inhaber des Servers "${guild.name}" gesendet.`);
             }
@@ -229,7 +239,7 @@ client.once(Events.ClientReady, async () => {
                                                        
        `);
   
-    Logger.info("Version: 1.1.8");
+    Logger.info("Version: 1.1.9");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
