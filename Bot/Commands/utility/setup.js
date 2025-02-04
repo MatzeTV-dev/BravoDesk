@@ -175,23 +175,34 @@ async function createChannel(interaction) {
     const channelName = 'Ticket-System';
     let channel = guild.channels.cache.find((channel) => channel.name === channelName);
 
-    if(!channel) {
+    if (!channel) {
         channel = await guild.channels.create({
             name: channelName,
             type: ChannelType.GuildText,
             topic: `Willkommen im Ticketsystem von ${guild.name}`,
             permissionOverwrites: [
                 {
-                    id: guild.roles.everyone,
-                    deny: [PermissionsBitField.Flags.SendMessages],
+                    id: guild.id, // Standardmäßig für @everyone
+                    deny: [PermissionsBitField.Flags.SendMessages], // Jeder darf NICHT schreiben
+                },
+                {
+                    id: guild.members.me.id, // Bot ID dynamisch holen
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                    ],
                 },
             ],
         });
+    
         ticketChannelID = channel.id;
         Logger.success(`${guild.name}: Created channel: ${channel.id}`);
     } else {
         Logger.info(`${guild.name}: Channel already exists: ${channel.id}`);
     }
+    
 
     // Lese Embed-Daten aus JSON
     embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
@@ -263,6 +274,15 @@ async function createCategories(interaction) {
                     id: guild.roles.everyone,
                     deny: [PermissionsBitField.Flags.ViewChannel],
                 },
+                {
+                    id: guild.members.me.id,
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                    ]
+                },
             ],
         });
         ticketCategoryID = category.id;
@@ -287,6 +307,15 @@ async function createCategories(interaction) {
                         PermissionsBitField.Flags.ViewChannel,
                         PermissionsBitField.Flags.SendMessages,
                     ],
+                },
+                {
+                    id: guild.members.me.id,
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                    ]
                 },
             ],
         });
