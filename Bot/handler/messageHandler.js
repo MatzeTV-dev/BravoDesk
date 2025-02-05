@@ -2,22 +2,44 @@ const { getData, upload } = require('../Database/qdrant.js');
 const Logger = require('../helper/loggerHelper.js');
 const { Insert } = require('../Database/database.js');
 const axios = require('axios');
-require('dotenv').config(); 
+require('dotenv').config();
+
+// Set zum Speichern der Kanäle, in denen gerade eine KI-Anfrage läuft
+const pendingTickets = new Set();
 
 module.exports = async (client, message) => {
     // 1. Bots ignorieren
     if (message.author.bot) return;
+
     // 2. Ticket-Logik
     if (isTicketChannel(message.channel)) {
-        
-        const isAiTicket = await isAiSupportTicket(message.channel);
-        if (!isAiTicket) {
-            // Wenn es kein KI-Ticket ist (also 'Mensch'),
-            // dann soll die AI nicht mehr antworten oder was immer du hier vorhast.
+        // Entferne die SendMessages-Berechtigung des Users, damit er während der KI-Verarbeitung keine Nachrichten senden kann.
+        try {
+            await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: false });
+        } catch (err) {
+            Logger.error(`Fehler beim Entfernen der Senderechte für ${message.author.id}: ${err.message}`);
+        }
+
+        // Falls bereits eine KI-Anfrage in diesem Kanal läuft, wird der Rest übersprungen.
+        if (pendingTickets.has(message.channel.id)) {
             return;
         }
         
+        pendingTickets.add(message.channel.id);
+
         try {
+            const isAiTicket = await isAiSupportTicket(message.channel);
+            if (!isAiTicket) {
+                // Falls es kein KI-Ticket ist, hebe die Sperre auf und stelle die Berechtigung wieder her.
+                pendingTickets.delete(message.channel.id);
+                try {
+                    await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
+                } catch (err) {
+                    Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
+                }
+                return;
+            }
+            
             const messages = await collectMessagesFromChannel(message.channel, client, message);
 
             if (!messages.includes("ein menschlicher Supporter wird das Ticket übernehmen!")) {
@@ -28,13 +50,23 @@ module.exports = async (client, message) => {
         } catch (error) {
             Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}\n${error.stack}`);
             await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
+        } finally {
+            pendingTickets.delete(message.channel.id);
+            // Stelle die SendMessages-Berechtigung des Users wieder her.
+            try {
+                await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
+            } catch (err) {
+                Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
+            }
         }
     }  
 
     // 3. DM-Check: Key-Generierung
-    //    (Nur, wenn keine Guild vorhanden: !message.guild und User-ID stimmt)
+    //    (Nur, wenn keine Guild vorhanden ist: !message.guild und User-ID stimmt)
     if (!message.guild) {
-        if (!message.author.id === '639759741555310612') Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`)
+        if (!message.author.id === '639759741555310612') {
+            Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
+        }
         try {
             if (message.content.startsWith('!generate')) {
                 const args = message.content.trim().split(/\s+/);
@@ -47,7 +79,7 @@ module.exports = async (client, message) => {
             
                 // Funktion: generiere 1 Key
                 function generateUniqueKey() {
-                    // 10 Buchstaben (A-Z) + 10 Ziffern (0-9) = 20 Zeichen
+                    // 10 Buchstaben (A-Z) + 5 Ziffern (0-9) = 15 Zeichen
                     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
                     const digits = '0123456789';
 
@@ -75,8 +107,8 @@ module.exports = async (client, message) => {
                 try {
                     for (const key of keysArray) {
                         await Insert(
-                        'INSERT INTO activation_keys (activation_key) VALUES (?)',
-                        [key]
+                            'INSERT INTO activation_keys (activation_key) VALUES (?)',
+                            [key]
                         );
                     }
                     // Antwort an dich mit den erzeugten Keys
@@ -85,13 +117,14 @@ module.exports = async (client, message) => {
                     Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}\n${error.stack}`);
                     await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
                 }
-                Logger.success(`Es wurden ${amountToGenerate} neue keys erstellt`)
+                Logger.success(`Es wurden ${amountToGenerate} neue keys erstellt`);
             } 
         } catch (error) {
             Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
         }
     }
-    // 4. DM-Check: Upload für daten zur GeneralInformation Collection
+
+    // 4. DM-Check: Upload für Daten zur GeneralInformation Collection
     if (!message.guild) {
         if (!message.author.id === '639759741555310612') {
             Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
@@ -105,13 +138,12 @@ module.exports = async (client, message) => {
                     
                     await upload('GeneralInformation', content);
 
-                    // Hier kannst du den Code einfügen, der die Daten speichert
                     Logger.info(`Gespeicherter Text: ${content}`);
     
                     await message.reply('Deine Daten wurden erfolgreich gespeichert.');
                 } catch (error) {
                     Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);
-                    await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
+                    await message.reply('Es gab einen Fehler beim Speichern der Daten in der Datenbank.');
                 }
             }
         } catch (error) {
@@ -122,10 +154,15 @@ module.exports = async (client, message) => {
 
 async function isAiSupportTicket(channel) {
     try {
-        const fetchedMessages = await channel.messages.fetch({ limit: 10 });
-        const oldestMessage = fetchedMessages.last();
+        // Nachrichtenverlauf abrufen und die erste Nachricht bestimmen
+        const fetchedMessages = await channel.messages.fetch({ limit: 1, after: "0" });
+        const firstMessage = fetchedMessages.first();
 
-        const embed = oldestMessage.embeds[0];
+        if (!firstMessage || firstMessage.embeds.length === 0) {
+            return false;
+        }
+
+        const embed = firstMessage.embeds[0];
         const embedData = embed.toJSON();
 
         if (embedData.fields) {
@@ -141,7 +178,6 @@ async function isAiSupportTicket(channel) {
         return false;
     }
 }
-
 
 // Prüfen, ob ein Kanal ein Ticket-Kanal ist
 function isTicketChannel(channel) {
@@ -345,7 +381,6 @@ async function sendMessagesToAI(messages, lastMessage, category) {
         `,
     };
     
-
     const systemPrompt = prompts[category] || prompts.unknown;
 
     try {

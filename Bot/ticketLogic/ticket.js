@@ -101,6 +101,15 @@ async function createTicket(interaction, reason) {
                         PermissionsBitField.Flags.AttachFiles,
                     ],
                 },
+                {
+                    id: guild.members.me.id,
+                    allow: [
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                    ]
+                },
             ],
         });
 
