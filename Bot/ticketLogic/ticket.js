@@ -11,44 +11,41 @@ const { error, info, warning } = require('../helper/embedHelper.js');
 const fs = require('fs');
 const Logger = require('../helper/loggerHelper.js');
 
-// ticket.js
-// ...
 module.exports = {
-    data: {
-      customId: 'create_ticket_ticket_category',
-    },
-    async execute(interaction) {
-      await interaction.deferReply({ ephemeral: true });
-  
-      // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
-      const selectedValues = interaction.values;
-  
-      // Lade für den aktuellen Server alle definierten Kategorien
-      const categories = getCategories(interaction.guild.id);
-  
-      for (const selectedLabel of selectedValues) {
-        // Verwende einen case-insensitiven Vergleich und trimme beide Werte
-        const categoryObj = categories.find(
-          cat => cat.label.trim().toLowerCase() === selectedLabel.trim().toLowerCase()
-        );
-        if (!categoryObj) {
-          Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
-          continue;
-        }
-        try {
-          await createTicket(interaction, categoryObj);
-        } catch (error) {
-          Logger.error(`Fehler beim Erstellen des Tickets für Kategorie "${selectedLabel}": ${error.message}\n${error.stack}`);
-        }
+  data: {
+    customId: 'create_ticket_ticket_category',
+  },
+  async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+
+    // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
+    const selectedValues = interaction.values;
+
+    // Lade für den aktuellen Server alle definierten Kategorien
+    const categories = getCategories(interaction.guild.id);
+
+    for (const selectedLabel of selectedValues) {
+      // Verwende einen case-insensitiven Vergleich und trimme beide Werte
+      const categoryObj = categories.find(
+        cat => cat.label.trim().toLowerCase() === selectedLabel.trim().toLowerCase()
+      );
+      if (!categoryObj) {
+        Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
+        continue;
       }
-  
-      // Antwort an den Benutzer
-      await interaction.editReply({ 
-        embeds: [info('Info', 'Dein Ticket wurde erstellt')] 
-      });
-    },
-  };
-  
+      try {
+        await createTicket(interaction, categoryObj);
+      } catch (err) {
+        Logger.error(`Fehler beim Erstellen des Tickets für Kategorie "${selectedLabel}": ${err.message}\n${err.stack}`);
+      }
+    }
+
+    // Antwort an den Benutzer
+    await interaction.editReply({ 
+      embeds: [info('Info', 'Dein Ticket wurde erstellt')] 
+    });
+  },
+};
 
 async function createTicket(interaction, categoryObj) {
   try {
@@ -77,43 +74,67 @@ async function createTicket(interaction, categoryObj) {
 
     const channelName = `${interaction.user.username}s-Ticket`;
 
-    // Erstelle einen neuen Ticket-Channel mit dem Topic, das den eindeutigen Kategorien-Wert enthält.
+    // Erstelle die Grundlegenden Berechtigungsüberschreibungen
+    const permissionOverwrites = [
+      {
+        id: interaction.user.id,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.EmbedLinks,
+          PermissionsBitField.Flags.ReadMessageHistory,
+        ],
+      },
+      {
+        id: guild.id,
+        deny: [PermissionsBitField.Flags.ViewChannel],
+      },
+      {
+        id: guild.members.me.id,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.EmbedLinks,
+          PermissionsBitField.Flags.ReadMessageHistory,
+        ],
+      },
+    ];
+
+    // Falls **keine** custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
+    if (!(categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0)) {
+      permissionOverwrites.push({
+        id: supporterRole.id,
+        allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.EmbedLinks,
+          PermissionsBitField.Flags.ReadMessageHistory,
+        ],
+      });
+    }
+
+    // Falls custom permissions vorhanden sind, füge diese Rollen hinzu
+    if (categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0) {
+      for (const roleId of categoryObj.permission) {
+        permissionOverwrites.push({
+          id: roleId,
+          allow: [
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.EmbedLinks,
+          PermissionsBitField.Flags.ReadMessageHistory,
+          ],
+        });
+      }
+    }
+
+    // Erstelle einen neuen Ticket-Channel mit dem Topic, das die Kategorie enthält.
     const createdChannel = await guild.channels.create({
       name: channelName,
       type: ChannelType.GuildText,
-      topic: `Ticket erstellt. Kategorie: ${categoryObj.value}`,
+      topic: `Ticket erstellt. Kategorie: ${categoryObj.label}`,
       parent: data.ticket_category_id,
-      permissionOverwrites: [
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.AttachFiles,
-          ],
-        },
-        {
-          id: guild.id,
-          deny: [PermissionsBitField.Flags.ViewChannel],
-        },
-        {
-          id: supporterRole.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.AttachFiles,
-          ],
-        },
-        {
-          id: guild.members.me.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
-            PermissionsBitField.Flags.SendMessages,       // Bot kann schreiben
-            PermissionsBitField.Flags.EmbedLinks,         // Bot kann Embeds senden
-            PermissionsBitField.Flags.ReadMessageHistory  // Bot kann Nachrichtenverlauf lesen
-          ]
-        },
-      ],
+      permissionOverwrites,
     });
 
     // Lade und verarbeite die Begrüßungsnachricht (Embeds) aus der Design-Datei
@@ -130,7 +151,7 @@ async function createTicket(interaction, categoryObj) {
         '{category}': categoryObj.label,
         '{user_ID}': interaction.user.id,
         '{username}': interaction.user.username,
-        '{support_type}': categoryObj.aiEnabled ? "KI" : "Mensch", // Anpassung hier
+        '{support_type}': categoryObj.aiEnabled ? "KI" : "Mensch",
       };
 
       processedEmbed.title = replacePlaceholders(processedEmbed.title, placeholders);
