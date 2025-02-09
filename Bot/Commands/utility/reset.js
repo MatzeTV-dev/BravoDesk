@@ -1,5 +1,6 @@
-const { getServerInformation, Delete } = require('../../Database/database.js');
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+// Ersetze die bisherigen DB-Funktionen für Discord-Daten durch den JSON-Handler:
+const { getServerInformation, loadAllData, saveAllData } = require('../../handler/discordDataHandler.js');
 const { deleteAll } = require('../../Database/qdrant.js');
 const { error, info } = require('../../helper/embedHelper.js');
 const Logger = require('../../helper/loggerHelper.js');
@@ -10,7 +11,7 @@ const path = require('path');
 const ticketCategoriesPath = path.join(__dirname, '../../data/ticket_categories.json');
 
 /**
- * Entfernt den Eintrag für eine bestimmte Guild (Server) aus der JSON-Datei.
+ * Entfernt den Eintrag für eine bestimmte Guild (Server) aus der ticket_categories.json.
  *
  * @param {string} guildId - Die ID der Guild, die entfernt werden soll.
  */
@@ -31,6 +32,20 @@ function removeGuildFromJSON(guildId) {
   }
 }
 
+/**
+ * Entfernt die Serverinformationen für eine bestimmte Guild aus der discord_data.json.
+ *
+ * @param {string} guildId - Die ID der Guild.
+ */
+function removeServerInfo(guildId) {
+  let data = loadAllData();
+  if (data.guilds && data.guilds[guildId]) {
+    delete data.guilds[guildId];
+    saveAllData(data);
+    Logger.info(`Server ${guildId} aus discord_data.json entfernt.`);
+  }
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reset')
@@ -47,7 +62,7 @@ module.exports = {
         });
 
         const adminChannel = guild.channels.cache.find(
-          (channel) => channel.name === 'admin-log'
+          channel => channel.name === 'admin-log'
         );
         if (adminChannel) {
           await adminChannel.send(
@@ -59,7 +74,7 @@ module.exports = {
       
       // Suchen des Ticket-Channels
       const ticket_channel = guild.channels.cache.find(
-        (channel) => channel.name === 'ticket-system'
+        channel => channel.name === 'ticket-system'
       );
       if (interaction.channel.id === ticket_channel?.id) {
         await interaction.editReply({
@@ -86,7 +101,7 @@ module.exports = {
       });
 
       // Collector für Button-Interaktionen
-      const filter = (i) => i.user.id === interaction.user.id;
+      const filter = i => i.user.id === interaction.user.id;
       const collector = confirmationMessage.createMessageComponentCollector({
         filter,
         time: 30_000,
@@ -102,20 +117,19 @@ module.exports = {
             });
 
             // Reset-Logik
-            const rawData = await getServerInformation(guild.id);
-            if (!rawData || rawData.length === 0) {
+            const data = getServerInformation(guild.id);
+            if (!data || Object.keys(data).length === 0) {
               await i.followUp({
                 embeds: [error('Reset Process', 'Keine Serverinformationen gefunden!')],
                 ephemeral: true
               });
               return;
             }
-            const data = rawData[0][0];
 
             // Ressourcen löschen
             try {
-              const channel = guild.channels.cache.get(data.ticket_system_channel_id);
-              if (channel) await channel.delete().catch(Logger.error);
+              const channelToDelete = guild.channels.cache.get(data.ticket_system_channel_id);
+              if (channelToDelete) await channelToDelete.delete().catch(Logger.error);
 
               const category = guild.channels.cache.get(data.ticket_category_id);
               if (category) await category.delete().catch(Logger.error);
@@ -137,9 +151,8 @@ module.exports = {
               return;
             }
 
-            // Datenbank & KI-Daten löschen
+            // Lösche KI-Daten in Qdrant (unverändert)
             try {
-              await Delete('CALL Delete_Server_Information(?)', guild.id);
               await deleteAll('guild_' + guild.id);
             } catch (dbError) {
               Logger.error(`Fehler beim Löschen der Daten: ${dbError}`);
@@ -150,7 +163,9 @@ module.exports = {
               return;
             }
 
-            // Entferne den Server aus der JSON-Datei (Ticket-Kategorien)
+            // Entferne die Discord-Daten aus der JSON (unserer neuen Speicherung)
+            removeServerInfo(guild.id);
+            // Entferne den Server auch aus der ticket_categories.json
             removeGuildFromJSON(guild.id);
 
             await i.followUp({

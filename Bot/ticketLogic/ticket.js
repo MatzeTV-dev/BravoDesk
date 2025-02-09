@@ -5,9 +5,10 @@ const {
   ButtonBuilder,
   ButtonStyle
 } = require('discord.js');
-const { getServerInformation } = require('../Database/database.js');
+// Ersetze den alten Datenbankaufruf durch den JSON-Handler:
+const { getServerInformation } = require('../handler/discordDataHandler');
 const { getCategories } = require('../helper/ticketCategoryHelper');
-const { error, info, warning } = require('../helper/embedHelper.js');
+const { error, info } = require('../helper/embedHelper.js');
 const fs = require('fs');
 const Logger = require('../helper/loggerHelper.js');
 
@@ -27,8 +28,9 @@ module.exports = {
     for (const selectedLabel of selectedValues) {
       // Verwende einen case-insensitiven Vergleich und trimme beide Werte
       const categoryObj = categories.find(
-        cat => cat.label.trim().toLowerCase() === selectedLabel.trim().toLowerCase()
+        cat => cat.value.trim().toLowerCase() === selectedLabel.trim().toLowerCase()
       );
+      
       if (!categoryObj) {
         Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
         continue;
@@ -49,10 +51,10 @@ module.exports = {
 
 async function createTicket(interaction, categoryObj) {
   try {
-    const rawData = await getServerInformation(interaction.guild.id);
-    Logger.info('Serverinformationen geladen:', rawData);
+    // Abrufen der Serverinformationen aus der JSON-Datei
+    const data = getServerInformation(interaction.guild.id);
+    Logger.info('Serverinformationen geladen:', data);
 
-    const data = rawData[0][0];
     if (!data) {
       Logger.error('Serverinformationen konnten nicht geladen werden.');
       await interaction.followUp({
@@ -74,7 +76,7 @@ async function createTicket(interaction, categoryObj) {
 
     const channelName = `${interaction.user.username}s-Ticket`;
 
-    // Erstelle die Grundlegenden Berechtigungsüberschreibungen
+    // Erstelle die grundlegenden Berechtigungsüberschreibungen
     const permissionOverwrites = [
       {
         id: interaction.user.id,
@@ -100,7 +102,7 @@ async function createTicket(interaction, categoryObj) {
       },
     ];
 
-    // Falls **keine** custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
+    // Falls keine custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
     if (!(categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0)) {
       permissionOverwrites.push({
         id: supporterRole.id,
@@ -119,10 +121,10 @@ async function createTicket(interaction, categoryObj) {
         permissionOverwrites.push({
           id: roleId,
           allow: [
-          PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.EmbedLinks,
-          PermissionsBitField.Flags.ReadMessageHistory,
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.EmbedLinks,
+            PermissionsBitField.Flags.ReadMessageHistory,
           ],
         });
       }
