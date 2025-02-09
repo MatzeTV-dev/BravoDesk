@@ -1,0 +1,11 @@
+{
+  "guilds": {
+    "1308408725236744314": {
+      "ticket_system_channel_id": "1338146686077505617",
+      "ticket_category_id": "1338146688514265179",
+      "support_role_id": "1338146683288158288",
+      "kiadmin_role_id": "1338146684466761851",
+      "ticket_archiv_category_id": "1338146690376536188"
+    }
+  }
+}

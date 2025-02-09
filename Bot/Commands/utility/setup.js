@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
-const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey, } = require('../../helper/keyHelper.js');
-const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
+const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } = require('../../helper/keyHelper.js');
+// Ersetze die alten Datenbank-Funktionen durch den JSON-Handler:
+const { getServerInformation, setServerInformation } = require('../../handler/discordDataHandler');
 const { error, success, warning, info } = require('../../helper/embedHelper.js');
 const { generateCollection } = require('../../Database/qdrant.js');
 const Logger = require('../../helper/loggerHelper.js');
@@ -18,7 +19,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('setup')
         .setDescription('Startet den automatischen setup Prozess.')
-        .addStringOption((option) =>
+        .addStringOption(option =>
             option
                 .setName('key')
                 .setDescription('Fügen Sie Ihren Aktivierungsschlüssel ein.')
@@ -32,14 +33,14 @@ module.exports = {
 
         try {
 
-            if(guild.ownerId !== interaction.user.id) {
+            if (guild.ownerId !== interaction.user.id) {
                 await interaction.editReply({
                     embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')]
                 });
 
                 // Optional: Benachrichtigung an Administratoren
-                const adminChannel = guild.channels.cache.find((channel) => channel.name === 'admin-log');
-                if(adminChannel) {
+                const adminChannel = guild.channels.cache.find(channel => channel.name === 'admin-log');
+                if (adminChannel) {
                     await adminChannel.send(
                         `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/setup\` ohne Berechtigung auszuführen.`
                     );
@@ -48,42 +49,34 @@ module.exports = {
             }
 
             var result = await checkKeyExists(interaction.options.getString('key'));
-            if(!result.exists_in_keys) {
-
+            if (!result.exists_in_keys) {
                 await interaction.editReply({
                     embeds: [error('Key existence', 'The key does not exists.')]
                 });
-
                 return;
             }
 
-            var result = await checkKeyActivated(interaction.options.getString('key'));
-
-            if(!result.is_activated) {
+            result = await checkKeyActivated(interaction.options.getString('key'));
+            if (!result.is_activated) {
                 await activateKey(interaction.options.getString('key'), guild.id);
-
                 await interaction.editReply({
                     embeds: [success('Key activated', 'The key has been activated.')]
                 });
             }
 
-            var result = await checkKeyValidity(interaction.options.getString('key'));
-
-            if(!result.is_valid) {
+            result = await checkKeyValidity(interaction.options.getString('key'));
+            if (!result.is_valid) {
                 await interaction.editReply({
                     embeds: [error('Key Expired', 'The key has expired.')]
                 });
-
                 return;
             }
 
             const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
-
-            if(!isMatch.IsMatch) {
+            if (!isMatch.IsMatch) {
                 await interaction.editReply({
                     embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')]
                 });
-
                 return;
             }
 
@@ -92,17 +85,23 @@ module.exports = {
             });
 
             guildID = guild.id;
-            const returnValue = await chefIfServerExists(guildID);
-
-            if(returnValue) {
+            // Nutze den JSON-Handler: Lade die Serverinformationen
+            const serverInfo = getServerInformation(guildID);
+            if (Object.keys(serverInfo).length === 0) {
                 // Erstelle Rollen, Kanäle und Kategorien
                 await createRoles(interaction);
                 await createChannel(interaction);
                 await createCategories(interaction);
                 await generateCollection("guild_" + interaction.guild.id);
                 
-                // Speichere in der Datenbank
-                await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID, ticketArchivCategoryID);
+                // Speichere die Informationen in der JSON-Datei
+                setServerInformation(guildID, {
+                    ticket_system_channel_id: ticketChannelID,
+                    ticket_category_id: ticketCategoryID,
+                    support_role_id: supportRoleID,
+                    kiadmin_role_id: kiadminRoleID,
+                    ticket_archiv_category_id: ticketArchivCategoryID,
+                });
 
                 await interaction.editReply({
                     embeds: [info('Setup Process!', 'Setup completed successfully!')]
@@ -144,8 +143,8 @@ async function createRoles(interaction) {
     ];
 
     for (const roleData of roles) {
-        const existingRole = guild.roles.cache.find((role) => role.name === roleData.name);
-        if(!existingRole) {
+        const existingRole = guild.roles.cache.find(role => role.name === roleData.name);
+        if (!existingRole) {
             const createdRole = await guild.roles.create({
                 name: roleData.name,
                 color: roleData.color,
@@ -154,16 +153,16 @@ async function createRoles(interaction) {
 
             Logger.success(`${guild.name}: Created role: ${roleData.name}`);
 
-            if(roleData.name === 'Supporter') {
+            if (roleData.name === 'Supporter') {
                 supportRoleID = createdRole.id;
-            } else if(roleData.name === 'KI-Admin') {
+            } else if (roleData.name === 'KI-Admin') {
                 kiadminRoleID = createdRole.id;
             }
         } else {
             Logger.info(`${guild.name}: Role already exists: ${roleData.name}`);
-            if(roleData.name === 'Supporter') {
+            if (roleData.name === 'Supporter') {
                 supportRoleID = existingRole.id;
-            } else if(roleData.name === 'KI-Admin') {
+            } else if (roleData.name === 'KI-Admin') {
                 kiadminRoleID = existingRole.id;
             }
         }
@@ -172,8 +171,9 @@ async function createRoles(interaction) {
 
 // Funktion: Kanäle erstellen
 async function createChannel(interaction) {
+    const guild = interaction.guild;
     const channelName = 'Ticket-System';
-    let channel = guild.channels.cache.find((channel) => channel.name === channelName);
+    let channel = guild.channels.cache.find(channel => channel.name === channelName);
 
     if (!channel) {
         channel = await guild.channels.create({
@@ -189,9 +189,9 @@ async function createChannel(interaction) {
                     id: guild.members.me.id, // Bot ID dynamisch holen
                     allow: [
                         PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
-                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
-                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
-                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                        PermissionsBitField.Flags.SendMessages,       // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,         // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory, // Bot kann Nachrichtenverlauf lesen
                     ],
                 },
             ],
@@ -203,11 +203,10 @@ async function createChannel(interaction) {
         Logger.info(`${guild.name}: Channel already exists: ${channel.id}`);
     }
     
-
     // Lese Embed-Daten aus JSON
-    embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
+    const embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
 
-    embeds = embedData.embeds.map((embed) => ({
+    const embeds = embedData.embeds.map(embed => ({
         ...embed,
         color: embed.color || 7049073,
     }));
@@ -260,12 +259,12 @@ async function createChannel(interaction) {
 // Funktion: Kategorien erstellen
 async function createCategories(interaction) {
     const guild = interaction.guild;
-    var categoryName = 'tickets';
-    let category = guild.channels.cache.find(
-        (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryName
+    const categoryName = 'tickets';
+    let category = guild.channels.cache.find(channel =>
+        channel.type === ChannelType.GuildCategory && channel.name === categoryName
     );
 
-    if(!category) {
+    if (!category) {
         category = await guild.channels.create({
             name: categoryName,
             type: ChannelType.GuildCategory,
@@ -277,10 +276,10 @@ async function createCategories(interaction) {
                 {
                     id: guild.members.me.id,
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
-                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
-                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
-                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                        PermissionsBitField.Flags.ViewChannel,      
+                        PermissionsBitField.Flags.SendMessages,     
+                        PermissionsBitField.Flags.EmbedLinks,       
+                        PermissionsBitField.Flags.ReadMessageHistory 
                     ]
                 },
             ],
@@ -291,12 +290,12 @@ async function createCategories(interaction) {
         Logger.info(`${guild.name}: Category already exists: ${category.id}`);
     }
 
-    var categoryArchivName = 'archiv';
-    let categoryArchiv = guild.channels.cache.find(
-        (channel) => channel.type === ChannelType.GuildCategory && channel.name === categoryArchivName
+    const categoryArchivName = 'archiv';
+    let categoryArchiv = guild.channels.cache.find(channel =>
+        channel.type === ChannelType.GuildCategory && channel.name === categoryArchivName
     );
 
-    if(!categoryArchiv) {
+    if (!categoryArchiv) {
         categoryArchiv = await guild.channels.create({
             name: categoryArchivName,
             type: ChannelType.GuildCategory,
@@ -311,10 +310,10 @@ async function createCategories(interaction) {
                 {
                     id: guild.members.me.id,
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
-                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
-                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
-                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
+                        PermissionsBitField.Flags.ViewChannel,      
+                        PermissionsBitField.Flags.SendMessages,     
+                        PermissionsBitField.Flags.EmbedLinks,       
+                        PermissionsBitField.Flags.ReadMessageHistory 
                     ]
                 },
             ],
@@ -332,45 +331,35 @@ async function rollbackSetup(interaction) {
         const guild = interaction.guild;
 
         // Löschen des Ticket-Kanals
-        if(ticketChannelID) {
+        if (ticketChannelID) {
             const channel = guild.channels.cache.get(ticketChannelID);
-            if(channel) await channel.delete();
+            if (channel) await channel.delete();
         }
 
         // Löschen der Ticket-Kategorie
-        if(ticketCategoryID) {
+        if (ticketCategoryID) {
             const category = guild.channels.cache.get(ticketCategoryID);
-            if(category) await category.delete();
+            if (category) await category.delete();
         }
 
-        if(ticketArchivCategoryID) {
+        if (ticketArchivCategoryID) {
             const categoryArchiv = guild.channels.cache.get(ticketArchivCategoryID);
-            if(categoryArchiv) await categoryArchiv.delete();
+            if (categoryArchiv) await categoryArchiv.delete();
         }
 
         // Löschen der Rollen
-        if(supportRoleID) {
+        if (supportRoleID) {
             const role = guild.roles.cache.get(supportRoleID);
-            if(role) await role.delete();
+            if (role) await role.delete();
         }
 
-        if(kiadminRoleID) {
+        if (kiadminRoleID) {
             const role = guild.roles.cache.get(kiadminRoleID);
-            if(role) await role.delete();
+            if (role) await role.delete();
         }
 
         Logger.info('Rollback completed successfully.');
     } catch (error) {
         Logger.error(`Error during rollback: ${error.message}\n${error.stack}`);
-    }
-}
-
-// Funktion: Datenbank speichern
-async function saveDatabase(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id, ticket_archiv_category_id) {
-    try {
-        await saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_id, kiadmin_role_id, ticket_archiv_category_id);
-        Logger.success(`Database saved for server ID: ${server_id}`);
-    } catch (error) {
-        Logger.error(`Error saving to database: ${error.message}\n${error.stack}`);
     }
 }
