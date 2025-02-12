@@ -101,22 +101,20 @@ async function updateTicketCreationMessage(guild) {
   const categories = getCategories(guild.id);
   
   // Erstelle die Options für das Dropdown-Menü
-  const options = categories.map(cat => {
-    const label = cat.label.slice(0, 100);
-    const description = cat.description
+  const options = categories.map(cat => ({
+    label: cat.label,
+    description: cat.description
       ? (cat.description.length > 100 ? cat.description.slice(0, 97) + "..." : cat.description)
-      : ' ';
-    const option = {
-      label,
-      description,
-      value: label // Verwende den Kategorienamen als Schlüssel
-    };
-
-    // Wenn ein Emoji angegeben wurde, einfach übernehmen
-    if (cat.emoji && cat.emoji.trim() !== '') {
-      option.emoji = { name: cat.emoji };  // Einfaches Übernehmen des Emoji-Strings
+      : ' ',
+    value: cat.value || cat.label  // Konsistenter Wert für Standard- und Custom-Kategorien
+  }));
+  
+  // Wenn ein Emoji angegeben wurde, einfach übernehmen
+  options.forEach(option => {
+    const cat = categories.find(c => (c.value || c.label).trim().toLowerCase() === option.value.trim().toLowerCase());
+    if (cat && cat.emoji && cat.emoji.trim() !== '') {
+      option.emoji = { name: cat.emoji };
     }
-    return option;
   });
 
   const newSelectMenu = new StringSelectMenuBuilder()

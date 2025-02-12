@@ -4,3 +4,4 @@ Bot/package-lock.json
 Bot/Scripts/package-lock.json
 LLM/Llama2/Modell/models--meta-llama--Llama-2-7b-hf/snapshots/01c7f73d771dfac7d292323805ebc428287df4f9/model-00001-of-00002.safetensors
 LLM/Llama2/Modell/models--meta-llama--Llama-2-7b-hf/snapshots/01c7f73d771dfac7d292323805ebc428287df4f9/model-00002-of-00002.safetensors
+Bot\data\ticket_categories.json
