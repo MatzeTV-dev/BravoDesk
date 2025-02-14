@@ -63,7 +63,7 @@ async function getServerInformation(discord_server_id) {
     Logger.success('Server information retrieved successfully!');
     return data;
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 }
 
@@ -119,6 +119,50 @@ async function checkUserBlacklisted(serverId, userId) {
   return result[0] && result[0].is_blacklisted === 1;
 }
 
+// Neue Funktionen für Ticket-Categories
+
+/**
+ * Ruft über die Stored Procedure GetCategories alle Kategorien für den angegebenen Guild ab.
+ * @param {string} guildId 
+ * @returns {Promise<Array>} Liste der Kategorien
+ */
+async function dbGetCategories(guildId) {
+  const results = await executeQuery('CALL GetCategories(?)', [guildId]);
+  // MySQL gibt hier möglicherweise mehrere Result-Sets zurück – wir nehmen das erste
+  return results[0] || [];
+}
+
+/**
+ * Legt über die Stored Procedure CreateCategory eine neue Kategorie an.
+ * @param {string} guildId 
+ * @param {Object} category 
+ */
+async function dbCreateCategory(guildId, category) {
+  // Wenn permission als Array vorliegt, in JSON umwandeln
+  const permission = category.permission && Array.isArray(category.permission)
+    ? JSON.stringify(category.permission)
+    : null;
+  await executeQuery('CALL CreateCategory(?, ?, ?, ?, ?, ?, ?, ?)', [
+    guildId,
+    category.label,
+    category.description,
+    category.value,
+    category.emoji,
+    category.aiPrompt,
+    category.aiEnabled,
+    permission
+  ]);
+}
+
+/**
+ * Löscht über die Stored Procedure DeleteCategory eine Kategorie anhand des Labels.
+ * @param {string} guildId 
+ * @param {string} label 
+ */
+async function dbDeleteCategory(guildId, label) {
+  await executeQuery('CALL DeleteCategory(?, ?)', [guildId, label]);
+}
+
 // Exportiere alle Funktionen
 module.exports = {
   initializeDatabaseConnection,
@@ -132,4 +176,7 @@ module.exports = {
   addUserToBlacklist,
   removeUserFromBlacklist,
   checkUserBlacklisted,
+  dbGetCategories,
+  dbCreateCategory,
+  dbDeleteCategory
 };

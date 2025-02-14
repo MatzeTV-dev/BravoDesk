@@ -1,5 +1,6 @@
+// addcategory.js
 const { SlashCommandBuilder } = require('discord.js');
-const { getCategories, saveCategories, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
+const { getCategories, createCategory, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
 const Logger = require('../../helper/loggerHelper');
 const { info, success, error } = require('../../helper/embedHelper');
 
@@ -55,7 +56,6 @@ module.exports = {
     let permission = [];
 
     if (permissionInput) {
-      // Extrahiere alle Rollen-IDs aus der Eingabe (Format: "<@&ID>")
       const roleIdMatches = permissionInput.match(/<@&(\d+)>/g);
       if (roleIdMatches) {
         permission = roleIdMatches.map(roleMention => roleMention.replace(/[<@&>]/g, ''));
@@ -63,8 +63,7 @@ module.exports = {
     }
 
     try {
-      const categories = getCategories(guildId);
-      // Prüfe, ob bereits eine Kategorie mit dem gleichen Wert existiert
+      const categories = await getCategories(guildId);
       const normalizedValue = label.trim().toLowerCase().replace(/\s+/g, '_');
       if (categories.some(cat => (cat.value || '').toLowerCase() === normalizedValue)) {
         await interaction.editReply({
@@ -72,19 +71,17 @@ module.exports = {
         });
         return;
       }
-      // Baue die neue Kategorie mit dem gleichen Format wie die Standard-Kategorien
       const newCategory = {
-        label: label,
-        description: description,
+        label,
+        description,
         value: normalizedValue,
-        emoji: emoji,
-        aiPrompt: aiPrompt,
-        aiEnabled: aiEnabled,
-        permission: permission
+        emoji,
+        aiPrompt,
+        aiEnabled,
+        permission
       };
 
-      categories.push(newCategory);
-      saveCategories(guildId, categories);
+      await createCategory(guildId, newCategory);
       await updateTicketCreationMessage(interaction.guild);
       await interaction.editReply({
         embeds: [success('Erfolg!', `Kategorie \`${label}\` wurde erfolgreich hinzugefügt.`)]
