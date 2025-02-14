@@ -26,7 +26,12 @@ module.exports = {
                     { name: '**/setup**', value: 'Startet den automatischen setup Prozess.' },
                     { name: '**/upload**', value: 'Ladet neues Wissen in das KI Brain hoch.' },
                     { name: '**/search**', value: 'Durchsucht die KI nach bestimmten Informationen' },
-                    { name: '**/help**', value: 'zeigt alle commands und deren Beschreibungen an.' }
+                    { name: '**/add**', value: 'Fügt einen User zum Ticket hinzu.' },
+                    { name: '**/remove**', value: 'Entfernt einen User aus dem Ticket.' },
+                    { name: '**/addcategory**', value: 'Lässt neue Kategorien erstellen' },
+                    { name: '**/removecategory**', value: 'Lässt Kategorien löschen.' },
+                    { name: '**/addblacklist**', value: 'Fügt User zur Ticket-blacklist hinzu' },
+                    { name: '**/removeblacklist**', value: 'Entfernt User von der Ticket-blacklist.' },
                 )
                 .setColor("#345635");
 
