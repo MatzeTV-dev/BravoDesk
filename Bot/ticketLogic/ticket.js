@@ -1,16 +1,9 @@
-const {
-  PermissionsBitField,
-  ChannelType,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
-} = require('discord.js');
-// Ersetze den alten Datenbankaufruf durch den JSON-Handler:
-const { getServerInformation } = require('../handler/discordDataHandler');
+const {  PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
+const { getServerInformation, checkUserBlacklisted } = require('../Database/database.js');
 const { getCategories } = require('../helper/ticketCategoryHelper');
 const { error, info } = require('../helper/embedHelper.js');
-const fs = require('fs');
 const Logger = require('../helper/loggerHelper.js');
+const fs = require('fs');
 
 module.exports = {
   data: {
@@ -18,6 +11,16 @@ module.exports = {
   },
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
+
+    // Prüfe, ob der User auf der Blacklist steht
+    const isBlacklisted = await checkUserBlacklisted(interaction.guild.id, interaction.user.id);
+    if (isBlacklisted) {
+      Logger.info(`User ${interaction.user.tag} ist in dieser Guild geblacklisted.`);
+      await interaction.editReply({
+        embeds: [error('Error!', 'Du bist geblacklisted und kannst kein Ticket erstellen.')]
+      });
+      return;
+    }
 
     // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
     const selectedValues = interaction.values;
@@ -30,6 +33,7 @@ module.exports = {
       const categoryObj = categories.find(
         cat => (cat.value || '').trim().toLowerCase() === (selectedLabel || '').trim().toLowerCase()
       );
+          
       
       if (!categoryObj) {
         Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
@@ -51,10 +55,8 @@ module.exports = {
 
 async function createTicket(interaction, categoryObj) {
   try {
-    // Abrufen der Serverinformationen aus der JSON-Datei
-    const data = getServerInformation(interaction.guild.id);
-    Logger.info('Serverinformationen geladen:', data);
-
+    const rawData = await getServerInformation(interaction.guild.id);
+    const data = rawData[0][0];
     if (!data) {
       Logger.error('Serverinformationen konnten nicht geladen werden.');
       await interaction.followUp({
@@ -76,7 +78,7 @@ async function createTicket(interaction, categoryObj) {
 
     const channelName = `${interaction.user.username}s-Ticket`;
 
-    // Erstelle die grundlegenden Berechtigungsüberschreibungen
+    // Erstelle die Grundlegenden Berechtigungsüberschreibungen
     const permissionOverwrites = [
       {
         id: interaction.user.id,
@@ -102,7 +104,7 @@ async function createTicket(interaction, categoryObj) {
       },
     ];
 
-    // Falls keine custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
+    // Falls **keine** custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
     if (!(categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0)) {
       permissionOverwrites.push({
         id: supporterRole.id,
@@ -121,10 +123,10 @@ async function createTicket(interaction, categoryObj) {
         permissionOverwrites.push({
           id: roleId,
           allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.EmbedLinks,
-            PermissionsBitField.Flags.ReadMessageHistory,
+          PermissionsBitField.Flags.ViewChannel,
+          PermissionsBitField.Flags.SendMessages,
+          PermissionsBitField.Flags.EmbedLinks,
+          PermissionsBitField.Flags.ReadMessageHistory,
           ],
         });
       }

@@ -48,4 +48,4 @@ const makeApiRequest = async () => {
 setInterval(() => {
     parentPort.postMessage('Starte API-Anfrage...');
     makeApiRequest();
-}, 1 * 60 * 1000);
+}, 15 * 60 * 1000);
