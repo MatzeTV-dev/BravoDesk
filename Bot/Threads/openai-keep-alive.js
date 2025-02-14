@@ -14,11 +14,12 @@ const makeApiRequest = async () => {
                 messages: [
                     { role: 'user', content: "Test" },
                 ],
+                max_tokens: 1 // Hier wird die Ausgabe auf maximal 1 Token begrenzt
             },
             {
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                    Authorization: `Bearer ${openAiApiKey}`,
                 },
             }
         );
@@ -47,4 +48,4 @@ const makeApiRequest = async () => {
 setInterval(() => {
     parentPort.postMessage('Starte API-Anfrage...');
     makeApiRequest();
-}, 15 * 60 * 1000);
+}, 1 * 60 * 1000);
