@@ -1,19 +1,20 @@
-const { REST, Routes } = require('discord.js');
-const fs = require('node:fs');
-const path = require('node:path');
+const { REST, Routes, Client, GatewayIntentBits } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-console.log(`CLIENT_ID: ${process.env.CLIENT_ID}`);
-console.log(`DISCORD_BOT_TOKEN: ${process.env.DISCORD_BOT_TOKEN}`);
-console.log(`GUILD_ID: ${process.env.GUILD_ID}`);
+const TOKEN = process.env.DISCORD_BOT_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const GUILD_ID = process.env.GUILD_ID;
 
 const commands = [];
 const foldersPath = path.join(__dirname, '../Commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
+// Commands aus Dateien laden
 for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -23,37 +24,62 @@ for (const folder of commandFolders) {
         if ('data' in command && 'execute' in command) {
             commands.push(command.data.toJSON());
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            console.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
     }
 }
 
 console.log('Commands to deploy:', commands);
 
-const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN);
+const rest = new REST().setToken(TOKEN);
 
-(async () => {
+// Discord-Client für Guild-Logging
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+client.once('ready', async () => {
+    console.log(`🤖 Bot ist online als ${client.user.tag}`);
+    
+    // Alle Server auflisten
+    const guilds = await client.guilds.fetch();
+    console.log(`✅ Der Bot ist in ${guilds.size} Servern:`);
+    guilds.forEach(guild => console.log(` - ${guild.name} (ID: ${guild.id})`));
+
     try {
-        console.log('Clearing old commands...');
+        console.log('🗑️ Lösche alte Commands...');
 
-        // Clear global commands
-        await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] });
-        console.log('Cleared global commands.');
+        // Lösche globale Commands
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+        console.log('✅ Globale Commands gelöscht.');
 
-        // Clear guild commands
-        await rest.put(Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), { body: [] });
-        console.log('Cleared guild commands.');
+        // Lösche Guild-Commands (falls GUILD_ID gesetzt)
+        if (GUILD_ID) {
+            await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
+            console.log(`✅ Commands für Guild ${GUILD_ID} gelöscht.`);
+        }
 
-        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+        console.log(`🚀 Aktualisiere ${commands.length} Befehle...`);
 
-        // Deploy new commands to the guild
-        const data = await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-            { body: commands },
+        // **Global registrieren**
+        const globalData = await rest.put(
+            Routes.applicationCommands(CLIENT_ID),
+            { body: commands }
         );
+        console.log(`🌍 ${globalData.length} globale Befehle registriert.`);
 
-        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        // **Optional: In einer spezifischen Guild registrieren**
+        if (GUILD_ID) {
+            const guildData = await rest.put(
+                Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+                { body: commands }
+            );
+            console.log(`🏠 ${guildData.length} Befehle für Guild ${GUILD_ID} registriert.`);
+        }
+
     } catch (error) {
-        console.error('Error deploying commands:', error);
+        console.error('❌ Fehler beim Deployen der Commands:', error);
+    } finally {
+        client.destroy(); // Beende den Client nach der Registrierung
     }
-})();
+});
+
+client.login(TOKEN);
