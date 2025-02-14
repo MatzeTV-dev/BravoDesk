@@ -1,14 +1,14 @@
+// deletecategory.js
 const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-const { getCategories } = require('../../helper/ticketCategoryHelper');
+const { getCategories, deleteCategory, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
 const Logger = require('../../helper/loggerHelper');
-const { error, info } = require('../../helper/embedHelper');
+const { error, info, success } = require('../../helper/embedHelper');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('deletecategory')
     .setDescription('Löscht eine Ticket-Kategorie über ein Dropdown-Menü.'),
   async execute(interaction) {
-
     await interaction.deferReply({ ephemeral: true });
 
     if (!interaction.member.permissions.has('ManageChannels')) {
@@ -16,25 +16,22 @@ module.exports = {
         embeds: [error('Error!', 'Du hast keine Berechtigung dafür!')],
         ephemeral: true 
       });
-
       return;
     }
     
-    const categories = getCategories(interaction.guild.id);
+    const categories = await getCategories(interaction.guild.id);
     if (!categories || categories.length === 0) {
       await interaction.editReply({ 
-        embeds: [info('Info', 'Es gibt keine Kategorie zum löschen.')],
+        embeds: [info('Info', 'Es gibt keine Kategorie zum Löschen.')],
         ephemeral: true 
       });
-
       return;
     }
     
-    // Erstelle die Options für das Dropdown-Menü – hier wird als value der Label genutzt.
     const options = categories.map(cat => ({
       label: cat.label,
       description: cat.description,
-      value: cat.label  // Verwende den Kategorienamen als eindeutigen Schlüssel
+      value: cat.label  // Hier wird der Label als Schlüssel genutzt
     }));
     
     const selectMenu = new StringSelectMenuBuilder()

@@ -1,4 +1,4 @@
-const {  PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
+const { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getServerInformation, checkUserBlacklisted } = require('../Database/database.js');
 const { getCategories } = require('../helper/ticketCategoryHelper');
 const { error, info } = require('../helper/embedHelper.js');
@@ -25,16 +25,15 @@ module.exports = {
     // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
     const selectedValues = interaction.values;
 
-    // Lade für den aktuellen Server alle definierten Kategorien
-    const categories = getCategories(interaction.guild.id);
+    // Lade für den aktuellen Server alle definierten Kategorien (jetzt asynchron)
+    const categories = await getCategories(interaction.guild.id);
 
     for (const selectedLabel of selectedValues) {
       // Verwende einen case-insensitiven Vergleich und trimme beide Werte
       const categoryObj = categories.find(
         cat => (cat.value || '').trim().toLowerCase() === (selectedLabel || '').trim().toLowerCase()
       );
-          
-      
+
       if (!categoryObj) {
         Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
         continue;
@@ -78,7 +77,7 @@ async function createTicket(interaction, categoryObj) {
 
     const channelName = `${interaction.user.username}s-Ticket`;
 
-    // Erstelle die Grundlegenden Berechtigungsüberschreibungen
+    // Erstelle die grundlegenden Berechtigungsüberschreibungen
     const permissionOverwrites = [
       {
         id: interaction.user.id,
@@ -123,10 +122,10 @@ async function createTicket(interaction, categoryObj) {
         permissionOverwrites.push({
           id: roleId,
           allow: [
-          PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.EmbedLinks,
-          PermissionsBitField.Flags.ReadMessageHistory,
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.EmbedLinks,
+            PermissionsBitField.Flags.ReadMessageHistory,
           ],
         });
       }
