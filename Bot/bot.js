@@ -239,7 +239,7 @@ client.once(Events.ClientReady, async () => {
                                                        
        `);
   
-    Logger.info("Version: 1.1.10");
+    Logger.info("Version: 1.1.11");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID

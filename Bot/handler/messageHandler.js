@@ -1,5 +1,7 @@
 // messageHandler.js
 const { getCategories, updateTicketCreationMessage } = require('../helper/ticketCategoryHelper');
+const { checkKeyValidity, GetActivationKey } = require('../helper/keyHelper');
+const { error } = require('../helper/embedHelper');
 const { getData } = require('../Database/qdrant');
 const axios = require('axios');
 const Logger = require('../helper/loggerHelper');
@@ -33,10 +35,20 @@ function getCategoryFromChannelTopic(channel) {
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
+
+  var result = await GetActivationKey(lastMessage.guild.id);
+  if (!result.activation_key) {
+    return "Es wurde kein Key gefunden..."
+  }
+
+  result = await checkKeyValidity(result.activation_key);
+  if (!result.is_valid) {
+    return "Es tut mir leid so wie es aussieht ist der Key ausgelaufen, bitte informiere einen administrator..."
+  }
+
   let knowledgeBaseText = '';
   let knowledgebasetextTwo = '';
   
-  // Hier kannst du deine Logik zum Abruf zusätzlicher Daten (z. B. aus einer Wissensdatenbank) einfügen.
     try {
         lastMessage.channel.sendTyping();
         const collectionName = `guild_${lastMessage.guild.id}`;

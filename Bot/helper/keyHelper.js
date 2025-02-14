@@ -62,10 +62,22 @@ async function CheckDiscordIDWithKey(activationKey, discord_server_id) {
     }
 }
 
+async function GetActivationKey(discord_server_id) {
+    try {
+        const result = await Call("Call GetActivationKey(?, @activation_key)", [discord_server_id], "SELECT @activation_key AS activation_key");
+        Logger.info(`Ergebnisse von GetActivationKey: ${result}`);
+        return result;
+    } catch (error) {
+        Logger.error(`Fehler bei GetActivationKey: ${error.message}\n${error.stack}`);
+        return null;
+    }
+}
+
 module.exports = {
-    activateKey,
+    CheckDiscordIDWithKey,
     checkKeyActivated,
     checkKeyValidity,
+    GetActivationKey,
     checkKeyExists,
-    CheckDiscordIDWithKey,
+    activateKey,
 };
