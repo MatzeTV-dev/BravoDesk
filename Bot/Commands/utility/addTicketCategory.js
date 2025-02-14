@@ -7,7 +7,6 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('addcategory')
     .setDescription('Fügt eine neue Ticket-Kategorie hinzu.')
-    // Erforderliche Optionen:
     .addStringOption(option =>
       option
         .setName('label')
@@ -32,14 +31,12 @@ module.exports = {
         .setDescription('Soll die KI für diese Kategorie aktiviert sein?')
         .setRequired(true)
     )
-    // Optionale Optionen:
     .addStringOption(option =>
       option
         .setName('emoji')
         .setDescription('Emoji für die Kategorie (optional)')
         .setRequired(false)
     )
-    // Neue Option: Rollen, die Zugriff auf das Ticket haben (als String mit Role-Erwähnungen; mehrere Rollen können mit Komma getrennt werden)
     .addStringOption(option =>
       option
         .setName('permission')
@@ -47,78 +44,55 @@ module.exports = {
         .setRequired(false)
     ),
   async execute(interaction) {
-
     await interaction.deferReply({ ephemeral: true });
-
-    const roleName = 'KI-Admin';
-    const member = interaction.member;
-
-    const role = member.roles.cache.find((role) => role.name === roleName);
-
-    if (!role) {
-      await interaction.editReply({
-        embeds: [error('Error!', 'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.')],
-      });
-
-      const adminChannel = interaction.guild.channels.cache.find(
-        (channel) => channel.name === 'admin-log'
-      );
-      if (adminChannel) {
-        await adminChannel.send(
-          `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/upload\` ohne Berechtigung auszuführen.`
-        );
-      }
-      return;
-    }
-
+    const guildId = interaction.guild.id;
     const label = interaction.options.getString('label');
     const description = interaction.options.getString('description');
     const aiPrompt = interaction.options.getString('ai_prompt');
     const aiEnabled = interaction.options.getBoolean('ai_enabled');
     const emoji = interaction.options.getString('emoji') || '';
-
-    // Verarbeite den neuen "permission"-Parameter:
     const permissionInput = interaction.options.getString('permission') || '';
-    let permissionRoleIds = [];
+    let permission = [];
+
     if (permissionInput) {
-      // Extrahiere alle Rollen-IDs aus der Eingabe (z. B. "<@&123456789012345678>")
+      // Extrahiere alle Rollen-IDs aus der Eingabe (Format: "<@&ID>")
       const roleIdMatches = permissionInput.match(/<@&(\d+)>/g);
       if (roleIdMatches) {
-        permissionRoleIds = roleIdMatches.map(roleMention =>
-          roleMention.replace(/[<@&>]/g, '')
-        );
+        permission = roleIdMatches.map(roleMention => roleMention.replace(/[<@&>]/g, ''));
       }
     }
 
     try {
-      const categories = getCategories(interaction.guild.id);
-
-      // Prüfe, ob bereits eine Kategorie mit diesem Label existiert
-      if (categories.some(cat => cat.label.toLowerCase() === label.toLowerCase())) {
-        return interaction.editReply({
-          embeds: [info('Erfolg!', `Eine Kategorie mit dem Namen \`${label}\` existiert bereits.`)],
-          ephemeral: true
+      const categories = getCategories(guildId);
+      // Prüfe, ob bereits eine Kategorie mit dem gleichen Wert existiert
+      const normalizedValue = label.trim().toLowerCase().replace(/\s+/g, '_');
+      if (categories.some(cat => (cat.value || '').toLowerCase() === normalizedValue)) {
+        await interaction.editReply({
+          embeds: [info('Info', `Eine Kategorie mit dem Namen \`${label}\` existiert bereits.`)]
         });
+        return;
       }
+      // Baue die neue Kategorie mit dem gleichen Format wie die Standard-Kategorien
+      const newCategory = {
+        label: label,
+        description: description,
+        value: normalizedValue,
+        emoji: emoji,
+        aiPrompt: aiPrompt,
+        aiEnabled: aiEnabled,
+        permission: permission
+      };
 
-      // Neues Kategorie-Objekt inkl. dem neuen "permission"-Attribut
-      const newCategory = { label, description, aiPrompt, aiEnabled, emoji, permission: permissionRoleIds };
       categories.push(newCategory);
-      saveCategories(interaction.guild.id, categories);
-
-      // Aktualisiere das Dropdown-Menü im Ticket-System-Channel
+      saveCategories(guildId, categories);
       await updateTicketCreationMessage(interaction.guild);
-
-      return interaction.editReply({ 
-        embeds: [success('Erfolg!', `Kategorie \`${label}\` wurde erfolgreich hinzugefügt.`)],
-        ephemeral: true 
+      await interaction.editReply({
+        embeds: [success('Erfolg!', `Kategorie \`${label}\` wurde erfolgreich hinzugefügt.`)]
       });
-
     } catch (err) {
       Logger.error(`Fehler beim Hinzufügen der Kategorie: ${err.message}\n${err.stack}`);
-      return interaction.editReply({ 
-        embeds: [error('Error!', `Es gab einen Fehler beim Hinzufügen der Kategorie.`)],
-        ephemeral: true 
+      await interaction.editReply({
+        embeds: [error('Error!', 'Es gab einen Fehler beim Hinzufügen der Kategorie.')]
       });
     }
   }

@@ -28,7 +28,7 @@ module.exports = {
     for (const selectedLabel of selectedValues) {
       // Verwende einen case-insensitiven Vergleich und trimme beide Werte
       const categoryObj = categories.find(
-        cat => cat.value.trim().toLowerCase() === selectedLabel.trim().toLowerCase()
+        cat => (cat.value || '').trim().toLowerCase() === (selectedLabel || '').trim().toLowerCase()
       );
       
       if (!categoryObj) {
