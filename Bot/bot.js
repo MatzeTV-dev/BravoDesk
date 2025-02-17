@@ -226,9 +226,6 @@ client.once(Events.ClientReady, async () => {
         status: 'dnd', // Status: 'online', 'idle', 'dnd', 'invisible'
     });
     
-    //Herstellung der DB Verbindung
-    initializeDatabaseConnection();
-
     console.log(`
         ______                     ______          _    
        | ___ \\                    |  _  \\        | |   
@@ -238,9 +235,8 @@ client.once(Events.ClientReady, async () => {
        \\____/|_|  \\__,_| \\_/ \\___/|___/ \\___||___/_|\\_\\
                                                        
        `);
-  
-    Logger.info("Version: 1.1.10");
     Logger.info(`Eingeloggt als ${client.user.tag}`);
+    initializeDatabaseConnection();
 
     //const testGuildId = '1308408725236744314'; // Ersetze mit deiner Guild-ID
     //await registerCommands(testGuildId);

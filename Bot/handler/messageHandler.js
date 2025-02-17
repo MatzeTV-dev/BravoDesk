@@ -1,5 +1,7 @@
 // messageHandler.js
 const { getCategories, updateTicketCreationMessage } = require('../helper/ticketCategoryHelper');
+const { checkKeyValidity, GetActivationKey } = require('../helper/keyHelper');
+const { error } = require('../helper/embedHelper');
 const { getData } = require('../Database/qdrant');
 const axios = require('axios');
 const Logger = require('../helper/loggerHelper');
@@ -33,33 +35,42 @@ function getCategoryFromChannelTopic(channel) {
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
+  var result = await GetActivationKey(lastMessage.guild.id);
+  if (!result.activation_key) {
+    return "Es wurde kein Key gefunden...";
+  }
+
+  result = await checkKeyValidity(result.activation_key);
+  if (!result.is_valid) {
+    return "Es tut mir leid so wie es aussieht ist der Key ausgelaufen, bitte informiere einen Administrator...";
+  }
+
   let knowledgeBaseText = '';
   let knowledgebasetextTwo = '';
-  
-  // Hier kannst du deine Logik zum Abruf zusätzlicher Daten (z. B. aus einer Wissensdatenbank) einfügen.
-    try {
-        lastMessage.channel.sendTyping();
-        const collectionName = `guild_${lastMessage.guild.id}`;
-        const data = await getData(collectionName, lastMessage.content);
-        const dataTwo = await getData("GeneralInformation", lastMessage.content);
 
-        if (data && data.length > 0) {
-            knowledgeBaseText = data.map(item => item.payload.text).join('\n');
-            knowledgebasetextTwo = dataTwo.map(item => item.payload.text).join('\n');
-            Logger.debug(knowledgeBaseText);
-        } else {
-            knowledgeBaseText = "Nichts passendes gefunden!";
-        }
-    } catch (error) {
-        Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}\n${error.stack}`);
-        knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
+  try {
+    lastMessage.channel.sendTyping();
+    const collectionName = `guild_${lastMessage.guild.id}`;
+    const data = await getData(collectionName, lastMessage.content);
+    const dataTwo = await getData("GeneralInformation", lastMessage.content);
+
+    if (data && data.length > 0) {
+      knowledgeBaseText = data.map(item => item.payload.text).join('\n');
+      knowledgebasetextTwo = dataTwo.map(item => item.payload.text).join('\n');
+      Logger.debug(knowledgeBaseText);
+    } else {
+      knowledgeBaseText = "Nichts passendes gefunden!";
     }
-  
+  } catch (error) {
+    Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}\n${error.stack}`);
+    knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
+  }
+
   // Ermittele den Kategorien-Wert aus dem Channel-Topic
   const categoryValue = getCategoryFromChannelTopic(lastMessage.channel);
-  
-  // Lade die Kategorien des Servers anhand der Guild-ID
-  const categories = getCategories(lastMessage.guild.id);
+
+  // Lade asynchron die Kategorien des Servers anhand der Guild-ID
+  const categories = await getCategories(lastMessage.guild.id);
   // Finde das passende Kategorien-Objekt
   let categoryObj = categories.find(cat => cat.value === categoryValue);
   if (!categoryObj) {
@@ -69,13 +80,13 @@ async function sendMessagesToAI(messages, lastMessage) {
       aiEnabled: true
     };
   }
-  
+
   // Ersetze die Platzhalter im AI-Prompt
   let systemPrompt = categoryObj.aiPrompt;
   systemPrompt = systemPrompt.replace(/{messages}/g, messages);
   systemPrompt = systemPrompt.replace(/{knowledgeBaseText}/g, knowledgeBaseText);
   systemPrompt = systemPrompt.replace(/{knowledgebasetextTwo}/g, knowledgebasetextTwo);
-  
+
   try {
     const response = await axios.post(
       process.env.OPENAI_URL,
@@ -204,13 +215,15 @@ module.exports = async (client, message) => {
   if (!message.guild) {
     return;
   }
-  
+
   // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
   // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
   if (message.channel.name.toLowerCase() === 'ticket-system') {
-    updateTicketCreationMessage(message.guild).catch(err => {
-      Logger.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message, err.stack}`);
-    });
+    try {
+      await updateTicketCreationMessage(message.guild);
+    } catch (err) {
+      Logger.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message}\n${err.stack}`);
+    }
     return;
   }
 
@@ -233,7 +246,7 @@ module.exports = async (client, message) => {
         }
         return;
       }
-      
+
       const messagesCollected = await collectMessagesFromChannel(message.channel, client, message);
       if (!messagesCollected.includes("ein menschlicher Supporter wird das Ticket übernehmen!")) {
         const aiResponse = await sendMessagesToAI(messagesCollected, message);
@@ -250,94 +263,94 @@ module.exports = async (client, message) => {
       }
     }
   }
-  
-   // 3. DM-Check: Key-Generierung
-    //    (Nur, wenn keine Guild vorhanden ist: !message.guild und User-ID stimmt)
-    if (!message.guild) {
-        if (!message.author.id === '639759741555310612') {
-            Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
+
+  // 3. DM-Check: Key-Generierung
+  //    (Nur, wenn keine Guild vorhanden ist: !message.guild und User-ID stimmt)
+  if (!message.guild) {
+    if (message.author.id !== '639759741555310612') {
+      Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
+    }
+    try {
+      if (message.content.startsWith('!generate')) {
+        const args = message.content.trim().split(/\s+/);
+        const amountToGenerate = parseInt(args[1], 10);
+
+        // Parameter extrahieren (z.B. "5" => 5 Keys)
+        if (isNaN(amountToGenerate) || amountToGenerate <= 0) {
+          return message.reply('Bitte gib eine gültige Anzahl ein!');
         }
+
+        // Funktion: generiere 1 Key
+        function generateUniqueKey() {
+          // 10 Buchstaben (A-Z) + 5 Ziffern (0-9) = 15 Zeichen
+          const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          const digits = '0123456789';
+
+          let partLetters = '';
+          for (let i = 0; i < 10; i++) {
+            partLetters += letters.charAt(Math.floor(Math.random() * letters.length));
+          }
+
+          let partDigits = '';
+          for (let i = 0; i < 5; i++) {
+            partDigits += digits.charAt(Math.floor(Math.random() * digits.length));
+          }
+
+          // Zusammenfügen: Buchstaben gefolgt von Ziffern
+          return partLetters + partDigits;
+        }
+
+        // Keys erzeugen
+        const keysArray = [];
+        for (let i = 0; i < amountToGenerate; i++) {
+          keysArray.push(generateUniqueKey());
+        }
+
+        // Keys in der Datenbank speichern
         try {
-            if (message.content.startsWith('!generate')) {
-                const args = message.content.trim().split(/\s+/);
-                const amountToGenerate = parseInt(args[1], 10);
-
-                // Parameter extrahieren (z.B. "5" => 5 Keys)
-                if (isNaN(amountToGenerate) || amountToGenerate <= 0) {
-                    return message.reply('Bitte gib eine gültige Anzahl ein!');
-                }
-            
-                // Funktion: generiere 1 Key
-                function generateUniqueKey() {
-                    // 10 Buchstaben (A-Z) + 5 Ziffern (0-9) = 15 Zeichen
-                    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                    const digits = '0123456789';
-
-                    let partLetters = '';
-                    for (let i = 0; i < 10; i++) {
-                        partLetters += letters.charAt(Math.floor(Math.random() * letters.length));
-                    }
-
-                    let partDigits = '';
-                    for (let i = 0; i < 5; i++) {
-                        partDigits += digits.charAt(Math.floor(Math.random() * digits.length));
-                    }
-
-                    // Zusammenfügen: Buchstaben gefolgt von Ziffern
-                    return partLetters + partDigits;
-                }
-
-                // Keys erzeugen
-                const keysArray = [];
-                for (let i = 0; i < amountToGenerate; i++) {
-                    keysArray.push(generateUniqueKey());
-                }
-
-                // Keys in der Datenbank speichern
-                try {
-                    for (const key of keysArray) {
-                        await Insert(
-                            'INSERT INTO activation_keys (activation_key) VALUES (?)',
-                            [key]
-                        );
-                    }
-                    // Antwort an dich mit den erzeugten Keys
-                    await message.reply(`Ich habe dir ${amountToGenerate} Key(s) erstellt:\n` + keysArray.join('\n'));
-                } catch (error) {
-                    Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}\n${error.stack}`);
-                    await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
-                }
-                Logger.success(`Es wurden ${amountToGenerate} neue keys erstellt`);
-            } 
+          for (const key of keysArray) {
+            await Insert(
+              'INSERT INTO activation_keys (activation_key) VALUES (?)',
+              [key]
+            );
+          }
+          // Antwort an dich mit den erzeugten Keys
+          await message.reply(`Ich habe dir ${amountToGenerate} Key(s) erstellt:\n` + keysArray.join('\n'));
         } catch (error) {
-            Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
+          Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}\n${error.stack}`);
+          await message.reply('Es gab einen Fehler beim Speichern der Keys in der Datenbank.');
         }
+        Logger.success(`Es wurden ${amountToGenerate} neue Keys erstellt`);
+      }
+    } catch (error) {
+      Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
+    }
+  }
+
+  // 4. DM-Check: Upload für Daten zur GeneralInformation Collection
+  if (!message.guild) {
+    if (message.author.id !== '639759741555310612') {
+      Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
     }
 
-    // 4. DM-Check: Upload für Daten zur GeneralInformation Collection
-    if (!message.guild) {
-        if (!message.author.id === '639759741555310612') {
-            Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue keys zu erstellen`);
-        }
-    
+    try {
+      if (message.content.startsWith('!upload')) {
         try {
-            if (message.content.startsWith('!upload')) {
-                try {
-                    // Entfernt den Befehl '!upload' und speichert nur den Text danach
-                    const content = message.content.slice('!upload'.length).trim();
-                    
-                    await upload('GeneralInformation', content);
+          // Entfernt den Befehl '!upload' und speichert nur den Text danach
+          const content = message.content.slice('!upload'.length).trim();
 
-                    Logger.info(`Gespeicherter Text: ${content}`);
-    
-                    await message.reply('Deine Daten wurden erfolgreich gespeichert.');
-                } catch (error) {
-                    Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);
-                    await message.reply('Es gab einen Fehler beim Speichern der Daten in der Datenbank.');
-                }
-            }
+          await upload('GeneralInformation', content);
+
+          Logger.info(`Gespeicherter Text: ${content}`);
+
+          await message.reply('Deine Daten wurden erfolgreich gespeichert.');
         } catch (error) {
-            Logger.debug(error);
+          Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);
+          await message.reply('Es gab einen Fehler beim Speichern der Daten in der Datenbank.');
         }
+      }
+    } catch (error) {
+      Logger.debug(error);
     }
+  }
 };
