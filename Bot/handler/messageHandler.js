@@ -5,6 +5,8 @@ const { error } = require('../helper/embedHelper');
 const { getData } = require('../Database/qdrant');
 const axios = require('axios');
 const Logger = require('../helper/loggerHelper');
+const { REST, Routes } = require('discord.js');
+
 require('dotenv').config();
 const fs = require('fs');
 
@@ -212,60 +214,108 @@ module.exports = async (client, message) => {
   if (message.author.bot) return;
 
   // Falls die Nachricht als DM gesendet wurde, kann hier zusätzliche Logik implementiert werden.
+  // Neue DM-Commands: !help und !commandsreload (nur für den User mit der ID 639759741555310612)
   if (!message.guild) {
-    return;
+    const content = message.content.trim();
+    if (content === '!help' || content === '!commandsreload') {
+      // Nur der autorisierte User darf diese Befehle ausführen
+      if (message.author.id !== '639759741555310612') {
+        Logger.report(`User ${message.author.tag} (ID: ${message.author.id}) hat versucht, einen geschützten DM-Befehl auszuführen.`);
+        return;
+      }
+
+      // Command: !help – Liste aller verfügbaren DM-Befehle
+      if (content === '!help') {
+        const dmCommands = [
+          '!help - Zeigt alle DM-Befehle an.',
+          '!commandsreload - Lädt alle Befehle auf allen Servern neu.',
+          '!generate <Anzahl> - Generiert Aktivierungsschlüssel.',
+          '!upload <Daten> - Lädt Daten in die Datenbank hoch.'
+        ];
+        return message.reply('Verfügbare DM-Befehle:\n' + dmCommands.join('\n'));
+      }
+
+      // Command: !commandsreload – Befehle in allen Guilds löschen und neu laden
+      if (content === '!commandsreload') {
+        // Nur der autorisierte User darf diese Befehle ausführen
+        if (message.author.id !== '639759741555310612') {
+          Logger.report(`User ${message.author.tag} (ID: ${message.author.id}) hat versucht, einen geschützten DM-Befehl auszuführen.`);
+          return;
+        }
+        message.reply('Starte das Neuladen der globalen Befehle...')
+          .then(async () => {
+            const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+            const commands = Array.from(client.commands.values()).map(cmd => cmd.data.toJSON());
+            try {
+              await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: commands });
+              Logger.success('Globale Befehle wurden neu geladen.');
+              return message.reply('Globale Befehle wurden neu geladen.');
+            } catch (error) {
+              Logger.error('Fehler beim Neuladen der globalen Befehle: ' + error.message);
+              return message.reply('Fehler beim Neuladen der globalen Befehle.');
+            }
+          })
+          .catch(err => {
+            Logger.error('Fehler beim Neuladen der Befehle: ' + err.message);
+            return message.reply('Fehler beim Neuladen der Befehle.');
+          });
+        return;
+      }      
+    }
   }
 
-  // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
-  // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
-  if (message.channel.name.toLowerCase() === 'ticket-system') {
-    try {
-      await updateTicketCreationMessage(message.guild);
-    } catch (err) {
-      Logger.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message}\n${err.stack}`);
-    }
-    return;
-  }
-
-  // Ticket-Logik: Nur fortfahren, wenn der Kanal als Ticket-Kanal gilt
-  if (isTicketChannel(message.channel)) {
-    try {
-      // Vorübergehend Schreibrechte des Nutzers entfernen
-      await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: false });
-    } catch (err) {
-      Logger.error(`Fehler beim Entfernen der Senderechte für ${message.author.id}: ${err.message}`);
+  // Falls die Nachricht in einem Guild-Channel gesendet wurde:
+  if (message.guild) {
+    // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
+    // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
+    if (message.channel.name.toLowerCase() === 'ticket-system') {
+      try {
+        await updateTicketCreationMessage(message.guild);
+      } catch (err) {
+        Logger.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message}\n${err.stack}`);
+      }
+      return;
     }
 
-    try {
-      const isAiTicket = await isAiSupportTicket(message.channel);
-      if (!isAiTicket) {
+    // Ticket-Logik: Nur fortfahren, wenn der Kanal als Ticket-Kanal gilt
+    if (isTicketChannel(message.channel)) {
+      try {
+        // Vorübergehend Schreibrechte des Nutzers entfernen
+        await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: false });
+      } catch (err) {
+        Logger.error(`Fehler beim Entfernen der Senderechte für ${message.author.id}: ${err.message}`);
+      }
+
+      try {
+        const isAiTicket = await isAiSupportTicket(message.channel);
+        if (!isAiTicket) {
+          try {
+            await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
+          } catch (err) {
+            Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
+          }
+          return;
+        }
+
+        const messagesCollected = await collectMessagesFromChannel(message.channel, client, message);
+        if (!messagesCollected.includes("ein menschlicher Supporter wird das Ticket übernehmen!")) {
+          const aiResponse = await sendMessagesToAI(messagesCollected, message);
+          await message.channel.send(aiResponse);
+        }
+      } catch (error) {
+        Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}\n${error.stack}`);
+        await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
+      } finally {
         try {
           await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
         } catch (err) {
           Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
         }
-        return;
-      }
-
-      const messagesCollected = await collectMessagesFromChannel(message.channel, client, message);
-      if (!messagesCollected.includes("ein menschlicher Supporter wird das Ticket übernehmen!")) {
-        const aiResponse = await sendMessagesToAI(messagesCollected, message);
-        await message.channel.send(aiResponse);
-      }
-    } catch (error) {
-      Logger.error(`Fehler beim Verarbeiten der Nachricht im Ticket-Kanal (${message.channel.name}): ${error.message}\n${error.stack}`);
-      await message.channel.send('Es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte versuche es später erneut.');
-    } finally {
-      try {
-        await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
-      } catch (err) {
-        Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
       }
     }
   }
 
-  // 3. DM-Check: Key-Generierung
-  //    (Nur, wenn keine Guild vorhanden ist: !message.guild und User-ID stimmt)
+  // DM-Check: Key-Generierung (nur, wenn keine Guild vorhanden ist)
   if (!message.guild) {
     if (message.author.id !== '639759741555310612') {
       Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
@@ -327,7 +377,7 @@ module.exports = async (client, message) => {
     }
   }
 
-  // 4. DM-Check: Upload für Daten zur GeneralInformation Collection
+  // DM-Check: Upload für Daten zur GeneralInformation Collection
   if (!message.guild) {
     if (message.author.id !== '639759741555310612') {
       Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
