@@ -77,6 +77,57 @@ module.exports = {
                 return;
             }
 
+        // ─── AGBs & Datenschutzerklärung Abfrage ─────────────────────────────
+        const agbsRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('accept_agbs')
+                .setLabel('AGBs & Datenschutz akzeptieren')
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId('decline_agbs')
+                .setLabel('Ablehnen')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+        await interaction.editReply({
+            embeds: [info("Datenschuzterklärung & AGB", 'Bevor das Setup gestartet wird, müssen Sie unsere AGBs und Datenschutzerklärung akzeptieren. Mit klicken des Buttons unten akzeptieren dies diese!')],
+            components: [agbsRow],
+        });
+
+        const replyMessage = await interaction.fetchReply();
+
+        try {
+            // Warten auf die Button-Interaktion (max. 60 Sekunden)
+            const confirmation = await replyMessage.awaitMessageComponent({
+                filter: i => i.user.id === interaction.user.id,
+                time: 60000,
+            });
+            if (confirmation.customId === 'accept_agbs') {
+                await confirmation.update({ 
+                    embeds: [success("Akzeptiert", "AGBs und Datenschutzerklärung akzeptiert. Setup wird fortgesetzt...")], 
+                    components: [] 
+                });
+            } else {
+                await confirmation.update({ 
+                    embeds: [error("Abgelehnt", "Setup abgebrochen. Sie müssen die AGBs und Datenschutzerklärung akzeptieren um den Bot nutzen zu können")], 
+                    components: [] 
+                });
+                return;
+            }
+        } catch (err) {
+            await interaction.editReply({ 
+                embeds: [error("error", "zeitüberschreitung: Setup abgebrochen.")], 
+                components: [] 
+            });
+
+            console.log(err);
+
+            return;
+
+            
+        }
+        // ────────────────────────────────────────────────────────────────────────
+            
             const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
 
             if(!isMatch.IsMatch) {
