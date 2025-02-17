@@ -1,8 +1,31 @@
-// addcategory.js
 const { SlashCommandBuilder } = require('discord.js');
 const { getCategories, createCategory, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
 const Logger = require('../../helper/loggerHelper');
 const { info, success, error } = require('../../helper/embedHelper');
+
+/**
+ * Prüft, ob das übergebene Emoji gültig ist:
+ * - Ist es ein Custom-Emoji, wird zusätzlich geprüft, ob es im aktuellen Server vorhanden ist.
+ * - Andernfalls wird geprüft, ob es ein gültiges Unicode-Emoji ist.
+ *
+ * @param {string} emoji Das zu prüfende Emoji.
+ * @param {Guild} guild Der aktuelle Server.
+ * @returns {boolean} true, wenn das Emoji gültig ist, andernfalls false.
+ */
+function isValidDiscordEmoji(emoji, guild) {
+  // Prüfe auf Custom-Emoji (z.B. <a:name:id> oder <:name:id>)
+  const customEmojiRegex = /^<a?:(\w+):(\d+)>$/;
+  const match = emoji.match(customEmojiRegex);
+  if (match) {
+    const emojiId = match[2];
+    // Erlaubt ist das Emoji nur, wenn es im aktuellen Server existiert.
+    return guild.emojis.cache.has(emojiId);
+  }
+  
+  // Prüfe, ob es sich um ein gültiges Unicode-Emoji handelt.
+  const unicodeEmojiRegex = /^\p{Extended_Pictographic}+$/u;
+  return unicodeEmojiRegex.test(emoji);
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -60,6 +83,15 @@ module.exports = {
       if (roleIdMatches) {
         permission = roleIdMatches.map(roleMention => roleMention.replace(/[<@&>]/g, ''));
       }
+    }
+
+    // Emoji-Validierung: Falls ein Emoji angegeben wurde,
+    // muss es gültig sein und aus dem aktuellen Server stammen (bei Custom-Emojis).
+    if (emoji && !isValidDiscordEmoji(emoji, interaction.guild)) {
+      await interaction.editReply({
+        embeds: [error('Fehler!', 'Das angegebene Emoji ist ungültig oder stammt von einem externen Server. Bitte gib ein gültiges Emoji ein.')]
+      });
+      return;
     }
 
     try {
