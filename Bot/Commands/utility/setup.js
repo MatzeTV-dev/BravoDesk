@@ -1,20 +1,5 @@
-const { 
-    SlashCommandBuilder, 
-    PermissionsBitField, 
-    ChannelType, 
-    ActionRowBuilder, 
-    StringSelectMenuBuilder, 
-    EmbedBuilder, 
-    ButtonBuilder, 
-    ButtonStyle 
-} = require('discord.js');
-const { 
-    activateKey, 
-    checkKeyActivated, 
-    checkKeyValidity, 
-    checkKeyExists, 
-    CheckDiscordIDWithKey 
-} = require('../../helper/keyHelper.js');
+const { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
+const { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey, } = require('../../helper/keyHelper.js');
 const { saveServerInformation, chefIfServerExists } = require('../../Database/database.js');
 const { error, success, warning, info } = require('../../helper/embedHelper.js');
 const { generateCollection } = require('../../Database/qdrant.js');
@@ -41,62 +26,57 @@ module.exports = {
         ),
     async execute(interaction) {
 
-        // Antwort als Ephemeral und Deferred Reply senden
         await interaction.deferReply({ ephemeral: true });
 
         guild = interaction.guild;
 
-        // Sicherstellen, dass nur der Serverinhaber diesen Befehl ausführen kann
-        if(guild.ownerId !== interaction.user.id) {
-            await interaction.editReply({
-                embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')]
-            });
-
-            // Optional: Benachrichtigung an Administratoren
-            const adminChannel = guild.channels.cache.find((channel) => channel.name === 'admin-log');
-            if(adminChannel) {
-                await adminChannel.send(
-                    `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/setup\` ohne Berechtigung auszuführen.`
-                );
-            }
-            return;
-        }
-
         try {
-            // Schlüsselüberprüfung und Aktivierung
+
+            if(guild.ownerId !== interaction.user.id) {
+                await interaction.editReply({
+                    embeds: [error('Error!', 'This Action is only allowed by the Server Owner!')]
+                });
+
+                // Optional: Benachrichtigung an Administratoren
+                const adminChannel = guild.channels.cache.find((channel) => channel.name === 'admin-log');
+                if(adminChannel) {
+                    await adminChannel.send(
+                        `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/setup\` ohne Berechtigung auszuführen.`
+                    );
+                }
+                return;
+            }
+
             var result = await checkKeyExists(interaction.options.getString('key'));
             if(!result.exists_in_keys) {
+
                 await interaction.editReply({
                     embeds: [error('Key existence', 'The key does not exists.')]
                 });
+
                 return;
             }
 
             var result = await checkKeyActivated(interaction.options.getString('key'));
+
             if(!result.is_activated) {
                 await activateKey(interaction.options.getString('key'), guild.id);
+
                 await interaction.editReply({
                     embeds: [success('Key activated', 'The key has been activated.')]
                 });
             }
 
             var result = await checkKeyValidity(interaction.options.getString('key'));
+
             if(!result.is_valid) {
                 await interaction.editReply({
                     embeds: [error('Key Expired', 'The key has expired.')]
                 });
+
                 return;
             }
 
-            const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
-            if(!isMatch.IsMatch) {
-                await interaction.editReply({
-                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')]
-                });
-                return;
-            }
-
-            
         // ─── AGBs & Datenschutzerklärung Abfrage ─────────────────────────────
         const agbsRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -147,7 +127,16 @@ module.exports = {
             
         }
         // ────────────────────────────────────────────────────────────────────────
+            
+            const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
 
+            if(!isMatch.IsMatch) {
+                await interaction.editReply({
+                    embeds: [error('Key mismatch!', 'The Key does not match the server it was activated originally.')]
+                });
+
+                return;
+            }
 
             await interaction.editReply({
                 embeds: [info('Setup Process!', 'Setup process started. Creating roles and channels...')]
@@ -176,8 +165,10 @@ module.exports = {
             }
         } catch (error) {
             Logger.error(`Error during setup: ${error.message}\n${error.stack}`);
+
             // Rollback bei Fehlern
             await rollbackSetup(interaction);
+
             await interaction.editReply({
                 embeds: [error('Setup Process!', 'An error occurred during the setup process. Please try again.')]
             });
@@ -242,16 +233,16 @@ async function createChannel(interaction) {
             topic: `Willkommen im Ticketsystem von ${guild.name}`,
             permissionOverwrites: [
                 {
-                    id: guild.id,
-                    deny: [PermissionsBitField.Flags.SendMessages],
+                    id: guild.id, // Standardmäßig für @everyone
+                    deny: [PermissionsBitField.Flags.SendMessages], // Jeder darf NICHT schreiben
                 },
                 {
-                    id: guild.members.me.id,
+                    id: guild.members.me.id, // Bot ID dynamisch holen
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
-                        PermissionsBitField.Flags.EmbedLinks,
-                        PermissionsBitField.Flags.ReadMessageHistory
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
                     ],
                 },
             ],
@@ -263,10 +254,11 @@ async function createChannel(interaction) {
         Logger.info(`${guild.name}: Channel already exists: ${channel.id}`);
     }
     
-    // Lese Embed-Daten aus JSON
-    const embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
 
-    const embeds = embedData.embeds.map((embed) => ({
+    // Lese Embed-Daten aus JSON
+    embedData = JSON.parse(fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8'));
+
+    embeds = embedData.embeds.map((embed) => ({
         ...embed,
         color: embed.color || 7049073,
     }));
@@ -336,10 +328,10 @@ async function createCategories(interaction) {
                 {
                     id: guild.members.me.id,
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
-                        PermissionsBitField.Flags.EmbedLinks,
-                        PermissionsBitField.Flags.ReadMessageHistory
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
                     ]
                 },
             ],
@@ -370,10 +362,10 @@ async function createCategories(interaction) {
                 {
                     id: guild.members.me.id,
                     allow: [
-                        PermissionsBitField.Flags.ViewChannel,
-                        PermissionsBitField.Flags.SendMessages,
-                        PermissionsBitField.Flags.EmbedLinks,
-                        PermissionsBitField.Flags.ReadMessageHistory
+                        PermissionsBitField.Flags.ViewChannel,      // Bot kann den Channel sehen
+                        PermissionsBitField.Flags.SendMessages,     // Bot kann schreiben
+                        PermissionsBitField.Flags.EmbedLinks,       // Bot kann Embeds senden
+                        PermissionsBitField.Flags.ReadMessageHistory // Bot kann Nachrichtenverlauf lesen
                     ]
                 },
             ],
@@ -433,8 +425,3 @@ async function saveDatabase(server_id, ticket_system_channel_id, ticket_category
         Logger.error(`Error saving to database: ${error.message}\n${error.stack}`);
     }
 }
-
-
-
-
-                
