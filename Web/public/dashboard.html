@@ -592,120 +592,10 @@
 </div>
 
 <script>
-  /* Beispiel-Datenstruktur für Kategorien */
-  var categoriesData = {
-    "bugreport": {
-      name: "Bug Report",
-      emoji: "🐛",
-      description: "Haben Sie einen Fehler gefunden?"
-    },
-    "featurerequest": {
-      name: "Feature Request",
-      emoji: "💡",
-      description: "Teile deine Ideen mit uns."
-    },
-    "question": {
-      name: "Question",
-      emoji: "❓",
-      description: "Stelle deine Fragen."
-    }
-  };
-
-  var currentCategoryKey = null; // Aktuell ausgewählte Kategorie
-  var currentEditRow = null;     // Für Wissenseinträge-Edit
-
   /* Initialisierung */
   window.addEventListener("load", function() {
     populateCategoryDropdown();
   });
-
-  /* Kategorien-Logik */
-  function populateCategoryDropdown() {
-    var select = document.getElementById("kategorieSelect");
-    select.innerHTML = "";
-    var keys = Object.keys(categoriesData);
-    for (var i = 0; i < keys.length; i++) {
-      var key = keys[i];
-      var opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = categoriesData[key].name;
-      select.appendChild(opt);
-    }
-    // Wähle automatisch das erste Element (falls vorhanden)
-    if (keys.length > 0) {
-      select.value = keys[0];
-      loadCategoryData(keys[0]);
-    }
-  }
-
-  function loadCategoryData(key) {
-    if (!categoriesData[key]) return;
-    currentCategoryKey = key;
-    document.getElementById("kategorieEmoji").value = categoriesData[key].emoji;
-    document.getElementById("kategorieBeschreibung").value = categoriesData[key].description;
-  }
-
-  function saveCategoryChanges() {
-    if (!currentCategoryKey) {
-      alert("Bitte zuerst eine Kategorie auswählen.");
-      return;
-    }
-    var newEmoji = document.getElementById("kategorieEmoji").value;
-    var newDesc = document.getElementById("kategorieBeschreibung").value;
-    categoriesData[currentCategoryKey].emoji = newEmoji;
-    categoriesData[currentCategoryKey].description = newDesc;
-    alert("Kategorie aktualisiert!");
-  }
-
-  function deleteCategory() {
-    if (!currentCategoryKey) {
-      alert("Keine Kategorie ausgewählt.");
-      return;
-    }
-    if (confirm("Kategorie '" + categoriesData[currentCategoryKey].name + "' wirklich löschen?")) {
-      delete categoriesData[currentCategoryKey];
-      currentCategoryKey = null;
-      populateCategoryDropdown();
-      document.getElementById("kategorieEmoji").value = "";
-      document.getElementById("kategorieBeschreibung").value = "";
-      alert("Kategorie gelöscht!");
-    }
-  }
-
-  /* Popup: Neue Kategorie erstellen */
-  function openCreateCategoryPopup() {
-    document.getElementById("createCategoryPopup").classList.add("show");
-  }
-  function closeCreateCategoryPopup() {
-    document.getElementById("createCategoryPopup").classList.remove("show");
-    document.getElementById("newCategoryName").value = "";
-    document.getElementById("newCategoryEmoji").value = "";
-    document.getElementById("newCategoryDescription").value = "";
-  }
-  function createCategory() {
-    var name = document.getElementById("newCategoryName").value.trim();
-    var emoji = document.getElementById("newCategoryEmoji").value.trim();
-    var desc = document.getElementById("newCategoryDescription").value.trim();
-    if (!name) {
-      alert("Bitte einen Kategorienamen eingeben.");
-      return;
-    }
-    var key = name.replace(/\s+/g, '').toLowerCase();
-    if (categoriesData[key]) {
-      alert("Kategorie existiert bereits!");
-      return;
-    }
-    categoriesData[key] = {
-      name: name,
-      emoji: emoji || "",
-      description: desc || ""
-    };
-    populateCategoryDropdown();
-    document.getElementById("kategorieSelect").value = key;
-    loadCategoryData(key);
-    closeCreateCategoryPopup();
-    alert("Neue Kategorie '" + name + "' wurde erstellt!");
-  }
 
   /* Tabs umschalten */
   function showSection(sectionId, navItem) {
@@ -740,101 +630,11 @@
       }, 10);
       if (arrow) arrow.style.transform = "rotate(180deg)";
     }
+    
   }
   function selectServer(serverName) {
     document.getElementById("selectedServer").innerText = serverName;
     toggleMenu("serverDropdown");
-  }
-
-  /* User-Menü */
-  function logout() {
-    toggleMenu("userMenu", "userArrow");
-  }
-
-
-
-
-
-  /*
-
-    Wissenseinträge Funktionen
-
-  */
-
-  /* Wissenseinträge: Neu anlegen */
-  function openPopup() {
-    document.getElementById("popupModal").classList.add("show");
-  }
-  function closePopup() {
-    document.getElementById("popupModal").classList.remove("show");
-  }
-  function saveEntry() {
-    var newEntry = document.getElementById("newEntryText").value.trim();
-    if (newEntry !== "") {
-      var tbody = document.querySelector("table tbody");
-      var newRow = document.createElement("tr");
-      newRow.innerHTML = `
-        <td class="wissen-cell" data-fulltext="${newEntry.replace(/"/g, '&quot;')}">
-          ${newEntry}
-        </td>
-        <td style="vertical-align: middle;">
-          <span style="cursor: pointer;" onclick="openEditPopup(this)">✏️</span>
-          <span style="cursor: pointer; margin-left: 10px;" onclick="deleteEntry(this)">❌</span>
-        </td>
-      `;
-      tbody.appendChild(newRow);
-      document.getElementById("newEntryText").value = "";
-      closePopup();
-    }
-  }
-
-    /* Wissenseinträge: Editieren */
-    var currentEditRow = null;
-  function openEditPopup(el) {
-    var row = el.parentElement.parentElement;
-    currentEditRow = row;
-    var currentText = row.cells[0].innerText;
-    document.getElementById("editEntryText").value = currentText;
-    document.getElementById("editPopupModal").classList.add("show");
-  }
-
-  function closeEditPopup() {
-    document.getElementById("editPopupModal").classList.remove("show");
-  }
-  
-  function saveEditEntry() {
-    var newText = document.getElementById("editEntryText").value.trim();
-    if (currentEditRow && newText !== "") {
-      currentEditRow.cells[0].innerText = newText;
-      currentEditRow.cells[0].setAttribute("data-fulltext", newText);
-      closeEditPopup();
-      currentEditRow = null;
-    }
-  }
-
-  /* Wissenseinträge: Löschen */
-  function deleteEntry(el) {
-    if (confirm("Eintrag wirklich löschen?")) {
-      var row = el.parentElement.parentElement;
-      row.remove();
-    }
-  }
-
-    /*
-
-    Design Funktionen
-
-    */
-
-  /* DESIGN-Funktionen (Platzhalter) */
-  function uploadImage() {
-    alert("Hier könntest du einen Dateiauswahldialog öffnen und das Bild hochladen.");
-  }
-
-  function saveDesign() {
-    var botName = document.getElementById("botName").value;
-    var botStatus = document.getElementById("botStatus").value;
-    alert("Design gespeichert!\nBot Name: " + botName + "\nBot Status: " + botStatus);
   }
 
   /* Klick außerhalb schließt Menüs */
