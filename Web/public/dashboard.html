@@ -1,45 +1,866 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>BravoDesk Dashboard</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Off-Canvas-Sidebar-Drawer-Navbar.css">
+</head>
+
+<body style="background: #1a1e1b;"><!DOCTYPE html>
+<html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <base href="/">
-  <link rel="stylesheet" type="text/css" href="output.css" >
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <title>Kategorien & Wissenseinträge</title>
+  <style>
+    /* Allgemein */
+    * {
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1e1b;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    h2 {
+      margin-top: 0;
+    }
+
+    /* Layout: Sidebar + Hauptbereich */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 280px;
+      background-color: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+      border-right: 2px solid #2a2a2a;
+    }
+    .main-content {
+      flex-grow: 1;
+      background-color: #1a1e1b;
+      padding: 20px;
+    }
+
+    /* Navigation Sidebar */
+    .nav {
+      display: flex;
+      flex-direction: column;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .nav li {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      background-color: #2a2a2a;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .nav li:hover,
+    .nav li.active {
+      background-color: #1c6b3e;
+    }
+
+    /* User-Info */
+    .user-info {
+      margin-top: auto;
+      padding: 12px;
+      background-color: #2a2a2a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .user-info:hover {
+      background-color: #1c6b3e;
+    }
+
+    /* Content Sections (Tabs) */
+    .content-section {
+      display: none;
+    }
+    .content-section.active {
+      display: block;
+    }
+
+    /* Tabelle für Wissenseinträge */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    th, td {
+      border: 1px solid #1e1e1e;
+      padding: 10px;
+      background-color: #1e1e1e;
+    }
+    .wissen-cell {
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .wissen-cell:hover::after {
+      content: attr(data-fulltext);
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background-color: #1e1e1e;
+      color: #fff;
+      padding: 5px;
+      border-radius: 4px;
+      width: 300px;
+      white-space: normal;
+      font-size: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+
+    /* Popup-Overlay */
+    .popup-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(5px);
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 100;
+    }
+    .popup-modal.show {
+      display: flex;
+      opacity: 1;
+      transform: scale(1);
+    }
+    /* Einheitlicher Popup-Stil */
+    .popup-content {
+      background-color: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      width: 500px;
+      max-width: 90%;
+    }
+    .popup-content h3 {
+      margin: 0 0 15px;
+      color: #fff;
+    }
+    /* Kürzere Inputs (wie die Beschreibung) */
+    .popup-content input,
+    .popup-content textarea {
+      width: 100%;
+      font-size: 12px;
+      color: #ccc;
+      background-color: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px;
+      margin-bottom: 5px;
+    }
+    /* Buttons im Popup linksbündig */
+    .popup-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+    }
+    .popup-buttons button {
+      background-color: #1c6b3e;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+    .popup-buttons button:hover {
+      background-color: #13843d;
+    }
+
+    /* Kategorien-Bereich */
+    .kategorien-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    .kategorien-container {
+      background-color: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      width: 320px;
+      max-width: 100%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+    .kategorien-container h3 {
+      margin: 0 0 20px;
+      color: #fff;
+      font-size: 18px;
+    }
+    /* Dropdown etwas kompakter */
+    .full-width-dropdown {
+      width: 100%;
+      font-size: 12px;
+      background-color: #1e1e1e;
+      color: #ccc;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px;
+    }
+    /* Eine Zeile für Emoji & Beschreibung */
+    .kategorien-single-line {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      align-items: flex-end;
+    }
+    .kategorien-field {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .kategorien-field label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #fff;
+    }
+    .kategorien-field input {
+      font-size: 12px;
+      color: #ccc;
+      background-color: #1e1e1e;
+      border: 0px solid #444;
+      border-radius: 4px;
+      padding: 4px;
+    }
+    /* Emoji-Feld schmaler */
+    #kategorieEmoji {
+      width: 27px;
+    }
+    /* Buttons in der Kategorienansicht linksbündig */
+    .kategorien-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+      margin-top: 20px;
+    }
+    .kategorien-buttons button {
+      background-color: #1c6b3e;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+    .kategorien-buttons button:hover {
+      background-color: #13843d;
+    }
+
+    /* -------------------------------------------
+       BLACKLIST-STYLES
+       ------------------------------------------- */
+    .btn-bl {
+      background-color: #1c6b3e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 10px 20px;
+      margin: 0 5px;
+      transition: background 0.3s;
+    }
+    .btn-bl:hover {
+      background-color: #13843d;
+    }
+
+    /* -------------------------------------------
+       DESIGN-STYLES (angepasst)
+       ------------------------------------------- */
+    .design-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    .design-container {
+      background-color: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      width: 600px; /* Passt du an */
+      max-width: 100%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+
+    /* Oberer Bereich: Bild links + Felder rechts */
+    .design-top {
+      display: flex;
+      gap: 30px;  /* Abstand zwischen Bild & Felder */
+      align-items: flex-start; /* Bild & Felder oben bündig */
+    }
+    .design-image {
+      text-align: center;
+    }
+    .design-image img {
+      width: 131px;
+      height: 131px;
+      background: #1e1e1e;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .design-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Abstand zwischen Name & Status */
+      flex: 1;
+    }
+    .design-fields label {
+      font-weight: bold;
+      font-size: 15px;
+      margin-bottom: 5px;
+      color: #fff;
+    }
+    .design-fields input {
+      font-size: 15px;
+      color: #ccc;
+      background-color: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 6px;
+    }
+
+    /* Unterer Bereich: Buttons */
+    .design-bottom {
+      margin-top: 20px;
+      display: flex;
+      justify-content: flex-end; /* Speichern nach rechts */
+      gap: 10px;
+    }
+    .design-button {
+      background-color: #1c6b3e;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    .design-button:hover {
+      background-color: #13843d;
+    }
+  </style>
 </head>
 <body>
-    <div class="flex items-center justify-center h-screen bg-discord-gray text-white flex-col">
-        <div class="text-2xl">Welcome to the dashboard,</div>
-        <div class="text-4xl mt-3 flex items-center font-medium" >
-            <img src='' id="avatar" class="rounded-full w-12 h-12 mr-3"/>
-            <div id="name"></div>
-        </div>
-        <a href="/" class="text-sm mt-5">Logout</a>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- Logo -->
+    <div style="text-align: center; margin-bottom: 15px;">
+      <img src="logo_transparent.png" alt="Logo" style="max-width: 120px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+    </div>
+    <!-- Server Selector Dropdown -->
+    <div style="position: relative; margin-bottom: 15px;">
+      <button id="serverButton" onclick="toggleMenu('serverDropdown')" style="background-color: #1c6b3e; color: #fff; padding: 12px; width: 100%; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
+        <span id="selectedServer">Benders Destiny</span>
+        <span style="font-size: 12px;">▼</span>
+      </button>
+      <div id="serverDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background-color: #2a2e2e; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s;">
+        <div onclick="selectServer('Benders Destiny')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Benders Destiny</div>
+        <div onclick="selectServer('Server 2')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Server 2</div>
+        <div onclick="selectServer('Server 3')" style="padding: 10px; cursor: pointer; color: #fff;">Server 3</div>
+      </div>
+    </div>
+    <!-- Navigation -->
+    <ul class="nav">
+      <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
+      <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
+      <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
+      <!-- Hier: Design mit onclick -->
+      <li onclick="showSection('design', this)">🎨 Design</li>
+    </ul>
+    <!-- User Info -->
+    <div class="user-info" onclick="toggleMenu('userMenu','userArrow')">
+      <div style="width: 40px; height: 40px; background: url('avatar.jpg') no-repeat center/cover; border-radius: 50%;"></div>
+      <div style="display: flex; flex-direction: column; flex-grow: 1;">
+        <span style="font-size: 14px; font-weight: bold;">Sucuck</span>
+        <span style="color: limegreen; font-size: 12px;">● Online</span>
+      </div>
+      <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
+      <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2a2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
+        <div onclick="logout()" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">🔒 Abmelden</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- Wissenseinträge -->
+    <div id="wissenseintraege" class="content-section active">
+      <h2 style="margin-bottom: 20px;">Wissenseinträge</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Wissen</th>
+            <th style="width: 100px;">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Beispiel-Eintrag -->
+          <tr>
+            <td class="wissen-cell" data-fulltext="Die Nutzung von OOC-Wissen im RP ist verboten! Lorem ipsum dolor sit amet...">
+              Die Nutzung von OOC-Wissen im RP ist verboten! Lorem ipsum dolor sit amet...
+            </td>
+            <td style="vertical-align: middle;">
+              <span style="cursor: pointer;" onclick="openEditPopup(this)">✏️</span>
+              <span style="cursor: pointer; margin-left: 10px;" onclick="deleteEntry(this)">❌</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="text-align: right; margin-top: 15px;">
+        <button onclick="openPopup()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Neu</button>
+      </div>
     </div>
 
-    <script>
-        window.onload = () => {
-            const fragment = new URLSearchParams(window.location.hash.slice(1));
-            const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
+    <!-- Kategorien -->
+    <div id="kategorien" class="content-section">
+      <h2 style="text-align: center;">Kategorien</h2>
+      <div class="kategorien-wrapper">
+        <div class="kategorien-container">
+          <h3>Kategorie bearbeiten</h3>
+          <!-- Dropdown -->
+          <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
+          <!-- Emoji & Beschreibung in einer Zeile -->
+          <div class="kategorien-single-line">
+            <div class="kategorien-field">
+              <label for="kategorieEmoji">Emoji</label>
+              <input type="text" id="kategorieEmoji">
+            </div>
+            <div class="kategorien-field">
+              <label style="margin-left: -90px;" for="kategorieBeschreibung">Beschreibung</label>
+              <input style="margin-left: -90px;" type="text" id="kategorieBeschreibung">
+            </div>
+          </div>
+          <div class="kategorien-buttons">
+            <button onclick="openCreateCategoryPopup()">Erstellen</button>
+            <button onclick="saveCategoryChanges()">Speichern</button>
+            <button onclick="deleteCategory()">Löschen</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            if (!accessToken) {
-                window.location.href('/')
-            }
+    <!-- BLACKLIST -->
+    <div id="blacklist" class="content-section">
+      <h2 style="margin-bottom: 20px;">Blacklist</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Grund</th>
+            <th>Datum</th>
+            <th style="width: 30px;"></th> <!-- Pfeil-Spalte -->
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Beispiel-Einträge -->
+          <tr>
+            <td>130953563188797673</td>
+            <td>Trolling, Spamming, Hacking</td>
+            <td>14.02.2025 14:16</td>
+            <td style="text-align:center;">&gt;</td>
+          </tr>
+          <tr>
+            <td>130953563188797673</td>
+            <td>Trolling, Spamming, Hacking</td>
+            <td>14.02.2025 14:16</td>
+            <td style="text-align:center;">&gt;</td>
+          </tr>
+          <tr>
+            <td>130953563188797673</td>
+            <td>Trolling, Spamming, Hacking</td>
+            <td>14.02.2025 14:16</td>
+            <td style="text-align:center;">&gt;</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="btn-bl">Entfernen</button>
+        <button class="btn-bl">Hinzufügen</button>
+        <button class="btn-bl">Suchen</button>
+      </div>
+    </div>
 
-            fetch('https://discord.com/api/users/@me', {
-                headers: {
-                    authorization: `${tokenType} ${accessToken}`,
-                },
-            })
-            .then(result => result.json())
-            .then(response => {
-                const { username, discriminator, avatar, id} = response;
-                
-                document.getElementById('name').innerText = ` ${username}`;
-                document.getElementById("avatar").src = `https://cdn.discordapp.com/avatars/${id}/${avatar}.jpg`;
-            })
-            .catch(console.error);
-        };
-    </script>
+    <!-- DESIGN (NEU) -->
+    <div id="design" class="content-section">
+      <h2 style="text-align:center;">Design</h2>
+      <div class="design-wrapper">
+        <div class="design-container">
+          <!-- Oberer Bereich -->
+          <div class="design-top">
+            <div class="design-image">
+              <img src="logo_transparent.png" alt="Bot-Logo">
+              <div style="margin-top:10px;">
+                <button style="background-color: grey;" class="design-button" onclick="uploadImage()">Bild hochladen</button>
+              </div>
+            </div>
+            <div class="design-fields">
+              <div>
+                <label style="margin-right: 10px;" for="botName">Bot Name</label>
+                <input type="text" id="botName" placeholder="Bot Name">
+              </div>
+              <div>
+                <label style="margin-right: 5px;" for="botStatus">Bot Status</label>
+                <input type="text" id="botStatus" placeholder="Bot Status">
+              </div>
+            </div>
+          </div>
+          <!-- Unterer Bereich (Speichern-Button) -->
+          <div class="design-bottom">
+            <button class="design-button" onclick="saveDesign()">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Neuen Wissenseintrag erstellen -->
+<div id="popupModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Neuer Eintrag</h3>
+    <textarea id="newEntryText" rows="3" placeholder="Neuer Wissenstext..."></textarea>
+    <div class="popup-buttons">
+      <button onclick="saveEntry()">Speichern</button>
+      <button onclick="closePopup()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Wissenseintrag bearbeiten -->
+<div id="editPopupModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Eintrag bearbeiten</h3>
+    <textarea id="editEntryText" rows="3"></textarea>
+    <div class="popup-buttons">
+      <button onclick="saveEditEntry()">Speichern</button>
+      <button onclick="closeEditPopup()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Neue Kategorie erstellen -->
+<div id="createCategoryPopup" class="popup-modal">
+  <div class="popup-content">
+    <h3>Neue Kategorie erstellen</h3>
+    <!-- Name (volle Breite) -->
+    <input type="text" id="newCategoryName" placeholder="Kategorie Name">
+    <!-- Eine Zeile: Emoji (schmal) + Beschreibung -->
+    <div class="create-category-line">
+      <input type="text" id="newCategoryEmoji" placeholder="🐛">
+      <input style="margin-bottom: 20px;" type="text" id="newCategoryDescription" placeholder="Beschreibung">
+    </div>
+    <div class="popup-buttons">
+      <button onclick="createCategory()">Speichern</button>
+      <button onclick="closeCreateCategoryPopup()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Beispiel-Datenstruktur für Kategorien */
+  var categoriesData = {
+    "bugreport": {
+      name: "Bug Report",
+      emoji: "🐛",
+      description: "Haben Sie einen Fehler gefunden?"
+    },
+    "featurerequest": {
+      name: "Feature Request",
+      emoji: "💡",
+      description: "Teile deine Ideen mit uns."
+    },
+    "question": {
+      name: "Question",
+      emoji: "❓",
+      description: "Stelle deine Fragen."
+    }
+  };
+
+  var currentCategoryKey = null; // Aktuell ausgewählte Kategorie
+  var currentEditRow = null;     // Für Wissenseinträge-Edit
+
+  /* Initialisierung */
+  window.addEventListener("load", function() {
+    populateCategoryDropdown();
+  });
+
+  /* Kategorien-Logik */
+  function populateCategoryDropdown() {
+    var select = document.getElementById("kategorieSelect");
+    select.innerHTML = "";
+    var keys = Object.keys(categoriesData);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = categoriesData[key].name;
+      select.appendChild(opt);
+    }
+    // Wähle automatisch das erste Element (falls vorhanden)
+    if (keys.length > 0) {
+      select.value = keys[0];
+      loadCategoryData(keys[0]);
+    }
+  }
+
+  function loadCategoryData(key) {
+    if (!categoriesData[key]) return;
+    currentCategoryKey = key;
+    document.getElementById("kategorieEmoji").value = categoriesData[key].emoji;
+    document.getElementById("kategorieBeschreibung").value = categoriesData[key].description;
+  }
+
+  function saveCategoryChanges() {
+    if (!currentCategoryKey) {
+      alert("Bitte zuerst eine Kategorie auswählen.");
+      return;
+    }
+    var newEmoji = document.getElementById("kategorieEmoji").value;
+    var newDesc = document.getElementById("kategorieBeschreibung").value;
+    categoriesData[currentCategoryKey].emoji = newEmoji;
+    categoriesData[currentCategoryKey].description = newDesc;
+    alert("Kategorie aktualisiert!");
+  }
+
+  function deleteCategory() {
+    if (!currentCategoryKey) {
+      alert("Keine Kategorie ausgewählt.");
+      return;
+    }
+    if (confirm("Kategorie '" + categoriesData[currentCategoryKey].name + "' wirklich löschen?")) {
+      delete categoriesData[currentCategoryKey];
+      currentCategoryKey = null;
+      populateCategoryDropdown();
+      document.getElementById("kategorieEmoji").value = "";
+      document.getElementById("kategorieBeschreibung").value = "";
+      alert("Kategorie gelöscht!");
+    }
+  }
+
+  /* Popup: Neue Kategorie erstellen */
+  function openCreateCategoryPopup() {
+    document.getElementById("createCategoryPopup").classList.add("show");
+  }
+  function closeCreateCategoryPopup() {
+    document.getElementById("createCategoryPopup").classList.remove("show");
+    document.getElementById("newCategoryName").value = "";
+    document.getElementById("newCategoryEmoji").value = "";
+    document.getElementById("newCategoryDescription").value = "";
+  }
+  function createCategory() {
+    var name = document.getElementById("newCategoryName").value.trim();
+    var emoji = document.getElementById("newCategoryEmoji").value.trim();
+    var desc = document.getElementById("newCategoryDescription").value.trim();
+    if (!name) {
+      alert("Bitte einen Kategorienamen eingeben.");
+      return;
+    }
+    var key = name.replace(/\s+/g, '').toLowerCase();
+    if (categoriesData[key]) {
+      alert("Kategorie existiert bereits!");
+      return;
+    }
+    categoriesData[key] = {
+      name: name,
+      emoji: emoji || "",
+      description: desc || ""
+    };
+    populateCategoryDropdown();
+    document.getElementById("kategorieSelect").value = key;
+    loadCategoryData(key);
+    closeCreateCategoryPopup();
+    alert("Neue Kategorie '" + name + "' wurde erstellt!");
+  }
+
+  /* Tabs umschalten */
+  function showSection(sectionId, navItem) {
+    // Alle Tabs ausblenden
+    document.querySelectorAll('.content-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    // Gewünschten Tab anzeigen
+    document.getElementById(sectionId).classList.add('active');
+    // Navigation reset
+    document.querySelectorAll('.nav li').forEach(li => {
+      li.classList.remove('active');
+    });
+    // Geklicktes Nav-Item hervorheben
+    navItem.classList.add('active');
+  }
+
+  /* Server-Dropdown */
+  function toggleMenu(menuId, arrowId) {
+    var menu = document.getElementById(menuId);
+    var arrow = arrowId ? document.getElementById(arrowId) : null;
+    if (menu.style.display === "block") {
+      menu.style.opacity = "0";
+      menu.style.transform = "translateY(" + (menuId === 'userMenu' ? '10px' : '-10px') + ")";
+      setTimeout(function() { menu.style.display = "none"; }, 300);
+      if (arrow) arrow.style.transform = "rotate(0deg)";
+    } else {
+      menu.style.display = "block";
+      setTimeout(function() {
+        menu.style.opacity = "1";
+        menu.style.transform = "translateY(0)";
+      }, 10);
+      if (arrow) arrow.style.transform = "rotate(180deg)";
+    }
+  }
+  function selectServer(serverName) {
+    document.getElementById("selectedServer").innerText = serverName;
+    toggleMenu("serverDropdown");
+  }
+
+  /* User-Menü */
+  function logout() {
+    toggleMenu("userMenu", "userArrow");
+  }
+
+
+
+
+
+  /*
+
+    Wissenseinträge Funktionen
+
+  */
+
+  /* Wissenseinträge: Neu anlegen */
+  function openPopup() {
+    document.getElementById("popupModal").classList.add("show");
+  }
+  function closePopup() {
+    document.getElementById("popupModal").classList.remove("show");
+  }
+  function saveEntry() {
+    var newEntry = document.getElementById("newEntryText").value.trim();
+    if (newEntry !== "") {
+      var tbody = document.querySelector("table tbody");
+      var newRow = document.createElement("tr");
+      newRow.innerHTML = `
+        <td class="wissen-cell" data-fulltext="${newEntry.replace(/"/g, '&quot;')}">
+          ${newEntry}
+        </td>
+        <td style="vertical-align: middle;">
+          <span style="cursor: pointer;" onclick="openEditPopup(this)">✏️</span>
+          <span style="cursor: pointer; margin-left: 10px;" onclick="deleteEntry(this)">❌</span>
+        </td>
+      `;
+      tbody.appendChild(newRow);
+      document.getElementById("newEntryText").value = "";
+      closePopup();
+    }
+  }
+
+    /* Wissenseinträge: Editieren */
+    var currentEditRow = null;
+  function openEditPopup(el) {
+    var row = el.parentElement.parentElement;
+    currentEditRow = row;
+    var currentText = row.cells[0].innerText;
+    document.getElementById("editEntryText").value = currentText;
+    document.getElementById("editPopupModal").classList.add("show");
+  }
+
+  function closeEditPopup() {
+    document.getElementById("editPopupModal").classList.remove("show");
+  }
+  
+  function saveEditEntry() {
+    var newText = document.getElementById("editEntryText").value.trim();
+    if (currentEditRow && newText !== "") {
+      currentEditRow.cells[0].innerText = newText;
+      currentEditRow.cells[0].setAttribute("data-fulltext", newText);
+      closeEditPopup();
+      currentEditRow = null;
+    }
+  }
+
+  /* Wissenseinträge: Löschen */
+  function deleteEntry(el) {
+    if (confirm("Eintrag wirklich löschen?")) {
+      var row = el.parentElement.parentElement;
+      row.remove();
+    }
+  }
+
+    /*
+
+    Design Funktionen
+
+    */
+
+  /* DESIGN-Funktionen (Platzhalter) */
+  function uploadImage() {
+    alert("Hier könntest du einen Dateiauswahldialog öffnen und das Bild hochladen.");
+  }
+
+  function saveDesign() {
+    var botName = document.getElementById("botName").value;
+    var botStatus = document.getElementById("botStatus").value;
+    alert("Design gespeichert!\nBot Name: " + botName + "\nBot Status: " + botStatus);
+  }
+
+  /* Klick außerhalb schließt Menüs */
+  document.addEventListener("click", function(event) {
+    // Server-Dropdown
+    if (!event.target.closest("#serverButton") && !event.target.closest("#serverDropdown")) {
+      var serverDropdown = document.getElementById("serverDropdown");
+      if (serverDropdown && serverDropdown.style.display === "block") {
+        toggleMenu("serverDropdown");
+      }
+    }
+    // User-Menü
+    if (!event.target.closest(".user-info") && !event.target.closest("#userMenu")) {
+      var userMenu = document.getElementById("userMenu");
+      if (userMenu && userMenu.style.display === "block") {
+        toggleMenu("userMenu", "userArrow");
+      }
+    }
+  });
+</script>
 </body>
+</html>
+
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/Off-Canvas-Sidebar-Drawer-Navbar-swipe.js"></script>
+    <script src="assets/js/Off-Canvas-Sidebar-Drawer-Navbar-off-canvas-sidebar.js"></script>
+</body>
+
 </html>
