@@ -5,8 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>BravoDesk Dashboard</title>
-    <link rel="stylesheet" href="assets/img/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/img/css/Off-Canvas-Sidebar-Drawer-Navbar.css">
 </head>
 
 <body style="background: #1a1e1b;"><!DOCTYPE html>
@@ -373,48 +371,50 @@
     }
   </style>
 </head>
-<body>
-
-<div class="layout">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <!-- Logo -->
-    <div style="text-align: center; margin-bottom: 15px;">
-      <img src="logo_transparent.png" alt="Logo" style="max-width: 120px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
-    </div>
-    <!-- Server Selector Dropdown -->
-    <div style="position: relative; margin-bottom: 15px;">
-      <button id="serverButton" onclick="toggleMenu('serverDropdown')" style="background-color: #1c6b3e; color: #fff; padding: 12px; width: 100%; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
-        <span id="selectedServer">Benders Destiny</span>
-        <span style="font-size: 12px;">▼</span>
-      </button>
-      <div id="serverDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background-color: #2a2e2e; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s;">
-        <div onclick="selectServer('Benders Destiny')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Benders Destiny</div>
-        <div onclick="selectServer('Server 2')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Server 2</div>
-        <div onclick="selectServer('Server 3')" style="padding: 10px; cursor: pointer; color: #fff;">Server 3</div>
+<body style="background: #1a1e1b;">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- Logo -->
+      <div style="text-align: center; margin-bottom: 15px;">
+        <img src="assets/img/logo_transparent.png" alt="Logo" style="max-width: 120px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+      </div>
+      <!-- Server Selector Dropdown (bleibt unverändert) -->
+      <div style="position: relative; margin-bottom: 15px;">
+        <button id="serverButton" onclick="toggleMenu('serverDropdown')" style="background-color: #1c6b3e; color: #fff; padding: 12px; width: 100%; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
+          <span id="selectedServer">Benders Destiny</span>
+          <span style="font-size: 12px;">▼</span>
+        </button>
+        <div id="serverDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background-color: #2a2e2e; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s;">
+          <div onclick="selectServer('Benders Destiny')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Benders Destiny</div>
+          <div onclick="selectServer('Server 2')" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">Server 2</div>
+          <div onclick="selectServer('Server 3')" style="padding: 10px; cursor: pointer; color: #fff;">Server 3</div>
+        </div>
+      </div>
+      <!-- Navigation -->
+      <ul class="nav">
+        <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
+        <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
+        <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
+        <li onclick="//showSection('design', this)">🎨 Design [COMING SOON]</li>
+      </ul>
+      <!-- User Info -->
+      <div class="user-info" onclick="toggleMenu('userMenu','userArrow')" style="position: relative;">
+        <!-- Avatar -->
+        <div class="user-avatar" style="width: 40px; height: 40px; background: url('assets/img/avatar.jpg') no-repeat center/cover; border-radius: 50%;"></div>
+        <!-- User-Daten (Platzhalter, werden via JS ersetzt) -->
+        <div class="user-details" style="display: flex; flex-direction: column; flex-grow: 1;">
+          <span class="user-name" style="font-size: 14px; font-weight: bold;">Lade...</span>
+          <span class="user-status" style="color: limegreen; font-size: 12px;">● Lade...</span>
+        </div>
+        <!-- Pfeil -->
+        <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
+        <!-- User-Menü -->
+        <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2e2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
+          <div onclick="logout()" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">🔒 Abmelden</div>
+        </div>
       </div>
     </div>
-    <!-- Navigation -->
-    <ul class="nav">
-      <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
-      <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
-      <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
-      <!-- Hier: Design mit onclick -->
-      <li onclick="showSection('design', this)">🎨 Design</li>
-    </ul>
-    <!-- User Info -->
-    <div class="user-info" onclick="toggleMenu('userMenu','userArrow')">
-      <div style="width: 40px; height: 40px; background: url('assets/img/avatar.jpg') no-repeat center/cover; border-radius: 50%;"></div>
-      <div style="display: flex; flex-direction: column; flex-grow: 1;">
-        <span style="font-size: 14px; font-weight: bold;">Sucuck</span>
-        <span style="color: limegreen; font-size: 12px;">● Online</span>
-      </div>
-      <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
-      <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2a2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
-        <div onclick="logout()" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">🔒 Abmelden</div>
-      </div>
-    </div>
-  </div>
 
   <!-- MAIN CONTENT -->
   <div class="main-content">
@@ -424,12 +424,12 @@
       <table>
         <thead>
           <tr>
-            <th>Wissen</th>
-            <th style="width: 100px;">Aktionen</th>
+            <th style="text-align: left" >Wissen</th>
+            <th style="width: 100px; text-align: left;">Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          <!-- Beispiel-Eintrag -->
+          <!-- Beispiel-Eintrag 
           <tr>
             <td class="wissen-cell" data-fulltext="Die Nutzung von OOC-Wissen im RP ist verboten! Lorem ipsum dolor sit amet...">
               Die Nutzung von OOC-Wissen im RP ist verboten! Lorem ipsum dolor sit amet...
@@ -438,7 +438,7 @@
               <span style="cursor: pointer;" onclick="openEditPopup(this)">✏️</span>
               <span style="cursor: pointer; margin-left: 10px;" onclick="deleteEntry(this)">❌</span>
             </td>
-          </tr>
+          </tr>-->
         </tbody>
       </table>
       <div style="text-align: right; margin-top: 15px;">
@@ -480,10 +480,9 @@
       <table>
         <thead>
           <tr>
-            <th>User ID</th>
-            <th>Grund</th>
-            <th>Datum</th>
-            <th style="width: 30px;"></th> <!-- Pfeil-Spalte -->
+            <th style="text-align: left" >User ID</th>
+            <th style="text-align: left" >Grund</th>
+            <th style="text-align: left" >Datum</th>
           </tr>
         </thead>
         <tbody>
@@ -492,19 +491,16 @@
             <td>130953563188797673</td>
             <td>Trolling, Spamming, Hacking</td>
             <td>14.02.2025 14:16</td>
-            <td style="text-align:center;">&gt;</td>
           </tr>
           <tr>
             <td>130953563188797673</td>
             <td>Trolling, Spamming, Hacking</td>
             <td>14.02.2025 14:16</td>
-            <td style="text-align:center;">&gt;</td>
           </tr>
           <tr>
             <td>130953563188797673</td>
             <td>Trolling, Spamming, Hacking</td>
             <td>14.02.2025 14:16</td>
-            <td style="text-align:center;">&gt;</td>
           </tr>
         </tbody>
       </table>
@@ -592,11 +588,6 @@
 </div>
 
 <script>
-  /* Initialisierung */
-  window.addEventListener("load", function() {
-    populateCategoryDropdown();
-  });
-
   /* Tabs umschalten */
   function showSection(sectionId, navItem) {
     // Alle Tabs ausblenden
@@ -657,10 +648,12 @@
 </script>
 </body>
 </html>
-
-    <script src="assets/img/bootstrap/js/bootstrap.min.js"></script>
-    <script src="assets/img/js/Off-Canvas-Sidebar-Drawer-Navbar-swipe.js"></script>
-    <script src="assets/img/js/Off-Canvas-Sidebar-Drawer-Navbar-off-canvas-sidebar.js"></script>
+  <script src="assets/js/SeverSelector.js"></script>
+  <script src="assets/js/UserMenu.js"></script>
+  <script src="assets/js/Memory.js"></script>
+  <script src="assets/js/Category.js"></script>
+  <script src="assets/js/Blacklist.js"></script>
+  <script src="assets/js/Design.js"></script>
 </body>
 
 </html>
