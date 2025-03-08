@@ -66,7 +66,7 @@
       padding: 12px;
       border-radius: 6px;
       margin-bottom: 8px;
-      background-color: #2a2a2a;
+      background-color: #1e1e1e;
       cursor: pointer;
       transition: background 0.3s;
     }
@@ -446,33 +446,90 @@
       </div>
     </div>
 
-    <!-- Kategorien -->
-    <div id="kategorien" class="content-section">
-      <h2 style="text-align: center;">Kategorien</h2>
-      <div class="kategorien-wrapper">
-        <div class="kategorien-container">
-          <h3>Kategorie bearbeiten</h3>
-          <!-- Dropdown -->
-          <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
-          <!-- Emoji & Beschreibung in einer Zeile -->
-          <div class="kategorien-single-line">
-            <div class="kategorien-field">
-              <label for="kategorieEmoji">Emoji</label>
-              <input type="text" id="kategorieEmoji">
-            </div>
-            <div class="kategorien-field">
-              <label style="margin-left: -90px;" for="kategorieBeschreibung">Beschreibung</label>
-              <input style="margin-left: -90px;" type="text" id="kategorieBeschreibung">
-            </div>
-          </div>
-          <div class="kategorien-buttons">
-            <button onclick="openCreateCategoryPopup()">Erstellen</button>
-            <button onclick="saveCategoryChanges()">Speichern</button>
-            <button onclick="deleteCategory()">Löschen</button>
-          </div>
+<!-- Kategorien -->
+<div id="kategorien" class="content-section">
+  <h2 style="text-align: center;">Kategorien</h2>
+  <div class="kategorien-wrapper">
+    <div class="kategorien-container">
+      <h3>Kategorie bearbeiten</h3>
+      <!-- Dropdown -->
+      <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
+      
+      <!-- Erste Zeile: Emoji und Beschreibung -->
+      <div class="kategorien-single-line" style="margin-top: 15px;">
+        <div class="kategorien-field">
+          <label for="kategorieEmoji">Emoji</label>
+          <input type="text" id="kategorieEmoji" style="width: 25px;">
+        </div>
+        <div class="kategorien-field" style="flex: 1;">
+          <label for="kategorieBeschreibung">Beschreibung</label>
+          <textarea id="kategorieBeschreibung" style="width: 100%; height: 60px; background-color: #1a1e1b; border: none; color: white;"></textarea>
         </div>
       </div>
+      
+      <!-- Zweite Zeile: AI Prompt -->
+      <div class="kategorien-single-line" style="margin-top: 15px;">
+        <div class="kategorien-field" style="flex: 1;">
+          <label for="kategorieAIPrompt">AI Prompt</label>
+          <textarea id="kategorieAIPrompt" style="width: 100%; height: 60px; background-color: #1a1e1b; border: none; color: white;"></textarea>
+        </div>
+      </div>
+      
+      <!-- Dritte Zeile: Enabled und Permission -->
+      <div class="kategorien-single-line" style="margin-top: 15px;">
+        <div class="kategorien-field" style="flex: 1;">
+          <label for="kategorieEnabled" style="text-align: left;">Enabled</label>
+          <input type="checkbox" id="kategorieEnabled" style="vertical-align: middle;" checked>
+        </div>
+        <div class="kategorien-field" style="flex: 1;">
+          <label for="kategoriePermission">Permission</label>
+          <!-- Hier wird nun ein select statt eines number inputs verwendet -->
+          <select id="kategoriePermission" class="full-width-dropdown"></select>
+        </div>
+      </div>
+      
+      <div class="kategorien-buttons" style="margin-top: 20px;">
+        <button onclick="openCreateCategoryPopup()">Erstellen</button>
+        <button onclick="saveCategoryChanges()">Speichern</button>
+        <button onclick="deleteCategory()">Löschen</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- POPUP: Neue Kategorie erstellen -->
+<div id="createCategoryPopup" class="popup-modal">
+  <div class="popup-content">
+    <h3>Neue Kategorie erstellen</h3>
+    <!-- Name (volle Breite) -->
+    <input type="text" id="newCategoryName" placeholder="Kategorie Name">
+    <!-- Zeile: Emoji und Beschreibung -->
+    <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
+      <input type="text" id="newCategoryEmoji" placeholder="🐛" style="width: 25px;">
+      <textarea id="newCategoryDescription" placeholder="Beschreibung" style="width: calc(100% - 30px); height: 60px;"></textarea>
+    </div>
+    <!-- Zeile: AI Prompt -->
+    <div class="create-category-line" style="margin-top: 10px;">
+      <textarea id="newCategoryAIPrompt" placeholder="AI Prompt" style="width: 100%; height: 60px;"></textarea>
+    </div>
+    <!-- Zeile: Enabled und Permission -->
+    <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
+      <div style="flex: 1;">
+        <label for="newCategoryEnabled">Enabled</label>
+        <input type="checkbox" id="newCategoryEnabled" checked>
+      </div>
+      <div style="flex: 1;">
+        <label for="newCategoryPermission">Permission</label>
+        <select id="newCategoryPermission" class="full-width-dropdown"></select>
+      </div>
+    </div>
+    <div class="popup-buttons" style="margin-top: 15px;">
+      <button onclick="createCategory()">Speichern</button>
+      <button onclick="closeCreateCategoryPopup()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 
     <!-- BLACKLIST -->
     <div id="blacklist" class="content-section">
@@ -486,28 +543,12 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Beispiel-Einträge -->
-          <tr>
-            <td>130953563188797673</td>
-            <td>Trolling, Spamming, Hacking</td>
-            <td>14.02.2025 14:16</td>
-          </tr>
-          <tr>
-            <td>130953563188797673</td>
-            <td>Trolling, Spamming, Hacking</td>
-            <td>14.02.2025 14:16</td>
-          </tr>
-          <tr>
-            <td>130953563188797673</td>
-            <td>Trolling, Spamming, Hacking</td>
-            <td>14.02.2025 14:16</td>
-          </tr>
         </tbody>
       </table>
       <div style="text-align: center; margin-top: 15px;">
-        <button class="btn-bl">Entfernen</button>
-        <button class="btn-bl">Hinzufügen</button>
-        <button class="btn-bl">Suchen</button>
+        <button id="btnBlacklistAdd" class="btn-bl">Hinzufügen</button>
+        <button id="btnBlacklistRemove" class="btn-bl">Entfernen</button>
+        <button id="btnBlacklistSearch" class="btn-bl">Suchen</button>
       </div>
     </div>
 
@@ -587,6 +628,44 @@
   </div>
 </div>
 
+<!-- POPUP: Blacklist Eintrag hinzufügen -->
+<div id="blacklistAddModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Blacklist Eintrag hinzufügen</h3>
+    <input type="text" id="blacklistAddUserId" placeholder="User ID">
+    <textarea id="blacklistAddReason" rows="3" placeholder="Grund"></textarea>
+    <div class="popup-buttons">
+      <button onclick="saveBlacklistEntry()">Speichern</button>
+      <button onclick="closeBlacklistAddModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Blacklist Eintrag entfernen -->
+<div id="blacklistRemoveModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Blacklist Eintrag entfernen</h3>
+    <input type="text" id="blacklistRemoveUserId" placeholder="User ID">
+    <div class="popup-buttons">
+      <button onclick="confirmBlacklistRemoval()">Entfernen</button>
+      <button onclick="closeBlacklistRemoveModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: Blacklist Eintrag suchen -->
+<div id="blacklistSearchModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Blacklist Eintrag suchen</h3>
+    <input type="text" id="blacklistSearchUserId" placeholder="User ID">
+    <div class="popup-buttons">
+      <button onclick="performBlacklistSearch()">Suchen</button>
+      <button onclick="closeBlacklistSearchModal()">Abbrechen</button>
+    </div>
+    <div id="blacklistSearchResults" style="margin-top: 15px; background: #1e1e1e; padding: 10px; border-radius: 4px; max-height: 150px; overflow-y: auto; color: #fff;"></div>
+  </div>
+</div>
+
 <script>
   /* Tabs umschalten */
   function showSection(sectionId, navItem) {
@@ -651,9 +730,25 @@
   <script src="assets/js/SeverSelector.js"></script>
   <script src="assets/js/UserMenu.js"></script>
   <script src="assets/js/Memory.js"></script>
-  <script src="assets/js/Category.js"></script>
   <script src="assets/js/Blacklist.js"></script>
   <script src="assets/js/Design.js"></script>
+  <script src="assets/js/Category.js"></script>
+
+  <script>
+
+  function loadAll(guild) {
+    loadServers();
+    console.log(guild.id)
+    loadKnowledgeEntries(guild.id);
+    loadBlacklistEntries(guild.id);
+    loadTicketCategories(guild.id);
+    loadGuildRoles();
+  }
+
+  window.addEventListener("load", loadAll);
+
+  </script>
+
 </body>
 
 </html>
