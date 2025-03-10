@@ -7,7 +7,6 @@ let guildID = null;
 // Ticket-Kategorien laden und Dropdown füllen
 // ------------------------
 function loadTicketCategories(guildId) {
-  console.log("Test1" + guildId)
   guildID = guildId;
   fetch(`/api/ticket_categories/${guildId}`)
     .then(response => response.json())
@@ -203,13 +202,16 @@ function loadGuildRoles() {
     .then(response => response.json())
     .then(data => {
       console.log("Guild Rollen erhalten:", data);
+
+      // 1) Erstes Dropdown (kategoriePermission)
       const permissionSelect = document.getElementById("kategoriePermission");
       permissionSelect.innerHTML = "";
-      // Optional: Eine Standardoption
+      // Standardoption
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
       defaultOption.textContent = "Keine";
       permissionSelect.appendChild(defaultOption);
+
       if (data && data.length) {
         data.forEach(role => {
           const opt = document.createElement("option");
@@ -221,14 +223,16 @@ function loadGuildRoles() {
         permissionSelect.innerHTML = `<option value="">Keine Rollen gefunden</option>`;
       }
 
-
+      // 2) Zweites Dropdown (newCategoryPermission)
       const permissionSelect2 = document.getElementById("newCategoryPermission");
-      permissionSelect.innerHTML = "";
-      // Optional: Eine Standardoption
+      permissionSelect2.innerHTML = ""; // ACHTUNG: Hier muss permissionSelect2 geleert werden, nicht nochmal permissionSelect
+
+      // Standardoption
       const defaultOption2 = document.createElement("option");
       defaultOption2.value = "";
       defaultOption2.textContent = "Keine";
-      permissionSelect2.appendChild(defaultOption);
+      permissionSelect2.appendChild(defaultOption2); // ACHTUNG: Hier musst du defaultOption2 anhängen, nicht defaultOption
+
       if (data && data.length) {
         data.forEach(role => {
           const opt = document.createElement("option");
@@ -243,6 +247,7 @@ function loadGuildRoles() {
     })
     .catch(err => console.error("Fehler beim Laden der Guild Rollen:", err));
 }
+
 
 // ------------------------
 // Event Listener setzen

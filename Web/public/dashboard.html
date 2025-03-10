@@ -405,7 +405,7 @@
         <!-- User-Daten (Platzhalter, werden via JS ersetzt) -->
         <div class="user-details" style="display: flex; flex-direction: column; flex-grow: 1;">
           <span class="user-name" style="font-size: 14px; font-weight: bold;">Lade...</span>
-          <span class="user-status" style="color: limegreen; font-size: 12px;">● Lade...</span>
+          <!--<span class="user-status" style="color: limegreen; font-size: 12px;">● Lade...</span>-->
         </div>
         <!-- Pfeil -->
         <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
@@ -738,7 +738,6 @@
 
   function loadAll(guild) {
     loadServers();
-    console.log(guild.id)
     loadKnowledgeEntries(guild.id);
     loadBlacklistEntries(guild.id);
     loadTicketCategories(guild.id);

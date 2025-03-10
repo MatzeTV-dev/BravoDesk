@@ -94,6 +94,13 @@ const Categories = {
 
     // Kategorie aktualisieren (ruft sp_UpdateTicketCategory auf)
     update: (id, guildId, label, description, emoji, prompt, enabled, permission, callback) => {
+        console.log("Permission is: " + permission)
+
+        if(!permission) {
+            console.log("Permission is: " + permission)
+            permission = null;
+        }
+
         db.query(
             'CALL sp_UpdateTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)',
             [id, guildId, label, description, emoji, prompt, enabled, permission],

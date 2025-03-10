@@ -26,11 +26,11 @@ function loadUserInfo() {
       }
 
       // Status setzen (statisch, da /users/@me keine Presence liefert)
-      const statusSpan = document.querySelector('.user-status');
+      /*const statusSpan = document.querySelector('.user-status');
       if (statusSpan) {
-        statusSpan.innerText = "● Online";
+        statusSpan.innerText = "Online";
         statusSpan.style.color = "limegreen";
-      }
+      }*/
     })
     .catch(err => console.error("Fehler beim Laden der User-Daten:", err));
 }

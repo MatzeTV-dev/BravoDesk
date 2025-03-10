@@ -253,7 +253,3 @@ function loadKnowledgeEntries(guildId) {
     })
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
-
-// Hinweis: 
-// Stelle sicher, dass du loadKnowledgeEntries(guildId) in deiner Serverauswahl-Funktion (z. B. selectServer(guild)) aufrufst, sobald ein Server ausgewählt wird.
-
