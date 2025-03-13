@@ -3,19 +3,20 @@ const path = require('path');
 const express = require('express');
 const fetch = require('node-fetch'); // npm install node-fetch@2
 const session = require('express-session'); // npm install express-session
-const { randomUUID } = require('crypto');
-const { QdrantClient } = require('@qdrant/js-client-rest');
+const dotenv = require('dotenv');
 
+dotenv.config();
 
 const app = express();
 
 /* 1) DISCORD OAUTH CONFIG */
-const CLIENT_ID = process.env.DISCORD_CLIENT_ID     || "1308807818366681131";
-const CLIENT_SECRET = process.env.DISCORD_SECRET    || "RMSbEhDNvVQEGX9uq8yfuKNmWz3TsVMe";
-const PORT = process.env.PORT                       || 53134;
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID
+const CLIENT_SECRET = process.env.DISCORD_SECRET
+const PORT = process.env.PORT
+const DOMAIN = process.env.DOMAIN
 // Diese Redirect-URL muss genau zu deiner eingestellten Redirect-URL
 // im Discord-Developer-Portal passen:
-const REDIRECT_URI = `http://localhost:${PORT}/auth/discord/callback`;
+const REDIRECT_URI = `http://${DOMAIN}${PORT}/auth/discord/callback`;
 
 /* 2) SESSION-EINRICHTUNG (damit wir den Access Token speichern können) */
 app.use(session({

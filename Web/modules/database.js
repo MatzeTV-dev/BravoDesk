@@ -1,11 +1,14 @@
 const mysql = require('mysql2');
+const dotenv = require('dotenv');
+
+dotenv.config({path: '../.env'})
 
 // Datenbankverbindung herstellen
 const db = mysql.createConnection({
-    host: '45.88.109.38', // Ändere dies je nach deiner Datenbankkonfiguration
-    user: 'bot-development', // Dein Datenbankbenutzer
-    password: '$G^Ht3bVLX$#8W983YeK', // Dein Datenbankpasswort
-    database: 'customer_server_information_development' // Dein Datenbankname
+    host: process.env.DB_HOST, // Ändere dies je nach deiner Datenbankkonfiguration
+    user: process.env.DB_USERNAME, // Dein Datenbankbenutzer
+    password: process.env.DB_PASSWORD, // Dein Datenbankpasswort
+    database: process.env.DB_NAME_SERVER_INFORMATION // Dein Datenbankname
 });
 
 // Verbindung testen
