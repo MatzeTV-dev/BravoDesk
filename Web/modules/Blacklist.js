@@ -25,6 +25,16 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
     return res.status(400).json({ error: "user_id und reason sind erforderlich." });
   }
   
+  // Überprüfung: Der Grund darf maximal 50 Zeichen lang sein.
+  if (reason.length > 50) {
+    return res.status(400).json({ error: "Der Grund darf maximal 50 Zeichen lang sein." });
+  }
+  
+  // Überprüfung: User ID muss ein numerischer String mit 18 Ziffern sein.
+  if (!/^\d{18}$/.test(user_id)) {
+    return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
+  }
+  
   db.query("CALL sp_AddBlacklist(?, ?, ?)", [serverId, user_id, reason], (err) => {
     if (err) {
       console.error("Fehler beim Hinzufügen zur Blacklist:", err);
@@ -38,6 +48,11 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
 router.delete('/blacklist/:serverId/:userId', (req, res) => {
   const serverId = req.params.serverId;
   const userId = req.params.userId;
+  
+  // Überprüfung: User ID muss ein numerischer String mit 18 Ziffern sein.
+  if (!/^\d{18}$/.test(userId)) {
+    return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
+  }
   
   db.query("CALL sp_RemoveBlacklist(?, ?)", [serverId, userId], (err) => {
     if (err) {

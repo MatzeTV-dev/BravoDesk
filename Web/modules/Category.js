@@ -19,15 +19,18 @@ router.get('/ticket_categories/:guildId', (req, res) => {
 // Neue Kategorie hinzufügen
 router.post('/ticket_categories/:guildId', express.json(), (req, res) => {
 	const guildId = req.params.guildId;
-	const { label, description, emoji, prompt, enabled, permission } = req.body;
-  
+	const { label, description, emoji, ai_prompt, enabled, permission } = req.body;
+
+	const sanitizedText = label.replace(/\s+/g, '_');
+	const value = 'category_' + sanitizedText;
+
 	if (!label) {
 	  return res.status(400).json({ error: "label ist erforderlich." });
 	}
   
 	db.query(
-	  "CALL sp_AddTicketCategory(?, ?, ?, ?, ?, ?, ?)",
-	  [guildId, label, description, emoji, prompt, enabled, permission],
+	  "CALL sp_AddTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)",
+	  [guildId, label, description, value, emoji, ai_prompt, enabled, permission],
 	  (err) => {
 		if (err) {
 		  console.error("Fehler beim Hinzufügen der Kategorie:", err);
@@ -42,15 +45,19 @@ router.post('/ticket_categories/:guildId', express.json(), (req, res) => {
 router.patch('/ticket_categories/:guildId/:categoryId', express.json(), (req, res) => {
 	const guildId = req.params.guildId;
 	const categoryId = parseInt(req.params.categoryId, 10);
-	const { label, description, emoji, prompt, enabled, permission } = req.body;
-  
+	let { label, description, emoji, ai_prompt, enabled, permission } = req.body;
+
 	if (!label) {
 	  return res.status(400).json({ error: "label ist erforderlich." });
 	}
-  
+	
+	/*if (permission === "") {
+		permission = null
+	}*/
+
 	db.query(
 	  "CALL sp_UpdateTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)",
-	  [categoryId, guildId, label, description, emoji, prompt, enabled, permission],
+	  [categoryId, guildId, label, description, emoji, ai_prompt, enabled, permission],
 	  (err) => {
 		if (err) {
 		  console.error("Fehler beim Aktualisieren der Kategorie:", err);

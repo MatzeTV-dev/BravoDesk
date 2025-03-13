@@ -35,21 +35,50 @@ function loadServers() {
 
         // Beim Klick wird der Server ausgewählt und die Daten werden gespeichert
         div.onclick = () => {
-          selectServer(guild);
+          selectServer(guild, true);
         };
 
         serverDropdown.appendChild(div);
       });
+
+      // Automatisch den ersten Server auswählen, falls vorhanden
+      if (guilds.length > 0) {
+        selectServer(guilds[0], false);
+      }
+      
+      // Zusätzliches Listenelement als Button, der den Nutzer zum Invite-Link des Bots führt
+      const inviteButton = document.createElement('button');
+      inviteButton.innerText = '+ Server Hinzufügen';
+      inviteButton.style.display = 'block';
+      inviteButton.style.width = '100%';
+      inviteButton.style.padding = '10px';
+      inviteButton.style.marginTop = '10px';
+      inviteButton.style.cursor = 'pointer';
+      inviteButton.style.backgroundColor = '#1c6b3e'; // Discord-Farbe
+      inviteButton.style.color = '#fff';
+      inviteButton.style.border = 'none';
+      inviteButton.style.borderRadius = '4px';
+      inviteButton.style.fontSize = '16px';
+      
+      const inviteLink = 'https://discord.com/oauth2/authorize?client_id=1308807818366681131&permissions=268463120&integration_type=0&scope=bot';
+      
+      inviteButton.onclick = () => {
+        window.location.href = inviteLink;
+      };
+
+      serverDropdown.appendChild(inviteButton);
     })
     .catch(err => console.error("Fehler beim Laden der Server:", err));
 }
 
-
-
-function selectServer(guild) {
+function selectServer(guild, automatic_open) {
   // Aktualisiere den im Dropdown angezeigten Namen
   document.getElementById("selectedServer").innerText = guild.name;
-  toggleMenu("serverDropdown");
+
+  if (automatic_open) {
+    toggleMenu("serverDropdown");
+  }
+
   // Lade die Wissenseinträge für den ausgewählten Server
   loadKnowledgeEntries(guild.id);
   loadBlacklistEntries(guild.id);

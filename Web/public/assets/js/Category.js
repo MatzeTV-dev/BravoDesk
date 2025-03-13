@@ -59,13 +59,21 @@ function fillCategoryFields(cat) {
   document.getElementById("kategorieEmoji").value = cat.emoji || "";
   document.getElementById("kategorieBeschreibung").value = cat.description || "";
   document.getElementById("kategorieAIPrompt").value = cat.ai_prompt || "";
-  document.getElementById("kategorieEnabled").checked = (cat.enabled == 1);
+  
+  // If-Abfrage: Prüft, ob die KI aktiviert ist
+  if (cat.ki_aktiviert && cat.ki_aktiviert == 1) {
+    document.getElementById("kategorieEnabled").checked = true;
+  } else {
+    document.getElementById("kategorieEnabled").checked = false;
+  }
+    
   if (cat.permission) {
     document.getElementById("kategoriePermission").value = cat.permission;
   } else {
     document.getElementById("kategoriePermission").value = "";
   }
 }
+
 
 // ------------------------
 // Speichert Änderungen an der aktuell ausgewählten Kategorie (PATCH)

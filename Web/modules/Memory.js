@@ -10,6 +10,31 @@ const qdrantClient = new QdrantClient({
 });
 
 /**
+ * Hilfsfunktion zum Zählen der Wörter im Input.
+ * - Enthält der Text Leerzeichen, wird anhand dieser getrennt.
+ * - Enthält er keine Leerzeichen, wird versucht, camelCase-/PascalCase-Übergänge zu erkennen.
+ */
+function countWords(text) {
+  text = text.trim();
+  if (text === "") return 0;
+  
+  // Falls Leerzeichen vorhanden sind, anhand der Leerzeichen splitten.
+  if (/\s/.test(text)) {
+    return text.split(/\s+/).length;
+  }
+  
+  // Wenn der Text keine Leerzeichen enthält, prüfen wir, ob er komplett in Klein- oder Großbuchstaben ist.
+  // In diesem Fall gehen wir von einem einzelnen Wort aus.
+  if (text === text.toLowerCase() || text === text.toUpperCase()) {
+    return 1;
+  }
+  
+  // Zähle Übergänge von Klein- zu Großbuchstaben.
+  const transitions = text.match(/(?<=[a-zäöüß])(?=[A-ZÄÖÜ])/g);
+  return 1 + (transitions ? transitions.length : 0);
+}
+
+/**
  * GET /api/wissenseintraege/:guildId
  * Ruft alle Wissenseinträge einer bestimmten Guild ab.
  */
@@ -43,13 +68,18 @@ router.post('/wissenseintraege/:guildId', express.json(), async (req, res) => {
     return res.status(400).json({ error: "Text ist erforderlich." });
   }
   
+  // Überprüfe, ob der Text maximal 10 Wörter enthält.
+  if (countWords(text) > 10) {
+    return res.status(400).json({ error: "Wissenseintrag darf maximal 10 Wörter enthalten." });
+  }
+  
   const collectionName = `guild_${guildId}`;
   const entryId = randomUUID(); // Generiere eine eindeutige ID
   
-  // Beispiel: Für eine Sammlung mit Dimension 128
+  // Beispiel: Für eine Sammlung mit Dimension 1024
   const dummyVector = Array(1024).fill(0);
 
-  // Erstelle den neuen Punkt. Hier wird ein Dummy-Vektor ([0]) verwendet.
+  // Erstelle den neuen Punkt.
   const point = {
     id: entryId,
     vector: dummyVector, // Passe die Dimension an deine Sammlung an
@@ -79,10 +109,12 @@ router.patch('/wissenseintraege/:guildId/:entryId', express.json(), async (req, 
     return res.status(400).json({ error: "Text ist erforderlich." });
   }
   
-  const collectionName = `guild_${guildId}`;
+  // Überprüfe, ob der Text maximal 10 Wörter enthält.
+  if (countWords(text) > 10) {
+    return res.status(400).json({ error: "Wissenseintrag darf maximal 10 Wörter enthalten." });
+  }
   
-  // Zum Aktualisieren wird ebenfalls upsert verwendet. 
-  // (Es wird davon ausgegangen, dass der Vektor gleich bleibt. Andernfalls müssten Sie den aktuellen Vektor vorher abrufen.)
+  const collectionName = `guild_${guildId}`;
   const dummyVector = Array(1024).fill(0);
 
   const point = {
