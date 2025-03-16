@@ -1,6 +1,10 @@
 const express = require('express');
 const { db } = require('../modules/database');
 const router = express.Router();
+const axios = require('axios')
+const dotenv = require('dotenv')
+
+dotenv.config({ path: '../.env'});
 
 // Alle Kategorien für einen Server abrufen
 router.get('/ticket_categories/:guildId', (req, res) => {
@@ -36,37 +40,31 @@ router.post('/ticket_categories/:guildId', express.json(), (req, res) => {
 		  console.error("Fehler beim Hinzufügen der Kategorie:", err);
 		  return res.status(500).json({ error: "Fehler beim Hinzufügen der Kategorie." });
 		}
-		
-		// Nach erfolgreichem DB-Aufruf wird ein HTTP-Request an den Bot gesendet,
-		// damit dieser z.B. die Ticket-Erstellungsnachricht aktualisiert.
-		try {
-		  const response = await axios.post(
-			`${process.env.BOT_API_URL}/api/update-ticket-message`, // Die URL des Bot-Endpoints, z.B. http://bot-server:3000/update-ticket-message
-			{
-			  guildId,
-			  label,
-			  description,
-			  value,
-			  emoji,
-			  ai_prompt,
-			  ai_enabled,
-			  permission
-			},
-			{
-			  headers: {
-				'Authorization': process.env.BOT_API_TOKEN,
-				'Content-Type': 'application/json'
-			  }
-			}
-		  );
-		  console.log("Bot update response:", response.data);
-		} catch (botErr) {
-		  console.error("Fehler beim Aktualisieren der Ticket-Erstellungsnachricht beim Bot:", botErr);
-		}
-		
-		res.json({ success: true, message: "Kategorie wurde hinzugefügt." });
 	  }
 	);
+
+	// Nach erfolgreichem DB-Aufruf wird ein HTTP-Request an den Bot gesendet,
+	// damit dieser z.B. die Ticket-Erstellungsnachricht aktualisiert.
+	try {
+		const response = axios.post(
+			`${process.env.BOT_API_URL}/api/update-ticket-message`, // Die URL des Bot-Endpoints, z.B. http://bot-server:3000/update-ticket-message
+			{
+				guildId
+			},
+			{
+				headers: {
+					'Authorization': process.env.BOT_API_TOKEN,
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+		console.log("Bot update response:", response.data);
+		} catch (botErr) {
+		console.error("Fehler beim Aktualisieren der Ticket-Erstellungsnachricht beim Bot:", botErr);
+		}
+		  
+	res.json({ success: true, message: "Kategorie wurde hinzugefügt." });
+
   });
 
 // Kategorie aktualisieren
@@ -91,9 +89,29 @@ router.patch('/ticket_categories/:guildId/:categoryId', express.json(), (req, re
 		  console.error("Fehler beim Aktualisieren der Kategorie:", err);
 		  return res.status(500).json({ error: "Fehler beim Aktualisieren der Kategorie." });
 		}
-		res.json({ success: true, message: "Kategorie wurde aktualisiert." });
 	  }
 	);
+
+	try {
+		const response = axios.post(
+			`${process.env.BOT_API_URL}/api/update-ticket-message`, // Die URL des Bot-Endpoints, z.B. http://bot-server:3000/update-ticket-message
+			{
+				guildId
+			},
+			{
+				headers: {
+					'Authorization': process.env.BOT_API_TOKEN,
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+		console.log("Bot update response:", response.data);
+		} catch (botErr) {
+		console.error("Fehler beim Aktualisieren der Ticket-Erstellungsnachricht beim Bot:", botErr);
+		}
+		  
+	res.json({ success: true, message: "Kategorie wurde aktualisiert." });
+
 });
   
 // Kategorie löschen
@@ -106,8 +124,29 @@ router.delete('/ticket_categories/:guildId/:categoryId', (req, res) => {
 		console.error("Fehler beim Löschen der Kategorie:", err);
 		return res.status(500).json({ error: "Fehler beim Löschen der Kategorie." });
 	  }
-	  res.json({ success: true, message: "Kategorie wurde gelöscht." });
+	  
 	});
+
+	try {
+		const response = axios.post(
+			`${process.env.BOT_API_URL}/api/update-ticket-message`, // Die URL des Bot-Endpoints, z.B. http://bot-server:3000/update-ticket-message
+			{
+				guildId
+			},
+			{
+				headers: {
+					'Authorization': process.env.BOT_API_TOKEN,
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+		console.log("Bot update response:", response.data);
+		} catch (botErr) {
+		console.error("Fehler beim Aktualisieren der Ticket-Erstellungsnachricht beim Bot:", botErr);
+		}
+		  
+	res.json({ success: true, message: "Kategorie wurde gelöscht." });
+
 });
 
 router.get('/roles/:guildId', async (req, res) => {

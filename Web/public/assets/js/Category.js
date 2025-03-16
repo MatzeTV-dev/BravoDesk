@@ -88,7 +88,7 @@ function saveCategoryChanges() {
   const emoji = document.getElementById("kategorieEmoji").value.trim();
   const description = document.getElementById("kategorieBeschreibung").value.trim();
   const ai_prompt = document.getElementById("kategorieAIPrompt").value.trim();
-  const enabled = document.getElementById("kategorieEnabled").checked ? 1 : 0;
+  const ai_enabled = document.getElementById("kategorieEnabled").checked ? 1 : 0;
   const permission = document.getElementById("kategoriePermission").value;
   
   fetch(`/api/ticket_categories/${guildID}/${currentCategoryId}`, {
@@ -99,7 +99,7 @@ function saveCategoryChanges() {
       description,
       emoji,
       ai_prompt,
-      enabled,
+      ai_enabled,
       permission
     })
   })
@@ -168,7 +168,7 @@ function createCategory() {
   const emoji = document.getElementById("newCategoryEmoji").value.trim();
   const description = document.getElementById("newCategoryDescription").value.trim();
   const ai_prompt = document.getElementById("newCategoryAIPrompt").value.trim();
-  const enabled = document.getElementById("newCategoryEnabled").checked ? 1 : 0;
+  const ai_enabled = document.getElementById("newCategoryEnabled").checked ? 1 : 0;
   const permission = document.getElementById("newCategoryPermission").value;
   
   if (!label) {
@@ -184,7 +184,7 @@ function createCategory() {
       description,
       emoji,
       ai_prompt,
-      enabled,
+      ai_enabled,
       permission
     })
   })
