@@ -90,7 +90,7 @@ async function Delete(statement, dataInput) {
 
 async function Call(statement, dataInput, SelectStatement) {
   await executeQuery(statement, dataInput);
-  const rows = await executeQuery(SelectStatement);
+  const rows = await executeQuery(SelectStatement, dataInput);
   Logger.success('Stored procedure executed successfully!');
   return rows[0];
 }
