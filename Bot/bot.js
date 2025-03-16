@@ -1,12 +1,16 @@
 const { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField, Partials } = require('discord.js');
 const interactionHandler = require('./handler/interactionHandler.js');
 const messageHandler = require('./handler/messageHandler.js');
+const { getCategories, saveCategories, updateTicketCreationMessage } = require('./helper/ticketCategoryHelper');
 const { initializeDatabaseConnection } = require('./Database/database.js');
 const Logger = require('./helper/loggerHelper.js');
 const { Worker } = require('worker_threads');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
+const express = require('express');
+const app = express();
+app.use(express.json());
 
 dotenv.config();
 const worker = new Worker('../Bot/Threads/openai-keep-alive.js');
@@ -248,3 +252,77 @@ client.once(Events.ClientReady, async () => {
 
 // **Bot-Login**
 client.login(process.env.DISCORD_BOT_TOKEN);
+
+
+// REST API PART
+// API-Endpunkt für das Dashboard
+
+// API-Endpunkt, der neue Ticket-Kategorien hinzufügt
+app.post('/api/addcategory', async (req, res) => {
+  // Authentifizierung (z.B. über einen speziellen API-Token)
+  const authToken = req.headers.authorization;
+  if (!authToken || authToken !== process.env.DASHBOARD_API_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Erforderliche Parameter aus dem Request-Body auslesen
+  const { guildId, label, description, ai_prompt, ai_enabled, emoji, permission } = req.body;
+  if (!guildId || !label || !description || !ai_prompt || typeof ai_enabled === 'undefined') {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  // Guild anhand der ID ermitteln
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return res.status(404).json({ error: 'Guild not found' });
+  }
+
+  // Verarbeite den "permission"-Parameter ähnlich wie im Slash Command
+  let permissionRoleIds = [];
+  if (permission) {
+    // Extrahiere alle Rollen-IDs aus der Eingabe (z.B. "<@&123456789012345678>")
+    const roleIdMatches = permission.match(/<@&(\d+)>/g);
+    if (roleIdMatches) {
+      permissionRoleIds = roleIdMatches.map(roleMention =>
+        roleMention.replace(/[<@&>]/g, '')
+      );
+    }
+  }
+
+  try {
+    const categories = getCategories(guild.id);
+
+    // Prüfen, ob bereits eine Kategorie mit diesem Label existiert
+    if (categories.some(cat => cat.label.toLowerCase() === label.toLowerCase())) {
+      return res.status(200).json({ message: `Eine Kategorie mit dem Namen "${label}" existiert bereits.` });
+    }
+
+    // Neues Kategorie-Objekt erstellen (entsprechend deinem Command)
+    const newCategory = {
+      label,
+      description,
+      aiPrompt: ai_prompt,
+      aiEnabled: ai_enabled,
+      emoji: emoji || '',
+      permission: permissionRoleIds
+    };
+
+    categories.push(newCategory);
+    saveCategories(guild.id, categories);
+
+    // Aktualisiere das Ticket-Dropdown im entsprechenden Channel
+    await updateTicketCreationMessage(guild);
+
+    return res.status(200).json({ message: `Kategorie "${label}" wurde erfolgreich hinzugefügt.` });
+  } catch (err) {
+    Logger.error(`Fehler beim Hinzufügen der Kategorie: ${err.message}\n${err.stack}`);
+    return res.status(500).json({ error: 'Es gab einen Fehler beim Hinzufügen der Kategorie.' });
+  }
+});
+
+// Den Express-Server starten – idealerweise nach der Client-Initialisierung:
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`API Server läuft auf Port ${PORT}`);
+});
+
