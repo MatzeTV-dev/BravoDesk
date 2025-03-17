@@ -412,3 +412,48 @@
   .design-button:hover {
     background-color: #13843d;
   }
+
+/* Container für mehrere Benachrichtigungen */
+.notify-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* Einzelne Benachrichtigung */
+.notify {
+  padding: 10px 20px;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.5s;
+  color: #fff;
+  min-width: 200px;
+}
+.notify.show {
+  opacity: 1;
+}
+/* Verschiedene Typen */
+.notify.info { background-color: #444; }
+.notify.success { background-color: #28a745; }
+.notify.warn { background-color: #ffc107; color: #000; }
+.notify.error { background-color: #dc3545; }
+
+/* Emoji Popup */
+.emoji-popup {
+  position: absolute;
+  display: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+.emoji-popup span {
+  cursor: pointer;
+  font-size: 20px;
+  margin: 5px;
+}
