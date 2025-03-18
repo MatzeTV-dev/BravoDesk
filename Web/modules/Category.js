@@ -29,25 +29,28 @@ router.post('/ticket_categories/:guildId', express.json(), (req, res) => {
 	const value = 'category_' + sanitizedText;
   
 	if (!label) {
-	  return res.status(400).json({ error: "label ist erforderlich." });
+		return res.status(400).json({ error: "label ist erforderlich." });
 	}
-  
+
+	// Emoji in ein Array aufspalten und nur das letzte verwenden
+	const emojiArray = [...emoji];
+	const lastEmoji = emojiArray.length > 0 ? emojiArray[emojiArray.length - 1] : '';
+
 	db.query(
-	  "CALL sp_AddTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)",
-	  [guildId, label, description, value, emoji, ai_prompt, ai_enabled, permission],
-	  async (err) => {
-		if (err) {
-		  console.error("Fehler beim Hinzufügen der Kategorie:", err);
-		  return res.status(500).json({ error: "Fehler beim Hinzufügen der Kategorie." });
+		"CALL sp_AddTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)",
+		[guildId, label, description, value, lastEmoji, ai_prompt, ai_enabled, permission],
+		async (err) => {
+			if (err) {
+				console.error("Fehler beim Hinzufügen der Kategorie:", err);
+				return res.status(500).json({ error: "Fehler beim Hinzufügen der Kategorie." });
+			}
 		}
-	  }
 	);
 
-	// Nach erfolgreichem DB-Aufruf wird ein HTTP-Request an den Bot gesendet,
-	// damit dieser z.B. die Ticket-Erstellungsnachricht aktualisiert.
+	// Nach erfolgreichem DB-Aufruf wird ein HTTP-Request an den Bot gesendet
 	try {
 		const response = axios.post(
-			`${process.env.BOT_API_URL}/api/update-ticket-message`, // Die URL des Bot-Endpoints, z.B. http://bot-server:3000/update-ticket-message
+			`${process.env.BOT_API_URL}/api/update-ticket-message`,
 			{
 				guildId
 			},
@@ -59,31 +62,31 @@ router.post('/ticket_categories/:guildId', express.json(), (req, res) => {
 			}
 		);
 		console.log("Bot update response:", response.data);
-		} catch (botErr) {
+	} catch (botErr) {
 		console.error("Fehler beim Aktualisieren der Ticket-Erstellungsnachricht beim Bot:", botErr);
-		}
+	}
 		  
 	res.json({ success: true, message: "Kategorie wurde hinzugefügt." });
+});
 
-  });
 
 // Kategorie aktualisieren
 router.patch('/ticket_categories/:guildId/:categoryId', express.json(), (req, res) => {
 	const guildId = req.params.guildId;
 	const categoryId = parseInt(req.params.categoryId, 10);
-	let { label, description, emoji, ai_prompt, enabled, permission } = req.body;
+	let { label, description, emoji, ai_prompt, ai_enabled, permission } = req.body;
 
 	if (!label) {
 	  return res.status(400).json({ error: "label ist erforderlich." });
 	}
 	
-	/*if (permission === "") {
-		permission = null
-	}*/
+		// Emoji in ein Array aufspalten und nur das letzte verwenden
+		const emojiArray = [...emoji];
+		const lastEmoji = emojiArray.length > 0 ? emojiArray[emojiArray.length - 1] : '';
 
 	db.query(
 	  "CALL sp_UpdateTicketCategory(?, ?, ?, ?, ?, ?, ?, ?)",
-	  [categoryId, guildId, label, description, emoji, ai_prompt, enabled, permission],
+	  [categoryId, guildId, label, description, lastEmoji, ai_prompt, ai_enabled, permission],
 	  (err) => {
 		if (err) {
 		  console.error("Fehler beim Aktualisieren der Kategorie:", err);

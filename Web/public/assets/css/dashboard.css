@@ -253,7 +253,7 @@
   #kategorieAIPrompt {
     width: 100% !important;
     height: auto !important;
-    min-height: 60px !important;
+    min-height: 400px !important;
     background-color: #1a1e1b !important;
     border: 1px solid #444 !important;
     border-radius: 6px !important;
