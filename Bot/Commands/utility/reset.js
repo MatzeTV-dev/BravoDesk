@@ -1,13 +1,13 @@
-const { getServerInformation, Delete } = require('../../Database/database.js');
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { deleteAll } = require('../../Database/qdrant.js');
-const { error, info } = require('../../helper/embedHelper.js');
-const Logger = require('../../helper/loggerHelper.js');
-const fs = require('fs');
-const path = require('path');
+import { getServerInformation, Delete } from '../../Database/database.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { deleteAll } from '../../Database/qdrant.js';
+import { error, info } from '../../helper/embedHelper.js';
+import Logger from '../../helper/loggerHelper.js';
+import fs from 'fs';
+import path from 'path';
 
 // Pfad zur JSON-Datei, in der die Ticket-Kategorien gespeichert sind
-const ticketCategoriesPath = path.join(__dirname, '../../data/ticket_categories.json');
+const ticketCategoriesPath = path.join(new URL('.', import.meta.url).pathname, '../../data/ticket_categories.json');
 
 /**
  * Entfernt den Eintrag für eine bestimmte Guild (Server) aus der JSON-Datei.
@@ -31,7 +31,7 @@ function removeGuildFromJSON(guildId) {
   }
 }
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('reset')
     .setDescription('Löscht alle Wissenseinträge, Rollen und erstellte Channels von BravoDesk.'),
@@ -43,7 +43,7 @@ module.exports = {
       // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
       if (guild.ownerId !== interaction.user.id) {
         await interaction.editReply({
-          embeds: [error('Error', 'This action can only be performed by the server owner! An administrator has been informed about your attempt.')],
+          embeds: [error('Error', 'This action can only be performed by the server owner! An administrator has been informed about your attempt.')]
         });
 
         const adminChannel = guild.channels.cache.find(
@@ -63,7 +63,7 @@ module.exports = {
       );
       if (interaction.channel.id === ticket_channel?.id) {
         await interaction.editReply({
-          embeds: [error('Reset', 'Dieser Befehl kann hier nicht ausgeführt werden.')],
+          embeds: [error('Reset', 'Dieser Befehl kann hier nicht ausgeführt werden.')]
         });
         return;
       }
@@ -194,4 +194,5 @@ module.exports = {
       });
     }
   },
+  removeGuildFromJSON, // Exportiere diese Funktion ebenfalls, falls sie extern benötigt wird
 };

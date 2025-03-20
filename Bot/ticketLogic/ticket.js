@@ -1,11 +1,11 @@
-const { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getServerInformation, checkUserBlacklisted } = require('../Database/database.js');
-const { getCategories } = require('../helper/ticketCategoryHelper');
-const { error, info } = require('../helper/embedHelper.js');
-const Logger = require('../helper/loggerHelper.js');
-const fs = require('fs');
+import { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getServerInformation, checkUserBlacklisted } from '../Database/database.js';
+import { getCategories } from '../helper/ticketCategoryHelper.js';
+import { error, info } from '../helper/embedHelper.js';
+import Logger from '../helper/loggerHelper.js';
+import fs from 'fs';
 
-module.exports = {
+export default {
   data: {
     customId: 'create_ticket_ticket_category',
   },
@@ -25,7 +25,7 @@ module.exports = {
     // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
     const selectedValues = interaction.values;
 
-    // Lade für den aktuellen Server alle definierten Kategorien (jetzt asynchron)
+    // Lade für den aktuellen Server alle definierten Kategorien
     const categories = await getCategories(interaction.guild.id);
 
     for (const selectedLabel of selectedValues) {

@@ -1,6 +1,5 @@
-// helper/ticketCategoryHelper.js
-const { dbGetCategories, dbCreateCategory, dbDeleteCategory } = require('../Database/database.js');
-const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
+import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 
 // Standard-Kategorien (mit vollständigen AI‑Prompts)
 function getDefaultCategories() {
@@ -148,8 +147,7 @@ async function updateTicketCreationMessage(guild) {
   }
 }
 
-
-module.exports = {
+export {
   getCategories,
   createCategory,
   deleteCategory,
