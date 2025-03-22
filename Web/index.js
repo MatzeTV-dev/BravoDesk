@@ -1,18 +1,21 @@
-// index.js
-const path = require('path');
-const express = require('express');
-const fetch = require('node-fetch');
-const session = require('express-session');
-const dotenv = require('dotenv');
+import path from 'path';
+import express from 'express';
+import fetch from 'node-fetch';
+import session from 'express-session';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
 
-const CLIENT_ID = process.env.DISCORD_CLIENT_ID
-const CLIENT_SECRET = process.env.DISCORD_SECRET
-const PORT = process.env.PORT
-const REDIRECT_URI = `http://localhost:53134/auth/discord/callback`;
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const CLIENT_SECRET = process.env.DISCORD_SECRET;
+const PORT = process.env.PORT;
+const REDIRECT_URI = process.env.REDERICT_URI;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -44,12 +47,12 @@ app.get('/auth/discord/callback', async (req, res) => {
 
   try {
     const data = new URLSearchParams({
-      client_id:     CLIENT_ID,
+      client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
-      grant_type:    'authorization_code',
-      code:          code,
-      redirect_uri:  REDIRECT_URI,
-      scope:         'identify guilds'
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: REDIRECT_URI,
+      scope: 'identify guilds'
     });
 
     const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
@@ -99,22 +102,21 @@ app.post('/api/guilds/:id', express.json(), (req, res) => {
 });
 
 app.get('/auth/logout', (req, res) => {
-	req.session.destroy(err => {
-	  if (err) {
-		console.error("Fehler beim Abmelden:", err);
-		return res.status(500).send('Fehler beim Abmelden');
-	  }
-	  res.redirect('/');
-	});
+  req.session.destroy(err => {
+    if (err) {
+      console.error("Fehler beim Abmelden:", err);
+      return res.status(500).send('Fehler beim Abmelden');
+    }
+    res.redirect('/');
+  });
 });
 
-
-const serverSelector = require('./modules/ServerSelector');
-const userMenu = require('./modules/UserMenu');
-const memoryRoutes = require('./modules/Memory');
-const blacklistRoutes = require('./modules/Blacklist');
-const categoryRoutes = require('./modules/Category');
-const designRoutes = require('./modules/Design');
+import serverSelector from './modules/ServerSelector.js';
+import userMenu from './modules/UserMenu.js';
+import memoryRoutes from './modules/Memory.js';
+import blacklistRoutes from './modules/Blacklist.js';
+import categoryRoutes from './modules/Category.js';
+import designRoutes from './modules/Design.js';
 
 app.use('/api', serverSelector);
 app.use('/api', userMenu);
