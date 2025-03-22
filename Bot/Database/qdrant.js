@@ -1,34 +1,35 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { Configuration, OpenAIApi } from 'openai';
 import { v4 as uuidv4 } from 'uuid';
-import dotenv from 'dotenv';
+import { HfInference } from '@huggingface/inference';
 import Logger from '../helper/loggerHelper.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import dotenv from 'dotenv';
 
-dotenv.config({ path: '../.env' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-  
-const openai = new OpenAIApi(configuration);
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const qdrantURL = process.env.QDRANT_URL;
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+
+// Qdrant-Client initialisieren
 const qdrantClient = new QdrantClient({
-  url: qdrantURL,
+  url: process.env.QDRANT_URL,
   apiKey: process.env.QDRANT_API_KEY,
 });
 
 // Funktion: Generiere Embeddings
 async function getEmbedding(text) {
   try {
-    const response = await openai.createEmbedding({
-      model: "text-embedding-ada-002",
-      input: text,
-    });
-    return response.data.data[0].embedding;
+      const embedding = await hf.featureExtraction({
+          model: "intfloat/multilingual-e5-large",
+          inputs: text,
+      });
+      return embedding;
   } catch (error) {
-    console.error("Error generating embedding:", error.message);
-    return null;
+      Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}\n${error.stack}`);
+      return null;
   }
 }
   
@@ -194,7 +195,7 @@ async function generateCollection(collectionname) {
   try {
     await qdrantClient.createCollection(collectionname, {
       vectors: {
-        size: 1024, // Dimension des Vektorraums
+        size: 1024, // Dimension des Vektorraums – passt zu den Embeddings des Modells
         distance: 'Cosine', // Ähnlichkeitsmetrik
       },
     });
