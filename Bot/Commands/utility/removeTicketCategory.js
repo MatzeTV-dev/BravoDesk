@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
-import { getCategories, deleteCategory, updateTicketCreationMessage } from '../../helper/ticketCategoryHelper.js';
-import Logger from '../../helper/loggerHelper.js';
-import { error, info, success } from '../../helper/embedHelper.js';
+import { getCategories } from '../../helper/ticketCategoryHelper.js';
+import { error, info } from '../../helper/embedHelper.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -30,7 +29,7 @@ export default {
     const options = categories.map(cat => ({
       label: cat.label,
       description: cat.description,
-      value: cat.label // Hier wird der Label als Schlüssel genutzt
+      value: cat.value // Hier wird der Label als Schlüssel genutzt
     }));
     
     const selectMenu = new StringSelectMenuBuilder()

@@ -20,9 +20,6 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('Filename:', __filename);
-console.log('Directory:', __dirname);
-
 // 🔹 Convert worker script path to file:// URL
 const workerPath = new URL('./Threads/openai-keep-alive.js', import.meta.url);
 const worker = new Worker(workerPath, { type: 'module' }); // ✅ Now the path is properly formatted

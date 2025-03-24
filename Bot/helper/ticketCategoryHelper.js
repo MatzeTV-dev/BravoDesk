@@ -1,5 +1,6 @@
 import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
 import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { getServerInformation } from '../Database/database.js';
 
 // Standard-Kategorien (mit vollständigen AI‑Prompts)
 function getDefaultCategories() {
@@ -83,9 +84,9 @@ async function deleteCategory(guildId, label) {
  * @param {Guild} guild - Der Discord-Server.
  */
 async function updateTicketCreationMessage(guild) {
-  const channel = guild.channels.cache.find(
-    ch => ch.name.toLowerCase() === 'ticket-system' && ch.type === 0
-  );
+
+  const serverInformation = await getServerInformation(guild.id);
+  const channel = guild.channels.cache.get(serverInformation[0][0].ticket_system_channel_id);
   if (!channel) return;
   const messages = await channel.messages.fetch({ limit: 1, after: '0' });
   const ticketMessage = messages.first();

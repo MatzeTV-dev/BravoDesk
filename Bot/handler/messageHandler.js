@@ -1,11 +1,10 @@
 import { getCategories, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
 import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
-import { error } from '../helper/embedHelper.js';
+import { getServerInformation } from '../Database/database.js';
 import { getData, upload } from '../Database/qdrant.js';
 import axios from 'axios';
 import Logger from '../helper/loggerHelper.js';
 import 'dotenv/config';
-import fs from 'fs';
 
 /**
  * Ermittelt den Kategorien-Wert aus dem Channel-Topic.
@@ -215,9 +214,11 @@ export default async (client, message) => {
     return;
   }
 
+  const serverInformation = await getServerInformation(message.guild.id);
+
   // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
   // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
-  if (message.channel.name.toLowerCase() === 'ticket-system') {
+  if (message.channel.id === serverInformation[0][0].ticket_system_channel_id) {
     try {
       await updateTicketCreationMessage(message.guild);
     } catch (err) {
