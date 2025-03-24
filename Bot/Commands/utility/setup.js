@@ -1,34 +1,19 @@
-import {
-    SlashCommandBuilder,
-    PermissionsBitField,
-    ChannelType,
-    ActionRowBuilder,
-    StringSelectMenuBuilder,
-    EmbedBuilder,
-    ButtonBuilder,
-    ButtonStyle
-  } from 'discord.js';
-  import {
-    activateKey,
-    checkKeyActivated,
-    checkKeyValidity,
-    checkKeyExists,
-    CheckDiscordIDWithKey
-  } from '../../helper/keyHelper.js';
-  import { saveServerInformation, chefIfServerExists } from '../../Database/database.js';
-  import { error, success, warning, info } from '../../helper/embedHelper.js';
-  import { generateCollection } from '../../Database/qdrant.js';
-  import Logger from '../../helper/loggerHelper.js';
-  import fs from 'fs';
+import { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } from '../../helper/keyHelper.js';
+import { saveServerInformation, chefIfServerExists } from '../../Database/database.js';
+import { error, success, warning, info } from '../../helper/embedHelper.js';
+import { generateCollection } from '../../Database/qdrant.js';
+import Logger from '../../helper/loggerHelper.js';
+import fs from 'fs';
   
-  // Globale Variablen, um IDs während des Setups zu speichern
-  let guild = null;
-  let guildID = '';
-  let ticketChannelID = '';
-  let ticketCategoryID = '';
-  let supportRoleID = '';
-  let ticketArchivCategoryID = '';
-  let kiadminRoleID = '';
+// Globale Variablen, um IDs während des Setups zu speichern
+let guild = null;
+let guildID = '';
+let ticketChannelID = '';
+let ticketCategoryID = '';
+let supportRoleID = '';
+let ticketArchivCategoryID = '';
+let kiadminRoleID = '';
   
   export default {
     data: new SlashCommandBuilder()
@@ -165,11 +150,10 @@ import {
         }
       } catch (error) {
         Logger.error(`Error during setup: ${error.message}\n${error.stack}`);
-        // Rollback bei Fehlern
-        await rollbackSetup(interaction);
         await interaction.editReply({
           embeds: [error('Setup Process!', 'An error occurred during the setup process. Please try again.')]
         });
+        await rollbackSetup(interaction);
       }
     },
   };

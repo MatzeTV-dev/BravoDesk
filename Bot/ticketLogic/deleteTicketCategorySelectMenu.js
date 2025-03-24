@@ -19,7 +19,7 @@ export default {
     const guildId = interaction.guild.id;
     
     const categories = await getCategories(guildId);
-    const category = categories.find(cat => cat.label.trim().toLowerCase() === labelToDelete.trim().toLowerCase());
+    const category = categories.find(cat => cat.value.trim().toLowerCase() === labelToDelete.trim().toLowerCase());
     if (!category) {
       return interaction.followUp({ 
         embeds: [error('Error!', `Kategorie \`${labelToDelete}\` wurde nicht gefunden.`)],

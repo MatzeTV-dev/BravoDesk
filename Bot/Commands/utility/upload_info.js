@@ -2,6 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import { upload } from '../../Database/qdrant.js';
 import { error, info } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
+import { getServerInformation } from '../../Database/database.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -17,33 +18,14 @@ export default {
     try {
       await interaction.deferReply({ ephemeral: true });
 
-      const roleName = 'KI-Admin';
+      const ServerInformation = await getServerInformation(interaction.guildId);
       const member = interaction.member;
+      const hasRole = member.roles.cache.some((role) => role.id === ServerInformation[0][0].kiadmin_role_id);
 
-      if (!member) {
-        throw new Error('Mitgliedsinformationen konnten nicht abgerufen werden.');
-      }
-
-      const role = member.roles.cache.find((role) => role.name === roleName);
-
-      if (!role) {
+      if (!hasRole) {
         await interaction.editReply({
-          embeds: [
-            error(
-              'Error!',
-              'Hoppla! Es sieht so aus, als hättest du keine Berechtigung dafür. Ein Administrator wurde informiert.'
-            )
-          ],
+          embeds: [error('Error!', 'Du hast keine Berechtigung für diesen Befehl!')]
         });
-
-        const adminChannel = interaction.guild.channels.cache.find(
-          (channel) => channel.name === 'admin-log'
-        );
-        if (adminChannel) {
-          await adminChannel.send(
-            `⚠️ Benutzer ${interaction.user.tag} hat versucht, den Befehl \`/upload\` ohne Berechtigung auszuführen.`
-          );
-        }
         return;
       }
 
@@ -89,7 +71,7 @@ export default {
         });
       }
     } catch (err) {
-      Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${err.message}`);
+      Logger.error(`Ein unerwarteter Fehler ist aufgetreten: ${err.message} ${err.stack}`);
       try {
         await interaction.editReply({
           embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten.')],

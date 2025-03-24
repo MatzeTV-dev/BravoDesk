@@ -1,10 +1,5 @@
-import { 
-  SlashCommandBuilder, 
-  EmbedBuilder, 
-  ButtonBuilder, 
-  ButtonStyle, 
-  ActionRowBuilder 
-} from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
+import { getServerInformation } from '../../Database/database.js';
 import { error } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
 import { getData } from '../../Database/qdrant.js';
@@ -25,22 +20,16 @@ export default {
       // Nur der ausführende User sieht das Ergebnis (ephemeral)
       await interaction.deferReply({ ephemeral: true });
 
-      const roleName = 'KI-Admin';
+      const ServerInformation = await getServerInformation(interaction.guildId);
       const member = interaction.member;
-      const role = member.roles.cache.find(r => r.name === roleName);
+      const hasRole = member.roles.cache.some((role) => role.id === ServerInformation[0][0].kiadmin_role_id);
 
-      // Rollen-Check
-      if (!role) {
+      if (!hasRole) {
         await interaction.editReply({
-          embeds: [
-            error(
-              'Error!',
-              'Hoppla! Du hast keine Berechtigung für diesen Befehl. Ein Admin wurde informiert.'
-            )
-          ]
-        });
-        return;
-      }
+          embeds: [error('Error!', 'Du hast keine Berechtigung für diesen Befehl!')]
+      });
+      return;
+    }
 
       // Suchbegriff aus dem Command
       const userQuery = interaction.options.getString('keyword', true);

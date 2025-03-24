@@ -1,19 +1,8 @@
-import {
-  SlashCommandBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-  ComponentType
-} from 'discord.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType} from 'discord.js';
 import { getEverythingCollection, deleteEntry } from '../../Database/qdrant.js';
 import { error, info } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
+import { getServerInformation } from '../../Database/database.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -23,15 +12,14 @@ export default {
     try {
       await interaction.deferReply({ ephemeral: true });
 
-      // Rollen-Check
-      const roleName = 'KI-Admin';
+      const ServerInformation = await getServerInformation(interaction.guildId);
       const member = interaction.member;
-      const hasRole = member.roles.cache.some((role) => role.name === roleName);
+      const hasRole = member.roles.cache.some((role) => role.id === ServerInformation[0][0].kiadmin_role_id);
 
       if (!hasRole) {
         await interaction.editReply({
           embeds: [error('Error!', 'Du hast keine Berechtigung für diesen Befehl!')]
-        });
+      });
 
         const adminChannel = interaction.guild.channels.cache.find(
           (channel) => channel.name === 'admin-log'

@@ -11,12 +11,6 @@ export default {
       // deferReply mit ephemeral: true
       await interaction.deferReply({ ephemeral: true });
 
-      const roleName = 'KI-Admin';
-      const member = interaction.member;
-
-      // Rolle finden
-      const role = member.roles.cache.find((role) => role.name === roleName);
-
       // Embed erstellen und als Antwort senden
       const embed = new EmbedBuilder()
         .setTitle('**Befehlsliste**')

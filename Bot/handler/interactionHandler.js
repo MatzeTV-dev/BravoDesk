@@ -71,7 +71,7 @@ import {
             Logger.info(`Button Interaction gestartet: ${customId}`);
             const entryId = customId.split('_')[1];
             const entry = await getEntry(entryId, interaction.guildId);
-            Logger.info('Gefundener Eintrag:', entry);
+            Logger.info('Gefundener Eintrag:', JSON.stringify(entry));
   
             // Modal erzeugen
             const modal = new ModalBuilder()
