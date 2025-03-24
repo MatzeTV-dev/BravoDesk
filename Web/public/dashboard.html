@@ -41,7 +41,7 @@
         <!-- Pfeil -->
         <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
         <!-- User-Menü -->
-        <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2e2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
+        <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2a2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
           <div onclick="logout()" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">🔒 Abmelden</div>
         </div>
       </div>
@@ -75,34 +75,54 @@
           <div class="kategorien-container">
             <h3>Kategorie bearbeiten</h3>
             <!-- Dropdown -->
-            <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
+            <div style="margin-bottom: 15px;">
+              <label for="kategorieSelect" class="label-container">
+                Kategorie auswählen 
+                <span class="help-icon" title="Wählen Sie eine Kategorie aus, um sie zu bearbeiten.">?</span>
+              </label>
+              <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
+            </div>
             <!-- Erste Zeile: Emoji und Beschreibung -->
             <div class="kategorien-single-line" style="margin-top: 15px;">
               <div class="kategorien-field">
-                <label for="kategorieEmoji">Emoji</label>
-                <!-- Das Emoji-Input-Feld dient als Trigger für den Emoji-Picker -->
+                <label for="kategorieEmoji" class="label-container">
+                  Emoji 
+                  <span class="help-icon" title="Wählen Sie ein Emoji für die Kategorie.">?</span>
+                </label>
                 <input type="text" id="kategorieEmoji" class="emoji-field" readonly placeholder="🐛" style="width: 25px;">
               </div>
               <div class="kategorien-field" style="flex: 1;">
-                <label for="kategorieBeschreibung">Beschreibung</label>
+                <label for="kategorieBeschreibung" class="label-container">
+                  Beschreibung 
+                  <span class="help-icon" title="Geben Sie eine kurze Beschreibung der Kategorie ein.">?</span>
+                </label>
                 <textarea id="kategorieBeschreibung" style="width: 100%; height: 23px; background-color: #1a1e1b; border: none; color: white;"></textarea>
               </div>
             </div>
             <!-- Zweite Zeile: AI Prompt -->
             <div class="kategorien-single-line" style="margin-top: 15px;">
               <div class="kategorien-field" style="flex: 1;">
-                <label for="kategorieAIPrompt">AI Prompt</label>
+                <label for="kategorieAIPrompt" class="label-container">
+                  AI Prompt 
+                  <span class="help-icon" title="Geben Sie den AI Prompt für diese Kategorie ein.">?</span>
+                </label>
                 <textarea id="kategorieAIPrompt" style="width: 100%; height: 60px; background-color: #1a1e1b; border: none; color: white;"></textarea>
               </div>
             </div>
             <!-- Dritte Zeile: Enabled und Permission -->
             <div class="kategorien-single-line" style="margin-top: 15px;">
               <div class="kategorien-field" style="flex: 1;">
-                <label for="kategorieEnabled" style="text-align: left;">AI Aktiviert</label>
+                <label for="kategorieEnabled" class="label-container">
+                  AI Aktiviert 
+                  <span class="help-icon" title="Aktiviert oder deaktiviert die AI für diese Kategorie.">?</span>
+                </label>
                 <input type="checkbox" id="kategorieEnabled" style="vertical-align: middle;" checked>
               </div>
               <div class="kategorien-field" style="flex: 1;">
-                <label for="kategoriePermission">Permission</label>
+                <label for="kategoriePermission" class="label-container">
+                  Permission 
+                  <span class="help-icon" title="Legt die Berechtigungen für diese Kategorie fest.">?</span>
+                </label>
                 <select id="kategoriePermission" class="full-width-dropdown"></select>
               </div>
             </div>
@@ -119,21 +139,49 @@
       <div id="createCategoryPopup" class="popup-modal">
         <div class="popup-content">
           <h3>Neue Kategorie erstellen</h3>
-          <input type="text" id="newCategoryName" placeholder="Kategorie Name">
-          <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
-            <input type="text" id="newCategoryEmoji" class="emoji-field" readonly placeholder="🐛" style="width: 25px;">
-            <textarea id="newCategoryDescription" placeholder="Beschreibung" style="width: calc(100% - 30px); height: 25px; resize: none;"></textarea>
+          <div style="margin-bottom: 10px;">
+            <label for="newCategoryName" class="label-container">
+              Kategorie Name 
+              <span class="help-icon" title="Geben Sie den Namen der neuen Kategorie ein.">?</span>
+            </label>
+            <input type="text" id="newCategoryName" placeholder="Kategorie Name">
           </div>
-          <div class="create-category-line" style="margin-top: 10px;">
+          <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
+            <div style="flex: 0 0 60px;">
+              <label for="newCategoryEmoji" class="label-container">
+                Emoji 
+                <span class="help-icon" title="Wählen Sie ein Emoji für die neue Kategorie.">?</span>
+              </label>
+              <input type="text" id="newCategoryEmoji" class="emoji-field" readonly placeholder="🐛" style="width: 100%;">
+            </div>
+            <div style="flex: 1;">
+              <label for="newCategoryDescription" class="label-container">
+                Beschreibung 
+                <span class="help-icon" title="Geben Sie eine Beschreibung der neuen Kategorie ein.">?</span>
+              </label>
+              <input type="text" id="newCategoryDescription" placeholder="Beschreibung">
+            </div>
+          </div>
+          <div style="margin-top: 10px;">
+            <label for="newCategoryAIPrompt" class="label-container">
+              AI Prompt 
+              <span class="help-icon" title="Geben Sie den AI Prompt für die neue Kategorie ein.">?</span>
+            </label>
             <textarea id="newCategoryAIPrompt" placeholder="AI Prompt" style="width: 100%; height: 60px;"></textarea>
           </div>
           <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
             <div style="flex: 1;">
-              <label for="newCategoryEnabled">AI Aktiviert</label>
+              <label for="newCategoryEnabled" class="label-container">
+                AI Aktiviert 
+                <span class="help-icon" title="Aktiviert oder deaktiviert die AI für diese neue Kategorie.">?</span>
+              </label>
               <input type="checkbox" id="newCategoryEnabled" checked>
             </div>
             <div style="flex: 1;">
-              <label for="newCategoryPermission">Permission</label>
+              <label for="newCategoryPermission" class="label-container">
+                Permission 
+                <span class="help-icon" title="Legt die Berechtigungen für diese neue Kategorie fest.">?</span>
+              </label>
               <select id="newCategoryPermission" class="full-width-dropdown"></select>
             </div>
           </div>
@@ -178,12 +226,18 @@
                 </div>
               </div>
               <div class="design-fields">
-                <div>
-                  <label style="margin-right: 10px;" for="botName">Bot Name</label>
+                <div style="margin-bottom: 10px;">
+                  <label for="botName" class="label-container">
+                    Bot Name 
+                    <span class="help-icon" title="Geben Sie den Namen des Bots ein.">?</span>
+                  </label>
                   <input type="text" id="botName" placeholder="Bot Name">
                 </div>
                 <div>
-                  <label style="margin-right: 5px;" for="botStatus">Bot Status</label>
+                  <label for="botStatus" class="label-container">
+                    Bot Status 
+                    <span class="help-icon" title="Geben Sie den Status des Bots ein.">?</span>
+                  </label>
                   <input type="text" id="botStatus" placeholder="Bot Status">
                 </div>
               </div>
@@ -201,7 +255,13 @@
   <div id="popupModal" class="popup-modal">
     <div class="popup-content">
       <h3>Neuer Eintrag</h3>
-      <textarea id="newEntryText" rows="3" placeholder="Neuer Wissenstext..."></textarea>
+      <div style="margin-bottom: 10px;">
+        <label for="newEntryText" class="label-container">
+          Neuer Wissenstext 
+          <span class="help-icon" title="Geben Sie den neuen Wissenstext ein.">?</span>
+        </label>
+        <textarea id="newEntryText" rows="3" placeholder="Neuer Wissenstext..."></textarea>
+      </div>
       <div class="popup-buttons">
         <button onclick="saveEntry()">Speichern</button>
         <button onclick="closePopup()">Abbrechen</button>
@@ -213,26 +273,16 @@
   <div id="editPopupModal" class="popup-modal">
     <div class="popup-content">
       <h3>Eintrag bearbeiten</h3>
-      <textarea id="editEntryText" rows="3"></textarea>
+      <div style="margin-bottom: 10px;">
+        <label for="editEntryText" class="label-container">
+          Eintrag bearbeiten 
+          <span class="help-icon" title="Bearbeiten Sie den Eintragtext.">?</span>
+        </label>
+        <textarea id="editEntryText" rows="3"></textarea>
+      </div>
       <div class="popup-buttons">
         <button onclick="saveEditEntry()">Speichern</button>
         <button onclick="closeEditPopup()">Abbrechen</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- POPUP: Neue Kategorie erstellen (Doppelt, falls benötigt) -->
-  <div id="createCategoryPopup" class="popup-modal">
-    <div class="popup-content">
-      <h3>Neue Kategorie erstellen</h3>
-      <input type="text" id="newCategoryName" placeholder="Kategorie Name">
-      <div class="create-category-line">
-        <input type="text" id="newCategoryEmoji" class="emoji-field" readonly placeholder="🐛">
-        <input style="margin-bottom: 20px;" type="text" id="newCategoryDescription" placeholder="Beschreibung">
-      </div>
-      <div class="popup-buttons">
-        <button onclick="createCategory()">Speichern</button>
-        <button onclick="closeCreateCategoryPopup()">Abbrechen</button>
       </div>
     </div>
   </div>
@@ -241,8 +291,20 @@
   <div id="blacklistAddModal" class="popup-modal">
     <div class="popup-content">
       <h3>Blacklist Eintrag hinzufügen</h3>
-      <input type="text" id="blacklistAddUserId" placeholder="User ID">
-      <textarea id="blacklistAddReason" rows="3" placeholder="Grund"></textarea>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistAddUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die hinzugefügt werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistAddUserId" placeholder="User ID">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistAddReason" class="label-container">
+          Grund 
+          <span class="help-icon" title="Geben Sie den Grund für die Blacklist-Eintragung ein.">?</span>
+        </label>
+        <textarea id="blacklistAddReason" rows="3" placeholder="Grund"></textarea>
+      </div>
       <div class="popup-buttons">
         <button onclick="saveBlacklistEntry()">Speichern</button>
         <button onclick="closeBlacklistAddModal()">Abbrechen</button>
@@ -254,7 +316,13 @@
   <div id="blacklistRemoveModal" class="popup-modal">
     <div class="popup-content">
       <h3>Blacklist Eintrag entfernen</h3>
-      <input type="text" id="blacklistRemoveUserId" placeholder="User ID">
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistRemoveUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die entfernt werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistRemoveUserId" placeholder="User ID">
+      </div>
       <div class="popup-buttons">
         <button onclick="confirmBlacklistRemoval()">Entfernen</button>
         <button onclick="closeBlacklistRemoveModal()">Abbrechen</button>
@@ -266,7 +334,13 @@
   <div id="blacklistSearchModal" class="popup-modal">
     <div class="popup-content">
       <h3>Blacklist Eintrag suchen</h3>
-      <input type="text" id="blacklistSearchUserId" placeholder="User ID">
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistSearchUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die gesucht werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistSearchUserId" placeholder="User ID">
+      </div>
       <div class="popup-buttons">
         <button onclick="performBlacklistSearch()">Suchen</button>
         <button onclick="closeBlacklistSearchModal()">Abbrechen</button>

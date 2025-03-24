@@ -457,3 +457,27 @@
   font-size: 20px;
   margin: 5px;
 }
+
+    /* Zusätzliche Styles für die Help-Icons neben den Labels */
+    .help-icon {
+      font-size: 12px;
+      color: #ccc;
+      cursor: help;
+      border: 1px solid #ccc;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      text-align: center;
+      line-height: 14px;
+      margin-left: 5px;
+      transition: color 0.3s, border-color 0.3s;
+    }
+    .help-icon:hover {
+      color: #fff;
+      border-color: #fff;
+    }
+    /* Optional: Labels in einem flex-Container, falls du mehr Kontrolle über den Abstand brauchst */
+    .label-container {
+      display: flex;
+      align-items: center;
+    }
