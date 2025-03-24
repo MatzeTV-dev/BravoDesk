@@ -1,6 +1,6 @@
-// modules/Blacklist.js
-const express = require('express');
-const { db } = require('../modules/database');
+import express from 'express';
+import { db } from '../modules/database.js';
+
 const router = express.Router();
 
 // Blacklist-Einträge für einen bestimmten Server abrufen
@@ -81,4 +81,4 @@ router.get('/blacklist/:serverId/search', (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

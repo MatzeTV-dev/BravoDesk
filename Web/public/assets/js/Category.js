@@ -80,7 +80,7 @@ function fillCategoryFields(cat) {
 // ------------------------
 function saveCategoryChanges() {
   if (!currentCategoryId) {
-    alert("Keine Kategorie ausgewählt.");
+    notify("Keine Kategorie ausgewählt", 3000, "warn")
     return;
   }
   const select = document.getElementById("kategorieSelect");
@@ -88,7 +88,7 @@ function saveCategoryChanges() {
   const emoji = document.getElementById("kategorieEmoji").value.trim();
   const description = document.getElementById("kategorieBeschreibung").value.trim();
   const ai_prompt = document.getElementById("kategorieAIPrompt").value.trim();
-  const enabled = document.getElementById("kategorieEnabled").checked ? 1 : 0;
+  const ai_enabled = document.getElementById("kategorieEnabled").checked ? 1 : 0;
   const permission = document.getElementById("kategoriePermission").value;
   
   fetch(`/api/ticket_categories/${guildID}/${currentCategoryId}`, {
@@ -99,18 +99,19 @@ function saveCategoryChanges() {
       description,
       emoji,
       ai_prompt,
-      enabled,
+      ai_enabled,
       permission
     })
   })
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        alert("Kategorie aktualisiert!");
+        notify("Kategorie aktualisiert", 3000, "success")
         loadTicketCategories(guildID);
+        return;
       } else {
         console.error(data.error);
-        alert("Fehler beim Aktualisieren: " + data.error);
+        notify("Fehler beim Aktualisieren", 3000, "error")
       }
     })
     .catch(err => console.error("Fehler beim Aktualisieren der Kategorie:", err));
@@ -121,7 +122,7 @@ function saveCategoryChanges() {
 // ------------------------
 function deleteCategory() {
   if (!currentCategoryId) {
-    alert("Keine Kategorie ausgewählt.");
+    notify("Keine Kategorie ausgewählt", 3000, "error")
     return;
   }
   const label = document.getElementById("kategorieSelect").selectedOptions[0].textContent;
@@ -132,11 +133,11 @@ function deleteCategory() {
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        alert("Kategorie gelöscht!");
+        notify("Kategorie gelöscht", 3000, "success")
         loadTicketCategories(guildID);
       } else {
         console.error(data.error);
-        alert("Fehler beim Löschen: " + data.error);
+        notify("Fehler beim Löschen", 3000, "error")
       }
     })
     .catch(err => console.error("Fehler beim Löschen der Kategorie:", err));
@@ -168,11 +169,11 @@ function createCategory() {
   const emoji = document.getElementById("newCategoryEmoji").value.trim();
   const description = document.getElementById("newCategoryDescription").value.trim();
   const ai_prompt = document.getElementById("newCategoryAIPrompt").value.trim();
-  const enabled = document.getElementById("newCategoryEnabled").checked ? 1 : 0;
+  const ai_enabled = document.getElementById("newCategoryEnabled").checked ? 1 : 0;
   const permission = document.getElementById("newCategoryPermission").value;
   
   if (!label) {
-    alert("Bitte einen Kategorienamen eingeben.");
+    notify("Bitte einen Kategorienamen eingeben.", 3000, "warn")
     return;
   }
   
@@ -184,19 +185,19 @@ function createCategory() {
       description,
       emoji,
       ai_prompt,
-      enabled,
+      ai_enabled,
       permission
     })
   })
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        alert("Kategorie wurde erstellt!");
+        notify("Kategorie wurde erstellt.", 3000, "success")
         closeCreateCategoryPopup();
         loadTicketCategories(guildID);
       } else {
         console.error(data.error);
-        alert("Fehler beim Erstellen: " + data.error);
+        notify("Fehler beim Erstellen.", 3000, "error")
       }
     })
     .catch(err => console.error("Fehler beim Erstellen der Kategorie:", err));

@@ -1,6 +1,5 @@
-// helper/ticketCategoryHelper.js
-const { dbGetCategories, dbCreateCategory, dbDeleteCategory } = require('../Database/database.js');
-const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
+import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 
 // Standard-Kategorien (mit vollständigen AI‑Prompts)
 function getDefaultCategories() {
@@ -84,11 +83,14 @@ async function deleteCategory(guildId, label) {
  * @param {Guild} guild - Der Discord-Server.
  */
 async function updateTicketCreationMessage(guild) {
-  const channel = guild.channels.cache.find(ch => ch.name.toLowerCase() === 'ticket-system' && ch.type === 0);
+  const channel = guild.channels.cache.find(
+    ch => ch.name.toLowerCase() === 'ticket-system' && ch.type === 0
+  );
   if (!channel) return;
   const messages = await channel.messages.fetch({ limit: 1, after: '0' });
   const ticketMessage = messages.first();
   if (!ticketMessage) return;
+  
   const categories = await getCategories(guild.id);
   
   const options = categories.map(cat => ({
@@ -105,22 +107,47 @@ async function updateTicketCreationMessage(guild) {
       option.emoji = { name: cat.emoji };
     }
   });
-
-  const newSelectMenu = new StringSelectMenuBuilder()
+  
+  let newSelectMenu = new StringSelectMenuBuilder()
     .setCustomId('create_ticket_ticket_category')
     .setPlaceholder('Wählen Sie eine Kategorie aus...')
     .addOptions(options);
-
-  const row = new ActionRowBuilder().addComponents(newSelectMenu);
-
+  
+  let row = new ActionRowBuilder().addComponents(newSelectMenu);
+  
   try {
     await ticketMessage.edit({ components: [row] });
   } catch (err) {
-    console.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message}`);
+    // Falls der Fehler wegen ungültiger Emojis kommt, entferne alle Emojis und versuche es erneut
+    if (err.message.includes("Invalid emoji")) {
+      console.error("Ungültige Emojis gefunden – versuche ohne Emojis.");
+      
+      options.forEach(option => {
+        if (option.emoji) {
+          delete option.emoji;
+        }
+      });
+      
+      newSelectMenu = new StringSelectMenuBuilder()
+        .setCustomId('create_ticket_ticket_category')
+        .setPlaceholder('Wählen Sie eine Kategorie aus...')
+        .addOptions(options);
+      
+      row = new ActionRowBuilder().addComponents(newSelectMenu);
+      
+      try {
+        await ticketMessage.edit({ components: [row] });
+        console.log("Dropdown-Menü wurde ohne Emojis aktualisiert.");
+      } catch (err2) {
+        console.error(`Fehler beim Aktualisieren des Dropdown-Menüs ohne Emoji: ${err2.message}`);
+      }
+    } else {
+      console.error(`Fehler beim Aktualisieren des Dropdown-Menüs: ${err.message}`);
+    }
   }
 }
 
-module.exports = {
+export {
   getCategories,
   createCategory,
   deleteCategory,

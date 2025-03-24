@@ -1,12 +1,23 @@
-const express = require('express');
-const { QdrantClient } = require('@qdrant/js-client-rest');
-const { randomUUID } = require('crypto');
+import express from 'express';
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { randomUUID } from 'crypto';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const router = express.Router();
 
+const QdrantURL = process.env.QDRANT_URL;
+const QdrantAPIkey = process.env.QDRANT_API_KEY;
+
 const qdrantClient = new QdrantClient({
-	url: process.env.QDRANT_URL || 'https://134feb5a-5ff2-462e-9a79-6dd5a9e95a9f.us-west-1-0.aws.cloud.qdrant.io:6333',
-	apiKey: process.env.QDRANT_API_KEY || 'grzntACUv-HukjpiMGcqYp67rgmdew0hMJa6R9MSHg9TVVWL6iNqvw'
+  url: QdrantURL,
+  apiKey: QdrantAPIkey,
 });
 
 /**
@@ -152,4 +163,4 @@ router.delete('/wissenseintraege/:guildId/:entryId', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

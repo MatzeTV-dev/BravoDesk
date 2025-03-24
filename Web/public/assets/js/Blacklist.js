@@ -69,6 +69,7 @@ function saveBlacklistEntry() {
         document.getElementById("blacklistAddUserId").value = "";
         document.getElementById("blacklistAddReason").value = "";
         closeBlacklistAddModal();
+        notify("User wurde zur Blacklist hinzugefügt", 3000, "success")
       })
       .catch(err => console.error("Fehler beim Speichern des Blacklist-Eintrags:", err));
   }
@@ -101,6 +102,7 @@ function confirmBlacklistRemoval() {
         loadBlacklistEntries(currentGuildId);
         document.getElementById("blacklistRemoveUserId").value = "";
         closeBlacklistRemoveModal();
+        notify("User wurde von der Blacklist entfernt", 3000, "success")
       })
       .catch(err => console.error("Fehler beim Entfernen des Blacklist-Eintrags:", err));
   }

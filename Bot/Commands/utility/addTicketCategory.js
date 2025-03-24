@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { getCategories, createCategory, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
-const Logger = require('../../helper/loggerHelper');
-const { info, success, error } = require('../../helper/embedHelper');
+import { SlashCommandBuilder } from 'discord.js';
+import { getCategories, createCategory, updateTicketCreationMessage } from '../../helper/ticketCategoryHelper.js';
+import Logger from '../../helper/loggerHelper.js';
+import { info, success, error } from '../../helper/embedHelper.js';
 
 /**
  * Prüft, ob das übergebene Emoji gültig ist:
@@ -27,7 +27,7 @@ function isValidDiscordEmoji(emoji, guild) {
   return unicodeEmojiRegex.test(emoji);
 }
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('addcategory')
     .setDescription('Fügt eine neue Ticket-Kategorie hinzu.')
@@ -81,7 +81,9 @@ module.exports = {
     if (permissionInput) {
       const roleIdMatches = permissionInput.match(/<@&(\d+)>/g);
       if (roleIdMatches) {
-        permission = roleIdMatches.map(roleMention => roleMention.replace(/[<@&>]/g, ''));
+        permission = roleIdMatches.map(roleMention =>
+          roleMention.replace(/[<@&>]/g, '')
+        );
       }
     }
 
@@ -89,7 +91,12 @@ module.exports = {
     // muss es gültig sein und aus dem aktuellen Server stammen (bei Custom-Emojis).
     if (emoji && !isValidDiscordEmoji(emoji, interaction.guild)) {
       await interaction.editReply({
-        embeds: [error('Fehler!', 'Das angegebene Emoji ist ungültig oder stammt von einem externen Server. Bitte gib ein gültiges Emoji ein.')]
+        embeds: [
+          error(
+            'Fehler!',
+            'Das angegebene Emoji ist ungültig oder stammt von einem externen Server. Bitte gib ein gültiges Emoji ein.'
+          ),
+        ],
       });
       return;
     }
@@ -99,7 +106,9 @@ module.exports = {
       const normalizedValue = label.trim().toLowerCase().replace(/\s+/g, '_');
       if (categories.some(cat => (cat.value || '').toLowerCase() === normalizedValue)) {
         await interaction.editReply({
-          embeds: [info('Info', `Eine Kategorie mit dem Namen \`${label}\` existiert bereits.`)]
+          embeds: [
+            info('Info', `Eine Kategorie mit dem Namen \`${label}\` existiert bereits.`),
+          ],
         });
         return;
       }
@@ -110,19 +119,19 @@ module.exports = {
         emoji,
         aiPrompt,
         aiEnabled,
-        permission
+        permission,
       };
 
       await createCategory(guildId, newCategory);
       await updateTicketCreationMessage(interaction.guild);
       await interaction.editReply({
-        embeds: [success('Erfolg!', `Kategorie \`${label}\` wurde erfolgreich hinzugefügt.`)]
+        embeds: [success('Erfolg!', `Kategorie \`${label}\` wurde erfolgreich hinzugefügt.`)],
       });
     } catch (err) {
       Logger.error(`Fehler beim Hinzufügen der Kategorie: ${err.message}\n${err.stack}`);
       await interaction.editReply({
-        embeds: [error('Error!', 'Es gab einen Fehler beim Hinzufügen der Kategorie.')]
+        embeds: [error('Error!', 'Es gab einen Fehler beim Hinzufügen der Kategorie.')],
       });
     }
-  }
+  },
 };

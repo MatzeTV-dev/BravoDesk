@@ -1,5 +1,9 @@
-const express = require('express');
-const fetch = require('node-fetch'); // oder axios, wenn du das bevorzugst
+import express from 'express';
+import fetch from 'node-fetch'; // oder axios, wenn du das bevorzugst
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '../.env' });
+
 const router = express.Router();
 
 router.get('/guilds', async (req, res) => {
@@ -8,6 +12,7 @@ router.get('/guilds', async (req, res) => {
   if (!accessToken) {
     return res.status(401).json({ error: "Nicht eingeloggt" });
   }
+  console.log(`Bot ${process.env.DISCORD_BOT_TOKEN}`);
   try {
     // Abrufen der Gilden, in denen der User Mitglied ist
     const response = await fetch("https://discord.com/api/users/@me/guilds", {
@@ -36,7 +41,7 @@ router.get('/guilds', async (req, res) => {
         try {
           const botResponse = await fetch(`https://discord.com/api/v10/guilds/${guild.id}`, {
             headers: {
-              "Authorization": `Bot MTMxNDIyNzQ0ODMyOTY2NjU5MQ.GMTqCE.4g-zsjR-vo94dpInBaZYU5PfTcQN4EvD6sUlYA`
+              "Authorization": `Bot ${process.env.DISCORD_BOT_TOKEN}`
             }
           });
           // Wenn die Antwort OK ist, ist der Bot Mitglied der Guild.
@@ -60,7 +65,4 @@ router.get('/guilds', async (req, res) => {
   }
 });
 
-
-module.exports = router;
-
-module.exports = router;
+export default router;

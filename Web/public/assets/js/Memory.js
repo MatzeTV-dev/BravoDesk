@@ -28,6 +28,7 @@ function saveEntry() {
     tbody.appendChild(newRow);
     document.getElementById("newEntryText").value = "";
     closePopup();
+    notify("Wissenseintrag wurde hinzugefügt!", 3000, "success")
   }
 }
 
@@ -53,6 +54,7 @@ function saveEditEntry() {
     currentEditRow.cells[0].setAttribute("data-fulltext", newText);
     closeEditPopup();
     currentEditRow = null;
+    notify("Wissenseintrage wrude erfolgreich gespeichert!", 3000, "success")
   }
 }
 
@@ -206,6 +208,7 @@ function deleteEntry(el) {
         console.log("Eintrag gelöscht:", data);
         // Nach dem Löschen die Einträge neu laden
         loadKnowledgeEntries(currentGuildId);
+        notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success")
       })
       .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));
   }
