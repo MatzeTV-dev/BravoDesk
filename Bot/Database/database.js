@@ -1,12 +1,12 @@
-const mysql = require('mysql2/promise');
-const dotenv = require('dotenv');
-const Logger = require('../helper/loggerHelper');
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+import Logger from '../helper/loggerHelper.js';
 
 dotenv.config();
 
 let pool;
 
-async function initializeDatabaseConnection() {
+export async function initializeDatabaseConnection() {
   try {
     pool = mysql.createPool({
       host: process.env.DB_HOST,
@@ -50,13 +50,14 @@ async function executeQuery(query, params = []) {
 }
 
 // Bestehende Funktionen...
-async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id) {
+
+export async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id) {
   const query = `CALL Save_Server_Information(?, ?, ?, ?, ?, ?)`;
   await executeQuery(query, [server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id]);
   Logger.success('Server information saved successfully!');
 }
 
-async function getServerInformation(discord_server_id) {
+export async function getServerInformation(discord_server_id) {
   try {
     const query = `CALL Get_Server_Information(?)`;
     const data = await executeQuery(query, [discord_server_id]);
@@ -67,7 +68,7 @@ async function getServerInformation(discord_server_id) {
   }
 }
 
-async function chefIfServerExists(input_id) {
+export async function chefIfServerExists(input_id) {
   const queryCheck = `CALL Check_If_Server_Exists(?, @exists_flag)`;
   const queryResult = `SELECT @exists_flag AS exists_flag`;
   await executeQuery(queryCheck, [input_id]);
@@ -76,42 +77,42 @@ async function chefIfServerExists(input_id) {
   return Boolean(result.exists_flag);
 }
 
-async function Select(statement, dataInput) {
+export async function Select(statement, dataInput) {
   const rows = await executeQuery(statement, dataInput);
   Logger.success('Data retrieved successfully!');
   return rows;
 }
 
-async function Delete(statement, dataInput) {
+export async function Delete(statement, dataInput) {
   const result = await executeQuery(statement, dataInput);
   Logger.success('Data deleted successfully!');
   return result;
 }
 
-async function Call(statement, dataInput, SelectStatement) {
+export async function Call(statement, dataInput, SelectStatement) {
   await executeQuery(statement, dataInput);
-  const rows = await executeQuery(SelectStatement);
+  const rows = await executeQuery(SelectStatement, dataInput);
   Logger.success('Stored procedure executed successfully!');
   return rows[0];
 }
 
-async function Insert(statement, dataInput) {
+export async function Insert(statement, dataInput) {
   const result = await executeQuery(statement, dataInput);
   Logger.success('New record inserted successfully!');
   return result;
 }
 
-async function addUserToBlacklist(serverId, userId, reason = '') {
+export async function addUserToBlacklist(serverId, userId, reason = '') {
   const query = `CALL Add_User_To_Blacklist(?, ?, ?)`;
   return await executeQuery(query, [serverId, userId, reason]);
 }
 
-async function removeUserFromBlacklist(serverId, userId) {
+export async function removeUserFromBlacklist(serverId, userId) {
   const query = `CALL Remove_User_From_Blacklist(?, ?)`;
   return await executeQuery(query, [serverId, userId]);
 }
 
-async function checkUserBlacklisted(serverId, userId) {
+export async function checkUserBlacklisted(serverId, userId) {
   // Zuerst die Stored Procedure ausführen, die den OUT-Parameter setzt
   await executeQuery(`CALL Check_User_Blacklisted(?, ?, @is_blacklisted)`, [serverId, userId]);
   // Dann den OUT-Parameter abfragen
@@ -126,7 +127,7 @@ async function checkUserBlacklisted(serverId, userId) {
  * @param {string} guildId 
  * @returns {Promise<Array>} Liste der Kategorien
  */
-async function dbGetCategories(guildId) {
+export async function dbGetCategories(guildId) {
   const results = await executeQuery('CALL GetCategories(?)', [guildId]);
   // MySQL gibt hier möglicherweise mehrere Result-Sets zurück – wir nehmen das erste
   return results[0] || [];
@@ -137,7 +138,7 @@ async function dbGetCategories(guildId) {
  * @param {string} guildId 
  * @param {Object} category 
  */
-async function dbCreateCategory(guildId, category) {
+export async function dbCreateCategory(guildId, category) {
   // Wenn permission als Array vorliegt, in JSON umwandeln
   const permission = category.permission && Array.isArray(category.permission)
     ? JSON.stringify(category.permission)
@@ -159,24 +160,6 @@ async function dbCreateCategory(guildId, category) {
  * @param {string} guildId 
  * @param {string} label 
  */
-async function dbDeleteCategory(guildId, label) {
+export async function dbDeleteCategory(guildId, label) {
   await executeQuery('CALL DeleteCategory(?, ?)', [guildId, label]);
 }
-
-// Exportiere alle Funktionen
-module.exports = {
-  initializeDatabaseConnection,
-  saveServerInformation,
-  getServerInformation,
-  chefIfServerExists,
-  Select,
-  Delete,
-  Call,
-  Insert,
-  addUserToBlacklist,
-  removeUserFromBlacklist,
-  checkUserBlacklisted,
-  dbGetCategories,
-  dbCreateCategory,
-  dbDeleteCategory
-};

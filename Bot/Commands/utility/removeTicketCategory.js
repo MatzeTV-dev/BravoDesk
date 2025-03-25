@@ -1,10 +1,8 @@
-// deletecategory.js
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
-const { getCategories, deleteCategory, updateTicketCreationMessage } = require('../../helper/ticketCategoryHelper');
-const Logger = require('../../helper/loggerHelper');
-const { error, info, success } = require('../../helper/embedHelper');
+import { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { getCategories } from '../../helper/ticketCategoryHelper.js';
+import { error, info } from '../../helper/embedHelper.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('deletecategory')
     .setDescription('Löscht eine Ticket-Kategorie über ein Dropdown-Menü.'),
@@ -31,7 +29,7 @@ module.exports = {
     const options = categories.map(cat => ({
       label: cat.label,
       description: cat.description,
-      value: cat.label  // Hier wird der Label als Schlüssel genutzt
+      value: cat.value // Hier wird der Label als Schlüssel genutzt
     }));
     
     const selectMenu = new StringSelectMenuBuilder()

@@ -1,12 +1,10 @@
-// messageHandler.js
-const { getCategories, updateTicketCreationMessage } = require('../helper/ticketCategoryHelper');
-const { checkKeyValidity, GetActivationKey } = require('../helper/keyHelper');
-const { error } = require('../helper/embedHelper');
-const { getData } = require('../Database/qdrant');
-const axios = require('axios');
-const Logger = require('../helper/loggerHelper');
-require('dotenv').config();
-const fs = require('fs');
+import { getCategories, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
+import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
+import { getServerInformation } from '../Database/database.js';
+import { getData, upload } from '../Database/qdrant.js';
+import axios from 'axios';
+import Logger from '../helper/loggerHelper.js';
+import 'dotenv/config';
 
 /**
  * Ermittelt den Kategorien-Wert aus dem Channel-Topic.
@@ -35,7 +33,7 @@ function getCategoryFromChannelTopic(channel) {
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
-  var result = await GetActivationKey(lastMessage.guild.id);
+  let result = await GetActivationKey(lastMessage.guild.id);
   if (!result.activation_key) {
     return "Es wurde kein Key gefunden...";
   }
@@ -207,7 +205,7 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 /**
  * Haupt-Message-Handler.
  */
-module.exports = async (client, message) => {
+export default async (client, message) => {
   // Bots ignorieren
   if (message.author.bot) return;
 
@@ -216,9 +214,11 @@ module.exports = async (client, message) => {
     return;
   }
 
+  const serverInformation = await getServerInformation(message.guild.id);
+
   // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
   // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
-  if (message.channel.name.toLowerCase() === 'ticket-system') {
+  if (message.channel.id === serverInformation[0][0].ticket_system_channel_id) {
     try {
       await updateTicketCreationMessage(message.guild);
     } catch (err) {

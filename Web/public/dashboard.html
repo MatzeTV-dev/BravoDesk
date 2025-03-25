@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>BravoDesk Dashboard</title>
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body style="background: #1a1e1b;">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- Logo -->
+      <div style="text-align: center; margin-bottom: 15px;">
+        <img src="assets/img/logo_transparent.png" alt="Logo" style="max-width: 120px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+      </div>
+      <!-- Server Selector Dropdown -->
+      <div style="position: relative; margin-bottom: 15px;">
+        <button id="serverButton" onclick="toggleMenu('serverDropdown')" style="background-color: #1c6b3e; color: #fff; padding: 12px; width: 100%; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
+          <span id="selectedServer"></span>
+          <span style="font-size: 12px;">▼</span>
+        </button>
+        <div id="serverDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background-color: #2a2e2e; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s;">
+        </div>
+      </div>
+      <!-- Navigation -->
+      <ul class="nav">
+        <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
+        <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
+        <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
+        <li onclick="//showSection('design', this)">🎨 Design [COMING SOON]</li>
+      </ul>
+      <!-- User Info -->
+      <div class="user-info" onclick="toggleMenu('userMenu','userArrow')" style="position: relative;">
+        <!-- Avatar -->
+        <div class="user-avatar" style="width: 40px; height: 40px; background: url('assets/img/avatar.jpg') no-repeat center/cover; border-radius: 50%;"></div>
+        <!-- User-Daten -->
+        <div class="user-details" style="display: flex; flex-direction: column; flex-grow: 1;">
+          <span class="user-name" style="font-size: 14px; font-weight: bold;">Lade...</span>
+        </div>
+        <!-- Pfeil -->
+        <span id="userArrow" style="color: #fff; transition: transform 0.3s;">▲</span>
+        <!-- User-Menü -->
+        <div id="userMenu" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 0; width: 100%; background-color: #2a2a2a; padding: 10px; border-radius: 8px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
+          <div onclick="logout()" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #3a3a3a; color: #fff;">🔒 Abmelden</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- Wissenseinträge -->
+      <div id="wissenseintraege" class="content-section active">
+        <h2 style="margin-bottom: 20px;">Wissenseinträge</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">Wissen</th>
+              <th style="width: 100px; text-align: left;">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Beispiel-Eintrag -->
+          </tbody>
+        </table>
+        <div style="text-align: right; margin-top: 15px;">
+          <button onclick="openPopup()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Neu</button>
+        </div>
+      </div>
+
+      <!-- Kategorien -->
+      <div id="kategorien" class="content-section">
+        <h2 style="text-align: center;">Kategorien</h2>
+        <div class="kategorien-wrapper">
+          <div class="kategorien-container">
+            <h3>Kategorie bearbeiten</h3>
+            <!-- Dropdown -->
+            <div style="margin-bottom: 15px;">
+              <label for="kategorieSelect" class="label-container">
+                Kategorie auswählen 
+                <span class="help-icon" title="Wählen Sie eine Kategorie aus, um sie zu bearbeiten.">?</span>
+              </label>
+              <select id="kategorieSelect" class="full-width-dropdown" onchange="loadCategoryData(this.value)"></select>
+            </div>
+            <!-- Erste Zeile: Emoji und Beschreibung -->
+            <div class="kategorien-single-line" style="margin-top: 15px;">
+              <div class="kategorien-field">
+                <label for="kategorieEmoji" class="label-container">
+                  Emoji 
+                  <span class="help-icon" title="Wählen Sie ein Emoji für die Kategorie.">?</span>
+                </label>
+                <input type="text" id="kategorieEmoji" class="emoji-field" readonly placeholder="🐛" style="width: 25px;">
+              </div>
+              <div class="kategorien-field" style="flex: 1;">
+                <label for="kategorieBeschreibung" class="label-container">
+                  Beschreibung 
+                  <span class="help-icon" title="Geben Sie eine kurze Beschreibung der Kategorie ein.">?</span>
+                </label>
+                <textarea id="kategorieBeschreibung" style="width: 100%; height: 23px; background-color: #1a1e1b; border: none; color: white;"></textarea>
+              </div>
+            </div>
+            <!-- Zweite Zeile: AI Prompt -->
+            <div class="kategorien-single-line" style="margin-top: 15px;">
+              <div class="kategorien-field" style="flex: 1;">
+                <label for="kategorieAIPrompt" class="label-container">
+                  AI Prompt 
+                  <span class="help-icon" title="Geben Sie den AI Prompt für diese Kategorie ein.">?</span>
+                </label>
+                <textarea id="kategorieAIPrompt" style="width: 100%; height: 60px; background-color: #1a1e1b; border: none; color: white;"></textarea>
+              </div>
+            </div>
+            <!-- Dritte Zeile: Enabled und Permission -->
+            <div class="kategorien-single-line" style="margin-top: 15px;">
+              <div class="kategorien-field" style="flex: 1;">
+                <label for="kategorieEnabled" class="label-container">
+                  AI Aktiviert 
+                  <span class="help-icon" title="Aktiviert oder deaktiviert die AI für diese Kategorie.">?</span>
+                </label>
+                <input type="checkbox" id="kategorieEnabled" style="vertical-align: middle;" checked>
+              </div>
+              <div class="kategorien-field" style="flex: 1;">
+                <label for="kategoriePermission" class="label-container">
+                  Permission 
+                  <span class="help-icon" title="Legt die Berechtigungen für diese Kategorie fest.">?</span>
+                </label>
+                <select id="kategoriePermission" class="full-width-dropdown"></select>
+              </div>
+            </div>
+            <div class="kategorien-buttons" style="margin-top: 20px;">
+              <button onclick="openCreateCategoryPopup()">Erstellen</button>
+              <button onclick="saveCategoryChanges()">Speichern</button>
+              <button onclick="deleteCategory()">Löschen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- POPUP: Neue Kategorie erstellen -->
+      <div id="createCategoryPopup" class="popup-modal">
+        <div class="popup-content">
+          <h3>Neue Kategorie erstellen</h3>
+          <div style="margin-bottom: 10px;">
+            <label for="newCategoryName" class="label-container">
+              Kategorie Name 
+              <span class="help-icon" title="Geben Sie den Namen der neuen Kategorie ein.">?</span>
+            </label>
+            <input type="text" id="newCategoryName" placeholder="Kategorie Name">
+          </div>
+          <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
+            <div style="flex: 0 0 60px;">
+              <label for="newCategoryEmoji" class="label-container">
+                Emoji 
+                <span class="help-icon" title="Wählen Sie ein Emoji für die neue Kategorie.">?</span>
+              </label>
+              <input type="text" id="newCategoryEmoji" class="emoji-field" readonly placeholder="🐛" style="width: 100%;">
+            </div>
+            <div style="flex: 1;">
+              <label for="newCategoryDescription" class="label-container">
+                Beschreibung 
+                <span class="help-icon" title="Geben Sie eine Beschreibung der neuen Kategorie ein.">?</span>
+              </label>
+              <input type="text" id="newCategoryDescription" placeholder="Beschreibung">
+            </div>
+          </div>
+          <div style="margin-top: 10px;">
+            <label for="newCategoryAIPrompt" class="label-container">
+              AI Prompt 
+              <span class="help-icon" title="Geben Sie den AI Prompt für die neue Kategorie ein.">?</span>
+            </label>
+            <textarea id="newCategoryAIPrompt" placeholder="AI Prompt" style="width: 100%; height: 60px;"></textarea>
+          </div>
+          <div class="create-category-line" style="margin-top: 10px; display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label for="newCategoryEnabled" class="label-container">
+                AI Aktiviert 
+                <span class="help-icon" title="Aktiviert oder deaktiviert die AI für diese neue Kategorie.">?</span>
+              </label>
+              <input type="checkbox" id="newCategoryEnabled" checked>
+            </div>
+            <div style="flex: 1;">
+              <label for="newCategoryPermission" class="label-container">
+                Permission 
+                <span class="help-icon" title="Legt die Berechtigungen für diese neue Kategorie fest.">?</span>
+              </label>
+              <select id="newCategoryPermission" class="full-width-dropdown"></select>
+            </div>
+          </div>
+          <div class="popup-buttons" style="margin-top: 15px;">
+            <button onclick="createCategory()">Speichern</button>
+            <button onclick="closeCreateCategoryPopup()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLACKLIST -->
+      <div id="blacklist" class="content-section">
+        <h2 style="margin-bottom: 20px;">Blacklist</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left">User ID</th>
+              <th style="text-align: left">Grund</th>
+              <th style="text-align: left">Datum</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 15px;">
+          <button id="btnBlacklistAdd" class="btn-bl">Hinzufügen</button>
+          <button id="btnBlacklistRemove" class="btn-bl">Entfernen</button>
+          <button id="btnBlacklistSearch" class="btn-bl">Suchen</button>
+        </div>
+      </div>
+
+      <!-- DESIGN (NEU) -->
+      <div id="design" class="content-section">
+        <h2 style="text-align:center;">Design</h2>
+        <div class="design-wrapper">
+          <div class="design-container">
+            <div class="design-top">
+              <div class="design-image">
+                <img src="assets/img/logo_transparent.png" alt="Bot-Logo">
+                <div style="margin-top:10px;">
+                  <button style="background-color: grey;" class="design-button" onclick="uploadImage()">Bild hochladen</button>
+                </div>
+              </div>
+              <div class="design-fields">
+                <div style="margin-bottom: 10px;">
+                  <label for="botName" class="label-container">
+                    Bot Name 
+                    <span class="help-icon" title="Geben Sie den Namen des Bots ein.">?</span>
+                  </label>
+                  <input type="text" id="botName" placeholder="Bot Name">
+                </div>
+                <div>
+                  <label for="botStatus" class="label-container">
+                    Bot Status 
+                    <span class="help-icon" title="Geben Sie den Status des Bots ein.">?</span>
+                  </label>
+                  <input type="text" id="botStatus" placeholder="Bot Status">
+                </div>
+              </div>
+            </div>
+            <div class="design-bottom">
+              <button class="design-button" onclick="saveDesign()">Speichern</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP: Neuen Wissenseintrag erstellen -->
+  <div id="popupModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Neuer Eintrag</h3>
+      <div style="margin-bottom: 10px;">
+        <label for="newEntryText" class="label-container">
+          Neuer Wissenstext 
+          <span class="help-icon" title="Geben Sie den neuen Wissenstext ein.">?</span>
+        </label>
+        <textarea id="newEntryText" rows="3" placeholder="Neuer Wissenstext..."></textarea>
+      </div>
+      <div class="popup-buttons">
+        <button onclick="saveEntry()">Speichern</button>
+        <button onclick="closePopup()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP: Wissenseintrag bearbeiten -->
+  <div id="editPopupModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Eintrag bearbeiten</h3>
+      <div style="margin-bottom: 10px;">
+        <label for="editEntryText" class="label-container">
+          Eintrag bearbeiten 
+          <span class="help-icon" title="Bearbeiten Sie den Eintragtext.">?</span>
+        </label>
+        <textarea id="editEntryText" rows="3"></textarea>
+      </div>
+      <div class="popup-buttons">
+        <button onclick="saveEditEntry()">Speichern</button>
+        <button onclick="closeEditPopup()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP: Blacklist Eintrag hinzufügen -->
+  <div id="blacklistAddModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Blacklist Eintrag hinzufügen</h3>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistAddUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die hinzugefügt werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistAddUserId" placeholder="User ID">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistAddReason" class="label-container">
+          Grund 
+          <span class="help-icon" title="Geben Sie den Grund für die Blacklist-Eintragung ein.">?</span>
+        </label>
+        <textarea id="blacklistAddReason" rows="3" placeholder="Grund"></textarea>
+      </div>
+      <div class="popup-buttons">
+        <button onclick="saveBlacklistEntry()">Speichern</button>
+        <button onclick="closeBlacklistAddModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP: Blacklist Eintrag entfernen -->
+  <div id="blacklistRemoveModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Blacklist Eintrag entfernen</h3>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistRemoveUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die entfernt werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistRemoveUserId" placeholder="User ID">
+      </div>
+      <div class="popup-buttons">
+        <button onclick="confirmBlacklistRemoval()">Entfernen</button>
+        <button onclick="closeBlacklistRemoveModal()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP: Blacklist Eintrag suchen -->
+  <div id="blacklistSearchModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Blacklist Eintrag suchen</h3>
+      <div style="margin-bottom: 10px;">
+        <label for="blacklistSearchUserId" class="label-container">
+          User ID 
+          <span class="help-icon" title="Geben Sie die User ID ein, die gesucht werden soll.">?</span>
+        </label>
+        <input type="text" id="blacklistSearchUserId" placeholder="User ID">
+      </div>
+      <div class="popup-buttons">
+        <button onclick="performBlacklistSearch()">Suchen</button>
+        <button onclick="closeBlacklistSearchModal()">Abbrechen</button>
+      </div>
+      <div id="blacklistSearchResults" style="margin-top: 15px; background: #1e1e1e; padding: 10px; border-radius: 4px; max-height: 150px; overflow-y: auto; color: #fff;"></div>
+    </div>
+  </div>
+
+  <!-- Notify-Container (für maximal 5 Notifys) -->
+  <div id="notifyContainer" class="notify-container"></div>
+
+  <!-- WICHTIG: Vanilla Emoji Picker einbinden (stelle sicher, dass diese Datei lokal verfügbar ist) -->
+  <script src="assets/js/vanillaEmojiPicker.js"></script>
+  <script src="assets/js/utility.js"></script>
+  <script src="assets/js/SeverSelector.js"></script>
+  <script src="assets/js/UserMenu.js"></script>
+  <script src="assets/js/Memory.js"></script>
+  <script src="assets/js/Blacklist.js"></script>
+  <script src="assets/js/Design.js"></script>
+  <script src="assets/js/Category.js"></script>
+  <script>
+    function loadAll(guild) {
+      loadServers();
+      loadKnowledgeEntries(guild.id);
+      loadBlacklistEntries(guild.id);
+      loadTicketCategories(guild.id);
+      loadGuildRoles();
+    }
+    window.addEventListener("load", loadAll);
+  </script>
+</body>
+</html>

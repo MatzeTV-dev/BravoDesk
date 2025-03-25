@@ -1,4 +1,4 @@
-const chalk = require('chalk');
+import chalk from 'chalk';
 
 const formatDate = (date) => {
   return date.toLocaleString('de-DE', {
@@ -27,4 +27,5 @@ const Logger = {
   success: (msg) => console.log(chalk.green(`[SUCCESS] [${formatDate(new Date())}]`), msg),
   report: (msg) => console.log(chalk.bgRed(`[REPORT] [${formatDate(new Date())} ${msg}]`)),
 };
-module.exports = Logger;
+
+export default Logger;

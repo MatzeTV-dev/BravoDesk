@@ -1,9 +1,8 @@
-// delete_ticket_category handler (z. B. in components/delete_ticket_category.js)
-const { getCategories, deleteCategory, updateTicketCreationMessage } = require('../helper/ticketCategoryHelper');
-const Logger = require('../helper/loggerHelper');
-const { error, success } = require('../helper/embedHelper');
+import { getCategories, deleteCategory, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
+import Logger from '../helper/loggerHelper.js';
+import { error, success } from '../helper/embedHelper.js';
 
-module.exports = {
+export default {
   data: { customId: 'delete_ticket_category' },
   async execute(interaction) {
     await interaction.deferUpdate();
@@ -20,7 +19,7 @@ module.exports = {
     const guildId = interaction.guild.id;
     
     const categories = await getCategories(guildId);
-    const category = categories.find(cat => cat.label.trim().toLowerCase() === labelToDelete.trim().toLowerCase());
+    const category = categories.find(cat => cat.value.trim().toLowerCase() === labelToDelete.trim().toLowerCase());
     if (!category) {
       return interaction.followUp({ 
         embeds: [error('Error!', `Kategorie \`${labelToDelete}\` wurde nicht gefunden.`)],
