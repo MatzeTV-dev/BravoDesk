@@ -33,7 +33,7 @@ function getCategoryFromChannelTopic(channel) {
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
-  let result = await GetActivationKey(lastMessage.guild.id);
+  /*let result = await GetActivationKey(lastMessage.guild.id);
   if (!result.activation_key) {
     return "Es wurde kein Key gefunden...";
   }
@@ -41,7 +41,7 @@ async function sendMessagesToAI(messages, lastMessage) {
   result = await checkKeyValidity(result.activation_key);
   if (!result.is_valid) {
     return "Es tut mir leid so wie es aussieht ist der Key ausgelaufen, bitte informiere einen Administrator...";
-  }
+  }*/
 
   let knowledgeBaseText = '';
   let knowledgebasetextTwo = '';
