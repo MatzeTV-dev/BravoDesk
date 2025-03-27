@@ -1,7 +1,7 @@
-import express from 'express';
 import { db } from '../modules/database.js';
-import axios from 'axios';
+import express from 'express';
 import dotenv from 'dotenv';
+import axios from 'axios';
 
 dotenv.config({ path: '../.env' });
 

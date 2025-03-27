@@ -1,10 +1,4 @@
-import {
-    EmbedBuilder,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder
-  } from 'discord.js';
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
   import { editEntry, getEntry, deleteEntry } from '../Database/qdrant.js';
   import { info, error } from '../helper/embedHelper.js';
   import Logger from '../helper/loggerHelper.js';

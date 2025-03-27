@@ -1,7 +1,7 @@
-import { SlashCommandBuilder } from 'discord.js';
 import { getCategories, createCategory, updateTicketCreationMessage } from '../../helper/ticketCategoryHelper.js';
-import Logger from '../../helper/loggerHelper.js';
 import { info, success, error } from '../../helper/embedHelper.js';
+import Logger from '../../helper/loggerHelper.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 /**
  * Prüft, ob das übergebene Emoji gültig ist:

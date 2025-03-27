@@ -1,5 +1,5 @@
+import fetch from 'node-fetch';
 import express from 'express';
-import fetch from 'node-fetch'; // oder axios, wenn du das bevorzugst
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '../.env' });

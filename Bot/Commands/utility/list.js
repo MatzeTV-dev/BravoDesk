@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType} from 'discord.js';
 import { getEverythingCollection, deleteEntry } from '../../Database/qdrant.js';
+import { getServerInformation } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
-import { getServerInformation } from '../../Database/database.js';
 
 export default {
   data: new SlashCommandBuilder()

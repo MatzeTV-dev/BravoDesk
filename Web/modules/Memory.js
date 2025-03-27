@@ -1,9 +1,9 @@
-import express from 'express';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
-import path from 'path';
+import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

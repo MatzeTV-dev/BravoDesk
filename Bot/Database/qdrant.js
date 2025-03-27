@@ -1,10 +1,10 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { v4 as uuidv4 } from 'uuid';
 import { HfInference } from '@huggingface/inference';
 import Logger from '../helper/loggerHelper.js';
 import { fileURLToPath } from 'url';
-import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

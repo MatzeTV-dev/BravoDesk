@@ -1,15 +1,15 @@
-import { Client, Collection, GatewayIntentBits, Events, REST, Routes, PermissionsBitField, Partials } from 'discord.js';
-import interactionHandler from './handler/interactionHandler.js';
-import messageHandler from './handler/messageHandler.js';
+import { Client, Collection, GatewayIntentBits, Events, REST, Routes, Partials } from 'discord.js';
 import { updateTicketCreationMessage } from './helper/ticketCategoryHelper.js';
 import { initializeDatabaseConnection } from './Database/database.js';
+import interactionHandler from './handler/interactionHandler.js';
+import messageHandler from './handler/messageHandler.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import Logger from './helper/loggerHelper.js';
 import { Worker } from 'worker_threads';
-import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import dotenv from 'dotenv';
 import express from 'express';
+import dotenv from 'dotenv';
+import fs from 'node:fs';
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } from '../../helper/keyHelper.js';
+//import { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } from '../../helper/keyHelper.js';
 import { saveServerInformation, chefIfServerExists } from '../../Database/database.js';
 import { error, success, warning, info } from '../../helper/embedHelper.js';
 import { generateCollection } from '../../Database/qdrant.js';
@@ -115,13 +115,13 @@ let kiadminRoleID = '';
         }
         // ────────────────────────────────────────────────────────────────────────
   
-        const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
+        /*const isMatch = await CheckDiscordIDWithKey(interaction.options.getString('key'), guild.id);
         if (!isMatch.IsMatch) {
           await interaction.editReply({
             embeds: [error('Key mismatch!', 'The key does not match the server it was activated originally.')]
           });
           return;
-        }
+        }*/
   
         await interaction.editReply({
           embeds: [info('Setup Process!', 'Setup process started. Creating roles and channels...')]

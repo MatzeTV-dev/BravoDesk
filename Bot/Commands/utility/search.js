@@ -1,8 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { getServerInformation } from '../../Database/database.js';
 import { error } from '../../helper/embedHelper.js';
-import Logger from '../../helper/loggerHelper.js';
 import { getData } from '../../Database/qdrant.js';
+import Logger from '../../helper/loggerHelper.js';
 
 export default {
   data: new SlashCommandBuilder()

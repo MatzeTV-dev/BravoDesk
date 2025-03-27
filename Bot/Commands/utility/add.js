@@ -1,6 +1,6 @@
-import { SlashCommandBuilder } from 'discord.js';
 import { error, info } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()

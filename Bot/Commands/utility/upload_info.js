@@ -1,8 +1,9 @@
-import { SlashCommandBuilder } from 'discord.js';
-import { upload } from '../../Database/qdrant.js';
-import { error, info } from '../../helper/embedHelper.js';
-import Logger from '../../helper/loggerHelper.js';
 import { getServerInformation } from '../../Database/database.js';
+import { error, info } from '../../helper/embedHelper.js';
+import { upload } from '../../Database/qdrant.js';
+import Logger from '../../helper/loggerHelper.js';
+import { SlashCommandBuilder } from 'discord.js';
+
 
 export default {
   data: new SlashCommandBuilder()

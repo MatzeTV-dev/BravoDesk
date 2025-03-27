@@ -1,6 +1,6 @@
+import Logger from '../helper/loggerHelper.js';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-import Logger from '../helper/loggerHelper.js';
 
 dotenv.config();
 

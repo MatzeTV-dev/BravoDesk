@@ -1,7 +1,7 @@
 import { parentPort } from 'worker_threads';
 import dotenv from 'dotenv';
-dotenv.config();
 import axios from 'axios';
+dotenv.config();
 
 const openAiApiKey = process.env.OPENAI_API_KEY;
 

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { error as errorEmbed } from '../../helper/embedHelper.js';
+import { error } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
 
 export default {
@@ -39,7 +39,7 @@ export default {
       try {
         if (!interaction.replied) {
           await interaction.followUp({
-            embeds: [errorEmbed('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
+            embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
           });
         }
       } catch (replyError) {

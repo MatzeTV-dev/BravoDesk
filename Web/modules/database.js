@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'url';
-import path from 'path';
-import mysql from 'mysql2';
 import dotenv from 'dotenv';
+import mysql from 'mysql2';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

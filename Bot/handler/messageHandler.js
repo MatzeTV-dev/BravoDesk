@@ -1,9 +1,9 @@
 import { getCategories, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
-import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
+//import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
 import { getServerInformation } from '../Database/database.js';
 import { getData, upload } from '../Database/qdrant.js';
-import axios from 'axios';
 import Logger from '../helper/loggerHelper.js';
+import axios from 'axios';
 import 'dotenv/config';
 
 /**

@@ -1,6 +1,6 @@
 import { getCategories, deleteCategory, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
-import Logger from '../helper/loggerHelper.js';
 import { error, success } from '../helper/embedHelper.js';
+import Logger from '../helper/loggerHelper.js';
 
 export default {
   data: { customId: 'delete_ticket_category' },

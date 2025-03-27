@@ -1,6 +1,6 @@
-import { EmbedBuilder } from 'discord.js';
-import Logger from '../helper/loggerHelper.js';
 import { info } from '../helper/embedHelper.js';
+import Logger from '../helper/loggerHelper.js';
+import { EmbedBuilder } from 'discord.js';
 
 export default {
   data: {

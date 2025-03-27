@@ -1,10 +1,10 @@
-import { getServerInformation, Delete } from '../../Database/database.js';
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { deleteAll } from '../../Database/qdrant.js';
+import { getServerInformation, Delete } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
+import { deleteAll } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 
 // Pfad zur JSON-Datei, in der die Ticket-Kategorien gespeichert sind
 const ticketCategoriesPath = path.join(new URL('.', import.meta.url).pathname, '../../data/ticket_categories.json');
