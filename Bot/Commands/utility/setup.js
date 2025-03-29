@@ -44,7 +44,7 @@ let kiadminRoleID = '';
           return;
         }
   
-        let result = await checkKeyExists(interaction.options.getString('key'));
+        /*let result = await checkKeyExists(interaction.options.getString('key'));
         if (!result.exists_in_keys) {
           await interaction.editReply({
             embeds: [error('Key existence', 'The key does not exist.')]
@@ -66,7 +66,7 @@ let kiadminRoleID = '';
             embeds: [error('Key Expired', 'The key has expired.')]
           });
           return;
-        }
+        }*/
   
         // ─── AGBs & Datenschutzerklärung Abfrage ─────────────────────────────
         const agbsRow = new ActionRowBuilder().addComponents(
