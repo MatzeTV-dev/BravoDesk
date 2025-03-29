@@ -8,15 +8,17 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// Datenbankverbindung herstellen
+/**
+ * Stellt eine Verbindung zur MySQL-Datenbank her.
+ * @type {mysql.Connection}
+ */
 const db = mysql.createConnection({
-  host: process.env.DB_HOST, // Ändere dies je nach deiner Datenbankkonfiguration
-  user: process.env.DB_USERNAME, // Dein Datenbankbenutzer
-  password: process.env.DB_PASSWORD, // Dein Datenbankpasswort
-  database: process.env.DB_NAME_SERVER_INFORMATION // Dein Datenbankname
+  host: process.env.DB_HOST,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME_SERVER_INFORMATION
 });
 
-// Verbindung testen
 db.connect(err => {
   if (err) {
     console.error('Fehler bei der Datenbankverbindung:', err);
@@ -25,9 +27,17 @@ db.connect(err => {
   }
 });
 
-// Blacklist-Funktionen
+/**
+ * Blacklist-Funktionen für das Hinzufügen, Entfernen und Suchen von Benutzern.
+ * @namespace Blacklist
+ */
 const Blacklist = {
-  // Benutzer zur Blacklist hinzufügen
+  /**
+   * Fügt einen Benutzer zur Blacklist hinzu.
+   * @param {string} userId - Die Benutzer-ID.
+   * @param {string} reason - Der Grund für die Blacklist.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   add: (userId, reason, callback) => {
     const query = 'INSERT INTO blacklist (user_id, reason, date) VALUES (?, ?, NOW())';
     db.query(query, [userId, reason], (err, results) => {
@@ -41,7 +51,11 @@ const Blacklist = {
     });
   },
 
-  // Benutzer von der Blacklist entfernen
+  /**
+   * Entfernt einen Benutzer von der Blacklist.
+   * @param {string} userId - Die Benutzer-ID.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   remove: (userId, callback) => {
     const query = 'DELETE FROM blacklist WHERE user_id = ?';
     db.query(query, [userId], (err, results) => {
@@ -55,7 +69,11 @@ const Blacklist = {
     });
   },
 
-  // Überprüfen, ob ein Benutzer auf der Blacklist steht
+  /**
+   * Sucht nach einem Blacklist-Eintrag für einen Benutzer.
+   * @param {string} userId - Die Benutzer-ID.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   search: (userId, callback) => {
     const query = 'SELECT * FROM blacklist WHERE user_id = ?';
     db.query(query, [userId], (err, results) => {
@@ -69,23 +87,37 @@ const Blacklist = {
   }
 };
 
-// ---------------------------------------------
-// KATEGORIEN-FUNKTIONEN (Ticket-Kategorien)
-// ---------------------------------------------
+/**
+ * Kategorien-Funktionen für Ticket-Kategorien.
+ * @namespace Categories
+ */
 const Categories = {
-  // Alle Kategorien für eine Guild abrufen (ruft z. B. sp_GetTicketCategories auf)
+  /**
+   * Ruft alle Ticket-Kategorien für eine Guild ab.
+   * @param {string} guildId - Die Guild-ID.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion, gibt das Resultset (results[0]) zurück.
+   */
   getAll: (guildId, callback) => {
     db.query('CALL sp_GetTicketCategories(?)', [guildId], (err, results) => {
       if (err) {
         console.error('Fehler beim Abrufen der Kategorien:', err);
         return callback(err, null);
       }
-      // Stored Procedure gibt Resultset in results[0] zurück
       callback(null, results[0]);
     });
   },
 
-  // Neue Kategorie hinzufügen (ruft sp_AddTicketCategory auf)
+  /**
+   * Fügt eine neue Ticket-Kategorie hinzu.
+   * @param {string} guildId - Die Guild-ID.
+   * @param {string} label - Der Kategoriename.
+   * @param {string} description - Die Beschreibung der Kategorie.
+   * @param {string} emoji - Das Emoji.
+   * @param {string} prompt - Der AI-Prompt.
+   * @param {boolean} enabled - Gibt an, ob die KI aktiviert ist.
+   * @param {string} permission - Die Berechtigungen.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   add: (guildId, label, description, emoji, prompt, enabled, permission, callback) => {
     db.query(
       'CALL sp_AddTicketCategory(?, ?, ?, ?, ?, ?, ?)',
@@ -100,7 +132,18 @@ const Categories = {
     );
   },
 
-  // Kategorie aktualisieren (ruft sp_UpdateTicketCategory auf)
+  /**
+   * Aktualisiert eine bestehende Ticket-Kategorie.
+   * @param {number} id - Die Kategorien-ID.
+   * @param {string} guildId - Die Guild-ID.
+   * @param {string} label - Der Kategoriename.
+   * @param {string} description - Die Beschreibung der Kategorie.
+   * @param {string} emoji - Das Emoji.
+   * @param {string} prompt - Der AI-Prompt.
+   * @param {boolean} enabled - Gibt an, ob die KI aktiviert ist.
+   * @param {string} permission - Die Berechtigungen.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   update: (id, guildId, label, description, emoji, prompt, enabled, permission, callback) => {
     console.log("Permission is: " + permission);
     if (!permission) {
@@ -120,7 +163,12 @@ const Categories = {
     );
   },
 
-  // Kategorie löschen (ruft sp_DeleteTicketCategory auf)
+  /**
+   * Löscht eine Ticket-Kategorie.
+   * @param {number} id - Die Kategorien-ID.
+   * @param {string} guildId - Die Guild-ID.
+   * @param {function(Error|null, any):void} callback - Callback-Funktion.
+   */
   delete: (id, guildId, callback) => {
     db.query('CALL sp_DeleteTicketCategory(?, ?)', [id, guildId], (err, results) => {
       if (err) {

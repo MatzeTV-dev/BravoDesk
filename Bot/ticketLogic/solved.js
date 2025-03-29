@@ -2,8 +2,14 @@ import Logger from '../helper/loggerHelper.js';
 
 export default {
   data: {
-    name: 'mark_as_solved_button', // Muss mit dem customId des Buttons übereinstimmen
+    name: 'mark_as_solved_button',
   },
+  /**
+   * Markiert ein Ticket als gelöst, indem der Ticket-Kanal gelöscht wird.
+   *
+   * @param {ButtonInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Vorgang abgeschlossen ist.
+   */
   async execute(interaction) {
     const channel = interaction.channel;
 
@@ -17,18 +23,11 @@ export default {
     }
 
     try {
-      // Informiere den Benutzer
       await interaction.reply({ content: 'Das Ticket wird als abgeschlossen markiert...', ephemeral: true });
-
-      // Logge den Kanalnamen und die ID vor dem Löschen
       Logger.info(`Ticket-Kanal wird als abgeschlossen markiert: Name="${channel.name}", ID=${channel.id}`);
-
-      // Lösche den Kanal
       await channel.delete();
     } catch (error) {
       Logger.error(`Fehler beim Markieren des Tickets als abgeschlossen (Kanal: ${channel.name}, ID: ${channel.id}): ${error.message}\n${error.stack}`);
-
-      // Fehlerantwort an den Benutzer
       try {
         if (!interaction.deferred && !interaction.replied) {
           await interaction.followUp({

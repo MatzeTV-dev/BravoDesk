@@ -6,15 +6,26 @@ dotenv.config({ path: '../.env' });
 
 const router = express.Router();
 
+/**
+ * GET /api/guilds
+ * Ruft alle Gilden ab, in denen der authentifizierte Benutzer Mitglied ist und in denen der Bot vorhanden ist.
+ * 
+ * - Verwendet den in der Session gespeicherten Access Token, um die Gilden des Benutzers von Discord abzurufen.
+ * - Filtert die Gilden, in denen der Benutzer Administratorrechte besitzt.
+ * - Prüft für jede gefilterte Gilde, ob der Bot Mitglied ist.
+ * - Gibt am Ende nur die Gilden zurück, in denen der Bot gefunden wurde.
+ *
+ * @param {express.Request} req - Der Request, der den Access Token in der Session enthält.
+ * @param {express.Response} res - Die Response, die die gefilterten Gilden als JSON zurückgibt.
+ * @returns {Promise<void>}
+ */
 router.get('/guilds', async (req, res) => {
-  // Hole den Access Token aus der Session
   const accessToken = req.session.access_token;
   if (!accessToken) {
     return res.status(401).json({ error: "Nicht eingeloggt" });
   }
   console.log(`Bot ${process.env.DISCORD_BOT_TOKEN}`);
   try {
-    // Abrufen der Gilden, in denen der User Mitglied ist
     const response = await fetch("https://discord.com/api/users/@me/guilds", {
       headers: {
         "Authorization": `Bearer ${accessToken}`
@@ -22,20 +33,16 @@ router.get('/guilds', async (req, res) => {
     });
     const guilds = await response.json();
 
-    // Überprüfe, ob guilds ein Array ist
     if (!Array.isArray(guilds)) {
       console.error("Unerwartetes Format:", guilds);
       return res.status(500).json({ error: "Unerwartete Antwort vom Discord-API" });
     }
     
-    // Filtere zunächst die Guilds, bei denen der User Administratorrechte hat
     const adminGuilds = guilds.filter(guild => {
       const perms = parseInt(guild.permissions);
       return (perms & 0x8) === 0x8;
     });
 
-    // Für jede Guild prüfen, ob der Bot in der Guild ist, indem wir die Discord-API mit dem Bot-Token anfragen.
-    // Wenn der Bot in der Guild ist, liefert die API einen erfolgreichen Statuscode (200).
     const guildChecks = await Promise.all(
       adminGuilds.map(async guild => {
         try {
@@ -44,7 +51,6 @@ router.get('/guilds', async (req, res) => {
               "Authorization": `Bot ${process.env.DISCORD_BOT_TOKEN}`
             }
           });
-          // Wenn die Antwort OK ist, ist der Bot Mitglied der Guild.
           if (botResponse.ok) {
             return guild;
           }
@@ -55,9 +61,7 @@ router.get('/guilds', async (req, res) => {
       })
     );
 
-    // Entferne alle Guilds, bei denen der Bot nicht gefunden wurde (null)
     const finalGuilds = guildChecks.filter(guild => guild !== null);
-
     res.json(finalGuilds);
   } catch (err) {
     console.error(err);

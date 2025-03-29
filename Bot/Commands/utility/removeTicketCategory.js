@@ -6,6 +6,12 @@ export default {
   data: new SlashCommandBuilder()
     .setName('deletecategory')
     .setDescription('Löscht eine Ticket-Kategorie über ein Dropdown-Menü.'),
+  /**
+   * Führt den /deletecategory-Command aus, um eine Ticket-Kategorie über ein Dropdown-Menü zur Löschung anzuzeigen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
@@ -29,7 +35,7 @@ export default {
     const options = categories.map(cat => ({
       label: cat.label,
       description: cat.description,
-      value: cat.value // Hier wird der Label als Schlüssel genutzt
+      value: cat.value
     }));
     
     const selectMenu = new StringSelectMenuBuilder()

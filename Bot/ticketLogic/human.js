@@ -3,9 +3,15 @@ import Logger from '../helper/loggerHelper.js';
 import { EmbedBuilder } from 'discord.js';
 
 export default {
-  data: {
-    name: 'talk_to_human', // Muss mit dem customId des Buttons übereinstimmen
-  },
+  data: { name: 'talk_to_human' },
+  /**
+   * Führt den "talk_to_human" Button-Handler aus, um den menschlichen Support zu benachrichtigen.
+   * Dabei wird geprüft, ob bereits ein Supporter informiert wurde, und falls nicht,
+   * wird die erste Nachricht im Ticket-Channel aktualisiert und eine Benachrichtigung gesendet.
+   *
+   * @param {ButtonInteraction} interaction - Die Interaktion, die den Button-Klick repräsentiert.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Vorgang abgeschlossen ist.
+   */
   async execute(interaction) {
     const channel = interaction.channel;
     const guild = interaction.guild;
@@ -20,7 +26,6 @@ export default {
     }
 
     try {
-      // Überprüfung, ob die Nachricht bereits im Kanal existiert
       const fetchedMessages = await channel.messages.fetch({ limit: 100 });
       const existingMessage = fetchedMessages.find((msg) =>
         msg.content.includes('Alles klar, ein menschlicher')
@@ -34,39 +39,31 @@ export default {
         return;
       }
 
-      // Nachrichten abrufen und das älteste bearbeiten
       const oldestMessage = fetchedMessages.last();
 
-      if (!oldestMessage) {
-        Logger.warn('Keine Nachrichten im Kanal gefunden.');
-      } else {
-        if (oldestMessage.embeds && oldestMessage.embeds.length > 0) {
-          const oldEmbed = oldestMessage.embeds[0];
-          const embedData = oldEmbed.toJSON();
+      if (oldestMessage && oldestMessage.embeds && oldestMessage.embeds.length > 0) {
+        const oldEmbed = oldestMessage.embeds[0];
+        const embedData = oldEmbed.toJSON();
 
-          if (embedData.fields) {
-            const supportFieldIndex = embedData.fields.findIndex(
-              (field) => field.name === 'Support'
-            );
-
-            if (supportFieldIndex !== -1) {
-              embedData.fields[supportFieldIndex].value = 'Mensch';
-            }
+        if (embedData.fields) {
+          const supportFieldIndex = embedData.fields.findIndex(
+            (field) => field.name === 'Support'
+          );
+          if (supportFieldIndex !== -1) {
+            embedData.fields[supportFieldIndex].value = 'Mensch';
           }
-
-          const newEmbed = new EmbedBuilder(embedData);
-          await oldestMessage.edit({ embeds: [newEmbed] });
         }
+
+        const newEmbed = new EmbedBuilder(embedData);
+        await oldestMessage.edit({ embeds: [newEmbed] });
       }
 
       const role = guild.roles.cache.find(r => r.name === 'Supporter');
 
       await channel.send(`Alles klar, ein menschlicher <@&${role.id}> wird das Ticket übernehmen!`);
-
       await interaction.update({});
     } catch (error) {
       Logger.error(`Fehler beim Senden der Nachricht an den menschlichen Support: ${error.message}\n${error.stack}`);
-
       try {
         if (!interaction.deferred && !interaction.replied) {
           await interaction.reply({

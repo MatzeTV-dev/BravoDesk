@@ -1,16 +1,11 @@
-// Memory.js
-
-// Öffnet das Popup zum Erstellen eines neuen Wissenseintrags
 function openPopup() {
   document.getElementById("popupModal").classList.add("show");
 }
 
-// Schließt das Popup zum Erstellen eines neuen Wissenseintrags
 function closePopup() {
   document.getElementById("popupModal").classList.remove("show");
 }
 
-// Speichert einen neuen Wissenseintrag und fügt ihn der Tabelle hinzu
 function saveEntry() {
   var newEntry = document.getElementById("newEntryText").value.trim();
   if (newEntry !== "") {
@@ -32,7 +27,6 @@ function saveEntry() {
   }
 }
 
-// Öffnet das Popup zum Editieren eines Eintrags
 function openEditPopup(el) {
   var row = el.parentElement.parentElement;
   currentEditRow = row;
@@ -41,12 +35,10 @@ function openEditPopup(el) {
   document.getElementById("editPopupModal").classList.add("show");
 }
 
-// Schließt das Edit-Popup
 function closeEditPopup() {
   document.getElementById("editPopupModal").classList.remove("show");
 }
 
-// Speichert den bearbeiteten Eintrag
 function saveEditEntry() {
   var newText = document.getElementById("editEntryText").value.trim();
   if (currentEditRow && newText !== "") {
@@ -58,7 +50,6 @@ function saveEditEntry() {
   }
 }
 
-// Löscht einen Eintrag nach Bestätigung
 function deleteEntry(el) {
   if (confirm("Eintrag wirklich löschen?")) {
     var row = el.parentElement.parentElement;
@@ -66,18 +57,13 @@ function deleteEntry(el) {
   }
 }
 
-// -------------------------------------------------
-// Neue Funktion: Wissenseinträge aus Qdrant laden
-// -------------------------------------------------
-// Diese Funktion ruft deinen API-Endpunkt (/api/wissenseintraege/:guildId) auf,
-// um die Wissenseinträge für die gegebene Guild-ID zu laden und den Tab "Wissenseinträge" zu befüllen.
 function loadKnowledgeEntries(guildId) {
   fetch(`/api/wissenseintraege/${guildId}`)
     .then(response => response.json())
     .then(data => {
       console.log("Wissenseinträge erhalten:", data);
       const tbody = document.querySelector('#wissenseintraege tbody');
-      tbody.innerHTML = ''; // Vorherige Einträge löschen
+      tbody.innerHTML = '';
 
       if (data && data.length) {
         data.forEach(point => {
@@ -85,7 +71,6 @@ function loadKnowledgeEntries(guildId) {
 
           const tdContent = document.createElement('td');
           tdContent.classList.add('wissen-cell');
-          // Nutze hier "text" statt "content"
           tdContent.setAttribute('data-fulltext', point.payload.text || '');
           tdContent.innerText = point.payload.text || 'Kein Inhalt';
 
@@ -105,27 +90,16 @@ function loadKnowledgeEntries(guildId) {
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
 
-
-// Memory.js
-
-// Globale Variable, in der die aktuell ausgewählte Guild-ID gespeichert wird
 let currentGuildId = null;
 
-// ------------------------
-// Wissenseinträge: Neu erstellen
-// ------------------------
-
-// Öffnet das Popup zum Erstellen eines neuen Wissenseintrags
 function openPopup() {
   document.getElementById("popupModal").classList.add("show");
 }
 
-// Schließt das Popup zum Erstellen eines neuen Wissenseintrags
 function closePopup() {
   document.getElementById("popupModal").classList.remove("show");
 }
 
-// Speichert einen neuen Wissenseintrag, indem er per POST an den Server gesendet wird
 function saveEntry() {
   const newEntryText = document.getElementById("newEntryText").value.trim();
   if (newEntryText !== "" && currentGuildId) {
@@ -137,7 +111,6 @@ function saveEntry() {
       .then(response => response.json())
       .then(data => {
         console.log("Eintrag gespeichert:", data);
-        // Nach erfolgreichem Speichern die Einträge neu laden
         loadKnowledgeEntries(currentGuildId);
         document.getElementById("newEntryText").value = "";
         closePopup();
@@ -146,30 +119,22 @@ function saveEntry() {
   }
 }
 
-// ------------------------
-// Wissenseinträge: Editieren
-// ------------------------
-
-// Variablen zum Speichern des aktuell zu bearbeitenden Eintrags
 let currentEditRow = null;
 let currentEditEntryId = null;
 
-// Öffnet das Popup zum Bearbeiten eines Eintrags und speichert die zu bearbeitenden Informationen
 function openEditPopup(el) {
   const row = el.parentElement.parentElement;
   currentEditRow = row;
-  currentEditEntryId = row.getAttribute("data-entry-id"); // Annahme: Das <tr> hat ein Attribut "data-entry-id"
+  currentEditEntryId = row.getAttribute("data-entry-id");
   const currentText = row.cells[0].innerText;
   document.getElementById("editEntryText").value = currentText;
   document.getElementById("editPopupModal").classList.add("show");
 }
 
-// Schließt das Edit-Popup
 function closeEditPopup() {
   document.getElementById("editPopupModal").classList.remove("show");
 }
 
-// Speichert die Bearbeitung eines Eintrags per PATCH-Anfrage an den Server
 function saveEditEntry() {
   const newText = document.getElementById("editEntryText").value.trim();
   if (currentEditRow && currentEditEntryId && newText !== "" && currentGuildId) {
@@ -181,7 +146,6 @@ function saveEditEntry() {
       .then(response => response.json())
       .then(data => {
         console.log("Eintrag aktualisiert:", data);
-        // Nach der Aktualisierung die Einträge neu laden
         loadKnowledgeEntries(currentGuildId);
         closeEditPopup();
         currentEditRow = null;
@@ -191,11 +155,6 @@ function saveEditEntry() {
   }
 }
 
-// ------------------------
-// Wissenseinträge: Löschen
-// ------------------------
-
-// Löscht einen Eintrag per DELETE-Anfrage an den Server
 function deleteEntry(el) {
   if (confirm("Eintrag wirklich löschen?") && currentGuildId) {
     const row = el.parentElement.parentElement;
@@ -206,7 +165,6 @@ function deleteEntry(el) {
       .then(response => response.json())
       .then(data => {
         console.log("Eintrag gelöscht:", data);
-        // Nach dem Löschen die Einträge neu laden
         loadKnowledgeEntries(currentGuildId);
         notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success")
       })
@@ -214,30 +172,22 @@ function deleteEntry(el) {
   }
 }
 
-// ------------------------
-// Wissenseinträge: Laden und Anzeigen
-// ------------------------
-
-// Lädt alle Wissenseinträge für eine bestimmte Guild und befüllt den Wissenseinträge-Tab
 function loadKnowledgeEntries(guildId) {
-  // Speichere die aktuelle Guild-ID global
   currentGuildId = guildId;
   fetch(`/api/wissenseintraege/${guildId}`)
     .then(response => response.json())
     .then(data => {
       console.log("Wissenseinträge erhalten:", data);
       const tbody = document.querySelector('#wissenseintraege tbody');
-      tbody.innerHTML = ""; // Vorherige Einträge löschen
+      tbody.innerHTML = "";
 
       if (data && data.length) {
         data.forEach(point => {
           const tr = document.createElement("tr");
-          // Speichere die Eintrags-ID im <tr>-Attribut, um sie später für Edit/Delete zu verwenden
           tr.setAttribute("data-entry-id", point.id);
           
           const tdContent = document.createElement("td");
           tdContent.classList.add("wissen-cell");
-          // Verwende hier das Feld "text" aus dem Payload
           tdContent.setAttribute("data-fulltext", point.payload.text || "");
           tdContent.innerText = point.payload.text || "Kein Inhalt";
           

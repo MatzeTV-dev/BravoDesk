@@ -21,26 +21,25 @@ const qdrantClient = new QdrantClient({
 });
 
 /**
- * Hilfsfunktion zum Zählen der Wörter im Input.
- * - Enthält der Text Leerzeichen, wird anhand dieser getrennt.
- * - Enthält er keine Leerzeichen, wird versucht, camelCase-/PascalCase-Übergänge zu erkennen.
+ * Zählt die Wörter in einem Text.
+ * Falls Leerzeichen vorhanden sind, wird der Text anhand dieser getrennt.
+ * Falls nicht, werden camelCase-/PascalCase-Übergänge erkannt.
+ *
+ * @param {string} text - Der zu zählende Text.
+ * @returns {number} Die Anzahl der Wörter.
  */
 function countWords(text) {
   text = text.trim();
   if (text === "") return 0;
   
-  // Falls Leerzeichen vorhanden sind, anhand der Leerzeichen splitten.
   if (/\s/.test(text)) {
     return text.split(/\s+/).length;
   }
   
-  // Wenn der Text keine Leerzeichen enthält, prüfen wir, ob er komplett in Klein- oder Großbuchstaben ist.
-  // In diesem Fall gehen wir von einem einzelnen Wort aus.
   if (text === text.toLowerCase() || text === text.toUpperCase()) {
     return 1;
   }
   
-  // Zähle Übergänge von Klein- zu Großbuchstaben.
   const transitions = text.match(/(?<=[a-zäöüß])(?=[A-ZÄÖÜ])/g);
   return 1 + (transitions ? transitions.length : 0);
 }
@@ -48,6 +47,9 @@ function countWords(text) {
 /**
  * GET /api/wissenseintraege/:guildId
  * Ruft alle Wissenseinträge einer bestimmten Guild ab.
+ *
+ * @param {Request} req - Der Request, der die Guild-ID als Parameter enthält.
+ * @param {Response} res - Die Response mit den abgerufenen Wissenseinträgen.
  */
 router.get('/wissenseintraege/:guildId', async (req, res) => {
   const guildId = req.params.guildId;
@@ -70,6 +72,9 @@ router.get('/wissenseintraege/:guildId', async (req, res) => {
 /**
  * POST /api/wissenseintraege/:guildId
  * Fügt einen neuen Wissenseintrag hinzu.
+ *
+ * @param {Request} req - Der Request mit der Guild-ID als Parameter und JSON-Body { text }.
+ * @param {Response} res - Die Response mit dem Erfolg und der generierten Eintrags-ID.
  */
 router.post('/wissenseintraege/:guildId', express.json(), async (req, res) => {
   const guildId = req.params.guildId;
@@ -79,21 +84,17 @@ router.post('/wissenseintraege/:guildId', express.json(), async (req, res) => {
     return res.status(400).json({ error: "Text ist erforderlich." });
   }
   
-  // Überprüfe, ob der Text maximal 10 Wörter enthält.
   if (countWords(text) > 10) {
     return res.status(400).json({ error: "Wissenseintrag darf maximal 10 Wörter enthalten." });
   }
   
   const collectionName = `guild_${guildId}`;
-  const entryId = randomUUID(); // Generiere eine eindeutige ID
-  
-  // Beispiel: Für eine Sammlung mit Dimension 1024
+  const entryId = randomUUID();
   const dummyVector = Array(1024).fill(0);
-
-  // Erstelle den neuen Punkt.
+  
   const point = {
     id: entryId,
-    vector: dummyVector, // Passe die Dimension an deine Sammlung an
+    vector: dummyVector,
     payload: { text }
   };
 
@@ -110,6 +111,9 @@ router.post('/wissenseintraege/:guildId', express.json(), async (req, res) => {
 /**
  * PATCH /api/wissenseintraege/:guildId/:entryId
  * Aktualisiert einen bestehenden Wissenseintrag.
+ *
+ * @param {Request} req - Der Request mit der Guild-ID und der Eintrags-ID als Parameter sowie JSON-Body { text }.
+ * @param {Response} res - Die Response, die den Erfolg bestätigt.
  */
 router.patch('/wissenseintraege/:guildId/:entryId', express.json(), async (req, res) => {
   const guildId = req.params.guildId;
@@ -120,14 +124,13 @@ router.patch('/wissenseintraege/:guildId/:entryId', express.json(), async (req, 
     return res.status(400).json({ error: "Text ist erforderlich." });
   }
   
-  // Überprüfe, ob der Text maximal 10 Wörter enthält.
   if (countWords(text) > 10) {
     return res.status(400).json({ error: "Wissenseintrag darf maximal 10 Wörter enthalten." });
   }
   
   const collectionName = `guild_${guildId}`;
   const dummyVector = Array(1024).fill(0);
-
+  
   const point = {
     id: entryId,
     vector: dummyVector,
@@ -147,6 +150,9 @@ router.patch('/wissenseintraege/:guildId/:entryId', express.json(), async (req, 
 /**
  * DELETE /api/wissenseintraege/:guildId/:entryId
  * Löscht einen Wissenseintrag.
+ *
+ * @param {Request} req - Der Request mit der Guild-ID und der Eintrags-ID als Parameter.
+ * @param {Response} res - Die Response, die den Erfolg bestätigt.
  */
 router.delete('/wissenseintraege/:guildId/:entryId', async (req, res) => {
   const guildId = req.params.guildId;

@@ -13,16 +13,12 @@ import { SlashCommandBuilder } from 'discord.js';
  * @returns {boolean} true, wenn das Emoji gültig ist, andernfalls false.
  */
 function isValidDiscordEmoji(emoji, guild) {
-  // Prüfe auf Custom-Emoji (z.B. <a:name:id> oder <:name:id>)
   const customEmojiRegex = /^<a?:(\w+):(\d+)>$/;
   const match = emoji.match(customEmojiRegex);
   if (match) {
     const emojiId = match[2];
-    // Erlaubt ist das Emoji nur, wenn es im aktuellen Server existiert.
     return guild.emojis.cache.has(emojiId);
   }
-  
-  // Prüfe, ob es sich um ein gültiges Unicode-Emoji handelt.
   const unicodeEmojiRegex = /^\p{Extended_Pictographic}+$/u;
   return unicodeEmojiRegex.test(emoji);
 }
@@ -67,6 +63,12 @@ export default {
         .setDescription('Erwähne die Rollen, die Zugriff auf das Ticket haben (optional, mehrere Rollen mit Komma trennen)')
         .setRequired(false)
     ),
+  /**
+   * Führt den /addcategory-Command aus, um eine neue Ticket-Kategorie hinzuzufügen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
     const guildId = interaction.guild.id;
@@ -87,8 +89,6 @@ export default {
       }
     }
 
-    // Emoji-Validierung: Falls ein Emoji angegeben wurde,
-    // muss es gültig sein und aus dem aktuellen Server stammen (bei Custom-Emojis).
     if (emoji && !isValidDiscordEmoji(emoji, interaction.guild)) {
       await interaction.editReply({
         embeds: [

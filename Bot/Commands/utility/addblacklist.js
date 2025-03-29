@@ -18,8 +18,13 @@ export default {
         .setDescription('Optional: Grund für den Blacklist-Eintrag')
         .setRequired(false)
     ),
+  /**
+   * Führt den /addblacklist-Command aus, um einen Benutzer zur Blacklist hinzuzufügen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
-    // Prüfe, ob der ausführende Member Administrator-Rechte hat
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return interaction.reply({ 
         embeds: [error('Berechtigung', 'Du hast keine Berechtigung, diesen Befehl zu verwenden.')], 

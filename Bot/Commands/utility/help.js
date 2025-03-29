@@ -6,12 +6,16 @@ export default {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('zeigt alle commands und deren Beschreibungen an'),
+  /**
+   * Führt den /help-Command aus, um alle Befehle und deren Beschreibungen in einem Embed anzuzeigen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     try {
-      // deferReply mit ephemeral: true
       await interaction.deferReply({ ephemeral: true });
 
-      // Embed erstellen und als Antwort senden
       const embed = new EmbedBuilder()
         .setTitle('**Befehlsliste**')
         .addFields(
@@ -34,8 +38,6 @@ export default {
       });
     } catch (err) {
       Logger.error(`Ein Fehler ist aufgetreten: ${err.message}\n${err.stack}`);
-
-      // Fallback: Fehler an den Benutzer melden
       try {
         if (!interaction.replied) {
           await interaction.followUp({

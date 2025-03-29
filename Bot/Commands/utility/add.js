@@ -12,15 +12,19 @@ export default {
         .setDescription('Der User, der hinzugefügt werden soll.')
         .setRequired(true)
     ),
+  /**
+   * Führt den /add-Command aus, um einen Benutzer zu einem Ticket-Channel hinzuzufügen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     try {
-      // Antwort vorbereiten
       await interaction.deferReply({ ephemeral: true });
 
       const channel = interaction.channel;
       const user = interaction.options.getUser('user');
 
-      // Überprüfen, ob der Channel mit "-ticket" endet
       if (!channel.name.endsWith('s-ticket')) {
         await interaction.editReply({
           embeds: [
@@ -34,7 +38,6 @@ export default {
         return;
       }
 
-      // Berechtigungen setzen, um den User zum Channel hinzuzufügen
       await channel.permissionOverwrites.edit(user.id, {
         ViewChannel: true,
         SendMessages: true,

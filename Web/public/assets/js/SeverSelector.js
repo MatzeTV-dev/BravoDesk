@@ -1,11 +1,10 @@
-// Beim Laden der Server:
 function loadServers() {
   fetch('/api/guilds')
     .then(response => response.json())
     .then(guilds => {
       console.log("Server-Daten erhalten:", guilds);
       const serverDropdown = document.getElementById('serverDropdown');
-      serverDropdown.innerHTML = ''; // Vorherige Einträge löschen
+      serverDropdown.innerHTML = '';
 
       guilds.forEach(guild => {
         const div = document.createElement('div');
@@ -16,11 +15,10 @@ function loadServers() {
         div.style.borderBottom = "1px solid #3a3a3a";
 
         const img = document.createElement('img');
-        // Falls ein Icon vorhanden ist, wird dieses angezeigt; ansonsten ein Fallback-Bild
         if (guild.icon) {
           img.src = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
         } else {
-          img.src = '/assets/img/avatar.jpg'; // Pfad zu deinem Fallback-Bild
+          img.src = '/assets/img/avatar.jpg';
         }
         img.alt = `${guild.name} Icon`;
         img.style.width = "24px";
@@ -33,7 +31,6 @@ function loadServers() {
         span.innerText = guild.name;
         div.appendChild(span);
 
-        // Beim Klick wird der Server ausgewählt und die Daten werden gespeichert
         div.onclick = () => {
           selectServer(guild, true);
         };
@@ -41,12 +38,10 @@ function loadServers() {
         serverDropdown.appendChild(div);
       });
 
-      // Automatisch den ersten Server auswählen, falls vorhanden
       if (guilds.length > 0) {
         selectServer(guilds[0], false);
       }
       
-      // Zusätzliches Listenelement als Button, der den Nutzer zum Invite-Link des Bots führt
       const inviteButton = document.createElement('button');
       inviteButton.innerText = '+ Server Hinzufügen';
       inviteButton.style.display = 'block';
@@ -54,7 +49,7 @@ function loadServers() {
       inviteButton.style.padding = '10px';
       inviteButton.style.marginTop = '10px';
       inviteButton.style.cursor = 'pointer';
-      inviteButton.style.backgroundColor = '#1c6b3e'; // Discord-Farbe
+      inviteButton.style.backgroundColor = '#1c6b3e';
       inviteButton.style.color = '#fff';
       inviteButton.style.border = 'none';
       inviteButton.style.borderRadius = '4px';
@@ -72,14 +67,12 @@ function loadServers() {
 }
 
 function selectServer(guild, automatic_open) {
-  // Aktualisiere den im Dropdown angezeigten Namen
   document.getElementById("selectedServer").innerText = guild.name;
 
   if (automatic_open) {
     toggleMenu("serverDropdown");
   }
 
-  // Lade die Wissenseinträge für den ausgewählten Server
   loadKnowledgeEntries(guild.id);
   loadBlacklistEntries(guild.id);
   loadTicketCategories(guild.id);

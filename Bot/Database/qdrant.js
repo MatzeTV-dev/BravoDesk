@@ -13,34 +13,42 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-// Qdrant-Client initialisieren
 const qdrantClient = new QdrantClient({
   url: process.env.QDRANT_URL,
   apiKey: process.env.QDRANT_API_KEY,
 });
 
-// Funktion: Generiere Embeddings
+/**
+ * Generiert ein Embedding für den übergebenen Text.
+ *
+ * @param {string} text - Der Eingabetext.
+ * @returns {Promise<Array|null>} Das generierte Embedding oder null bei einem Fehler.
+ */
 async function getEmbedding(text) {
   try {
-      const embedding = await hf.featureExtraction({
-          model: "intfloat/multilingual-e5-large",
-          inputs: text,
-      });
-      return embedding;
+    const embedding = await hf.featureExtraction({
+      model: "intfloat/multilingual-e5-large",
+      inputs: text,
+    });
+    return embedding;
   } catch (error) {
-      Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}\n${error.stack}`);
-      return null;
+    Logger.error(`Fehler beim Generieren des Embeddings: ${error.message}\n${error.stack}`);
+    return null;
   }
 }
-  
-// Funktion: Überprüfen, ob Collection existiert
+
+/**
+ * Stellt sicher, dass eine Collection für die gegebene Guild existiert.
+ *
+ * @param {string} guildID - Die ID der Guild.
+ * @returns {Promise<void>}
+ */
 async function ensureCollectionExists(guildID) {
   const collectionName = `${guildID}`;
   try {
     const collectionsResponse = await qdrantClient.getCollections();
     const collections = collectionsResponse.collections || [];
     const collectionNames = collections.map((collection) => collection.name);
-
     if (!collectionNames.includes(collectionName)) {
       Logger.warn(`Collection "${collectionName}" existiert nicht. Erstelle sie...`);
       generateCollection(collectionName);
@@ -53,25 +61,27 @@ async function ensureCollectionExists(guildID) {
   }
 }
 
-// Funktion: Daten hochladen
+/**
+ * Lädt den übergebenen Text in die Collection hoch.
+ *
+ * @param {string} guildID - Die ID der Guild.
+ * @param {string} text - Der Text, der hochgeladen werden soll.
+ * @returns {Promise<boolean>} true bei Erfolg, false bei einem Fehler.
+ */
 async function upload(guildID, text) {
   const collectionName = `${guildID}`;
   try {
     await ensureCollectionExists(guildID);
-
     const embedding = await getEmbedding(text);
     if (!embedding) {
       Logger.error('Embedding konnte nicht generiert werden.');
-      return false; // Rückgabe von `false` bei Fehlern
+      return false;
     }
-
     const id = uuidv4();
     const payload = { guildID, text };
-
     await qdrantClient.upsert(collectionName, {
       points: [{ id, vector: embedding, payload }],
     });
-
     Logger.success('Daten erfolgreich hochgeladen.');
     return true;
   } catch (error) {
@@ -80,7 +90,12 @@ async function upload(guildID, text) {
   }
 }
 
-// Funktion: Alle Vektoren eines Namespaces (Collection) abrufen
+/**
+ * Ruft alle Vektoren einer Collection ab.
+ *
+ * @param {string} guildID - Die ID der Guild.
+ * @returns {Promise<Array|null>} Ein Array von Punkten oder null bei einem Fehler.
+ */
 async function getEverythingCollection(guildID) {
   const collectionName = `guild_${guildID}`;
   try {
@@ -93,11 +108,17 @@ async function getEverythingCollection(guildID) {
     return scrollResponse.points;
   } catch (error) {
     Logger.error(`Fehler beim Abrufen der Daten: ${error.message}\n${error.stack}`);
-    return null; // Rückgabe von `null` bei Fehlern
+    return null;
   }
 }
 
-// Funktion: Löscht einen Eintrag
+/**
+ * Löscht einen Eintrag in der Collection.
+ *
+ * @param {string} guildID - Die ID der Guild.
+ * @param {string} id - Die ID des Eintrags.
+ * @returns {Promise<boolean>} true bei Erfolg, false bei einem Fehler.
+ */
 async function deleteEntry(guildID, id) {
   const collectionName = `guild_${guildID}`;
   try {
@@ -110,7 +131,14 @@ async function deleteEntry(guildID, id) {
   }
 }
 
-// Funktion: Aktualisieren eines Eintrags
+/**
+ * Aktualisiert einen Eintrag in der Collection.
+ *
+ * @param {string} guildID - Die ID der Guild.
+ * @param {string} id - Die ID des Eintrags.
+ * @param {string} description - Der neue Text.
+ * @returns {Promise<boolean>} true bei Erfolg, false bei einem Fehler.
+ */
 async function editEntry(guildID, id, description) {
   const collectionName = `guild_${guildID}`;
   try {
@@ -119,13 +147,10 @@ async function editEntry(guildID, id, description) {
       Logger.error('Fehler beim Generieren des Embeddings für das Update.');
       return false;
     }
-
     const payload = { guildID, text: description };
-
     await qdrantClient.upsert(collectionName, {
       points: [{ id, vector: embedding, payload }],
     });
-
     Logger.success(`Eintrag mit der ID ${id} erfolgreich aktualisiert.`);
     return true;
   } catch (error) {
@@ -134,6 +159,13 @@ async function editEntry(guildID, id, description) {
   }
 }
 
+/**
+ * Ruft einen Eintrag aus der Collection ab.
+ *
+ * @param {string} entryID - Die ID des Eintrags.
+ * @param {string} guildID - Die ID der Guild.
+ * @returns {Promise<Object|null>} Das Payload des Eintrags oder null, wenn nichts gefunden wurde.
+ */
 async function getEntry(entryID, guildID) {
   const collectionName = `guild_${guildID}`;
   try {
@@ -141,9 +173,7 @@ async function getEntry(entryID, guildID) {
       ids: [entryID],
       withPayload: true
     });
-
     Logger.info('Abfrage erfolgreich abgeschlossen.');
-
     if (response && response.length > 0) {
       return response[0].payload;
     } else {
@@ -156,7 +186,13 @@ async function getEntry(entryID, guildID) {
   }
 }
 
-// Funktion: Ähnlichkeitssuche
+/**
+ * Führt eine Ähnlichkeitssuche in der Collection durch.
+ *
+ * @param {string} collectionName - Der Name der Collection.
+ * @param {string} userQuery - Der Suchbegriff.
+ * @returns {Promise<Array|null>} Das Suchergebnis oder null bei einem Fehler.
+ */
 async function getData(collectionName, userQuery) {
   try {
     const embedding = await getEmbedding(userQuery);
@@ -164,13 +200,11 @@ async function getData(collectionName, userQuery) {
       Logger.error('Fehler beim Generieren des Embeddings für die Suche.');
       return null;
     }
-
     const searchResult = await qdrantClient.search(collectionName, {
       vector: embedding,
       limit: 1,
       with_payload: true,
     });
-
     Logger.success('Ähnlichkeitssuche erfolgreich abgeschlossen.');
     return searchResult;
   } catch (error) {
@@ -179,7 +213,12 @@ async function getData(collectionName, userQuery) {
   }
 }
 
-// Funktion: Löscht alle Daten einer Collection
+/**
+ * Löscht alle Daten einer Collection.
+ *
+ * @param {string} collectionName - Der Name der Collection.
+ * @returns {Promise<boolean>} true bei Erfolg, false bei einem Fehler.
+ */
 async function deleteAll(collectionName) {
   try {
     await qdrantClient.deleteCollection(collectionName);
@@ -191,12 +230,18 @@ async function deleteAll(collectionName) {
   }
 }
 
+/**
+ * Erstellt eine neue Collection mit vorgegebenen Vektoreigenschaften.
+ *
+ * @param {string} collectionname - Der Name der Collection.
+ * @returns {Promise<void>}
+ */
 async function generateCollection(collectionname) {
   try {
     await qdrantClient.createCollection(collectionname, {
       vectors: {
-        size: 1024, // Dimension des Vektorraums – passt zu den Embeddings des Modells
-        distance: 'Cosine', // Ähnlichkeitsmetrik
+        size: 1024,
+        distance: 'Cosine',
       },
     });
   } catch (error) {

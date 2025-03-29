@@ -25,10 +25,24 @@ app.use(session({
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+/**
+ * GET /
+ * Liefert die index.html als Startseite.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.get('/', (req, res) => {
   return res.sendFile('index.html', { root: path.join(__dirname, 'public') });
 });
 
+/**
+ * GET /auth/discord/login
+ * Leitet den Benutzer zur Discord-OAuth2-Autorisierung weiter.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.get('/auth/discord/login', (req, res) => {
   const scopes = encodeURIComponent('identify guilds');
   const discordAuthURL = `https://discord.com/api/oauth2/authorize` +
@@ -39,6 +53,13 @@ app.get('/auth/discord/login', (req, res) => {
   res.redirect(discordAuthURL);
 });
 
+/**
+ * GET /auth/discord/callback
+ * Bearbeitet den Callback von Discord und speichert den Access-Token in der Session.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.get('/auth/discord/callback', async (req, res) => {
   const code = req.query.code;
   if (!code) {
@@ -79,6 +100,13 @@ app.get('/auth/discord/callback', async (req, res) => {
   }
 });
 
+/**
+ * GET /dashboard
+ * Zeigt das Dashboard an, falls der Benutzer authentifiziert ist.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.get('/dashboard', (req, res) => {
   if (!req.session.access_token) {
     return res.redirect('/');
@@ -88,6 +116,13 @@ app.get('/dashboard', (req, res) => {
 
 const guildDataStore = {};
 
+/**
+ * POST /api/guilds/:id
+ * Speichert Guild-Daten in einem temporären Speicher.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.post('/api/guilds/:id', express.json(), (req, res) => {
   const guildId = req.params.id;
   const guildData = req.body;
@@ -101,6 +136,13 @@ app.post('/api/guilds/:id', express.json(), (req, res) => {
   });
 });
 
+/**
+ * GET /auth/logout
+ * Meldet den Benutzer ab, indem die Session zerstört wird.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 app.get('/auth/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
@@ -125,4 +167,7 @@ app.use('/api', blacklistRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', designRoutes);
 
+/**
+ * Startet den Express-Server.
+ */
 app.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`));

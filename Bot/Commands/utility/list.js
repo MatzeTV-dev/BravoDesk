@@ -4,10 +4,20 @@ import { getServerInformation } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
 
+/**
+ * Command, der alle Wissenseinträge der KI auflistet.
+ */
 export default {
   data: new SlashCommandBuilder()
     .setName('list')
     .setDescription('Listet alle Wissenseinträge der KI auf'),
+  /**
+   * Führt den List-Befehl aus, indem er die entsprechenden Wissenseinträge abruft, paginiert
+   * und dem User über interaktive Buttons anzeigt.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Befehl abgeschlossen ist.
+   */
   async execute(interaction) {
     try {
       await interaction.deferReply({ ephemeral: true });
@@ -19,7 +29,7 @@ export default {
       if (!hasRole) {
         await interaction.editReply({
           embeds: [error('Error!', 'Du hast keine Berechtigung für diesen Befehl!')]
-      });
+        });
 
         const adminChannel = interaction.guild.channels.cache.find(
           (channel) => channel.name === 'admin-log'
@@ -32,7 +42,6 @@ export default {
         return;
       }
 
-      // Datenbank-Abfrage
       const knowledge = await getEverythingCollection(interaction.guildId);
       if (!knowledge || knowledge.length === 0) {
         await interaction.editReply({
@@ -41,28 +50,36 @@ export default {
         return;
       }
 
-      // Mapping von "globalem Index" => DB-ID
       const globalIndexIdMap = knowledge.map((item) => item.id);
 
-      // PAGINATION SETUP
       let currentPage = 1;
       const itemsPerPage = 6;
       let totalEntries = knowledge.length;
       let totalPages = Math.ceil(totalEntries / itemsPerPage);
 
-      // Gibt die Einträge zurück, die auf Seite X angezeigt werden
+      /**
+       * Ermittelt die Wissenseinträge, die auf einer bestimmten Seite angezeigt werden sollen.
+       *
+       * @param {number} page - Die Seitenzahl, für die die Einträge ermittelt werden sollen.
+       * @returns {Array} Das Array der Wissenseinträge für die angegebene Seite.
+       */
       function getPageEntries(page) {
         const startIndex = (page - 1) * itemsPerPage;
         return knowledge.slice(startIndex, startIndex + itemsPerPage);
       }
 
-      // Embed erstellen
+      /**
+       * Erstellt ein Embed, das die Wissenseinträge der aktuellen Seite anzeigt.
+       *
+       * @param {number} page - Die aktuelle Seitenzahl.
+       * @param {Array} pageEntries - Die Wissenseinträge der aktuellen Seite.
+       * @returns {EmbedBuilder} Das erstellte Embed-Objekt.
+       */
       function createEmbed(page, pageEntries) {
         const embed = new EmbedBuilder()
           .setTitle(`Wissenseinträge – Seite ${page}/${totalPages}`)
           .setColor('#345635');
 
-        // startIndex nötig, um aus globalIndexIdMap den richtigen Index zu errechnen
         const startIndex = (page - 1) * itemsPerPage;
 
         pageEntries.forEach((item, idx) => {
@@ -80,13 +97,18 @@ export default {
         return embed;
       }
 
-      // Action Rows: pro Eintrag 1 Button + Navigationsbuttons
+      /**
+       * Erstellt Action Rows mit Buttons für jeden Eintrag und zusätzliche Navigations-Buttons.
+       *
+       * @param {number} page - Die aktuelle Seitenzahl.
+       * @param {Array} pageEntries - Die Wissenseinträge der aktuellen Seite.
+       * @returns {Array} Ein Array von ActionRowBuilder-Objekten.
+       */
       function createActionRows(page, pageEntries) {
         const rows = [];
         let row = new ActionRowBuilder();
         let buttonsInRow = 0;
 
-        // startIndex wieder berechnen
         const startIndex = (page - 1) * itemsPerPage;
 
         pageEntries.forEach((item, idx) => {
@@ -101,7 +123,6 @@ export default {
           row.addComponents(actionButton);
           buttonsInRow++;
 
-          // Max. 5 Buttons pro Row
           if (buttonsInRow >= 5) {
             rows.push(row);
             row = new ActionRowBuilder();
@@ -113,7 +134,6 @@ export default {
           rows.push(row);
         }
 
-        // Navigations-Row
         const navRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('prev_page')
@@ -131,7 +151,12 @@ export default {
         return rows;
       }
 
-      // Seite aktualisieren
+      /**
+       * Aktualisiert die angezeigte Seite, indem das Reply mit neuen Embeds und Komponenten editiert wird.
+       *
+       * @param {number} page - Die Seitenzahl, die angezeigt werden soll.
+       * @returns {Promise<void>} Ein Promise, das resolved, wenn die Seite aktualisiert wurde.
+       */
       async function updatePage(page) {
         currentPage = page;
 
@@ -147,7 +172,6 @@ export default {
       // ------------------------
       await updatePage(currentPage);
 
-      // Collector für Buttons
       const msg = await interaction.fetchReply();
       const collector = msg.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -155,7 +179,6 @@ export default {
       });
 
       collector.on('collect', async (i) => {
-        // Nur der aufrufende User darf
         if (i.user.id !== interaction.user.id) {
           return i.reply({
             content: 'Nur der ausführende User kann das nutzen.',
@@ -165,7 +188,6 @@ export default {
 
         const { customId } = i;
 
-        // PAGINATION
         if (customId === 'prev_page') {
           await i.deferUpdate();
           if (currentPage > 1) await updatePage(currentPage - 1);
@@ -177,17 +199,12 @@ export default {
           return;
         }
 
-        // Aktion-Button
         if (customId.startsWith('action_')) {
-          // Bsp.: action_12  =>  globalIndex = 12
           const [, globalIndexStr] = customId.split('_');
           const globalIndex = parseInt(globalIndexStr, 10);
 
-          // Aus dem Mapping die echte ID holen
           const dbId = globalIndexIdMap[globalIndex];
 
-          // Ephemeres Select-Menü schicken
-          // KEIN deferUpdate hier, weil wir gleich reply()n
           const selectMenu = new StringSelectMenuBuilder()
             .setCustomId(`select_${globalIndex}`)
             .setPlaceholder('Wähle eine Aktion aus ...')
@@ -212,7 +229,6 @@ export default {
             ephemeral: true
           });
 
-          // Collector für das Select-Menü
           const selectCollector = i.channel.createMessageComponentCollector({
             componentType: ComponentType.StringSelect,
             time: 60 * 1000 // 1 Minute
@@ -249,19 +265,16 @@ export default {
                 try {
                   await deleteEntry(interaction.guildId, dbId);
 
-                  // Lokal auch löschen
                   knowledge.splice(globalIndex, 1);
                   globalIndexIdMap.splice(globalIndex, 1);
 
                   totalEntries = knowledge.length;
                   totalPages = Math.ceil(totalEntries / itemsPerPage);
 
-                  // Seite anpassen, falls wir "über das Ziel" hinausschauen
                   if (currentPage > totalPages && totalPages > 0) {
                     currentPage = totalPages;
                   }
 
-                  // Info
                   await interaction.editReply({
                     embeds: [info('Deleted', `Eintrag #${globalIndex + 1} erfolgreich gelöscht.`)]
                   });
@@ -274,7 +287,6 @@ export default {
                   });
                 }
               }
-              // Select-Collector stoppen
               selectCollector.stop();
             }
           });
@@ -282,7 +294,6 @@ export default {
       });
 
       collector.on('end', async () => {
-        // Buttons disablen, wenn Collector abgelaufen ist
         const pageEntries = getPageEntries(currentPage);
         const oldRows = createActionRows(currentPage, pageEntries);
 

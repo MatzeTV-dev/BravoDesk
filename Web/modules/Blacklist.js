@@ -3,10 +3,15 @@ import express from 'express';
 
 const router = express.Router();
 
-// Blacklist-Einträge für einen bestimmten Server abrufen
+/**
+ * Ruft Blacklist-Einträge für einen bestimmten Server ab.
+ *
+ * @route GET /blacklist/:serverId
+ * @param {Request} req - Der Request, mit Parameter serverId.
+ * @param {Response} res - Die Response.
+ */
 router.get('/blacklist/:serverId', (req, res) => {
   const serverId = req.params.serverId;
-  
   db.query("CALL sp_GetBlacklist(?)", [serverId], (err, results) => {
     if (err) {
       console.error("Fehler beim Abrufen der Blacklist:", err);
@@ -15,8 +20,14 @@ router.get('/blacklist/:serverId', (req, res) => {
     res.json(results[0]);
   });
 });
-  
-// Blacklist-Eintrag hinzufügen
+
+/**
+ * Fügt einen Blacklist-Eintrag für einen bestimmten Server hinzu.
+ *
+ * @route POST /blacklist/:serverId
+ * @param {Request} req - Der Request mit Body { user_id, reason }.
+ * @param {Response} res - Die Response.
+ */
 router.post('/blacklist/:serverId', express.json(), (req, res) => {
   const serverId = req.params.serverId;
   const { user_id, reason } = req.body;
@@ -25,12 +36,10 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
     return res.status(400).json({ error: "user_id und reason sind erforderlich." });
   }
   
-  // Überprüfung: Der Grund darf maximal 50 Zeichen lang sein.
   if (reason.length > 50) {
     return res.status(400).json({ error: "Der Grund darf maximal 50 Zeichen lang sein." });
   }
   
-  // Überprüfung: User ID muss ein numerischer String mit 18 Ziffern sein.
   if (!/^\d{18}$/.test(user_id)) {
     return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
   }
@@ -43,13 +52,18 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
     res.json({ success: true, message: "Benutzer wurde zur Blacklist hinzugefügt." });
   });
 });
-  
-// Blacklist-Eintrag entfernen
+
+/**
+ * Entfernt einen Blacklist-Eintrag für einen bestimmten Server.
+ *
+ * @route DELETE /blacklist/:serverId/:userId
+ * @param {Request} req - Der Request mit Parameter serverId und userId.
+ * @param {Response} res - Die Response.
+ */
 router.delete('/blacklist/:serverId/:userId', (req, res) => {
   const serverId = req.params.serverId;
   const userId = req.params.userId;
   
-  // Überprüfung: User ID muss ein numerischer String mit 18 Ziffern sein.
   if (!/^\d{18}$/.test(userId)) {
     return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
   }
@@ -62,8 +76,14 @@ router.delete('/blacklist/:serverId/:userId', (req, res) => {
     res.json({ success: true, message: "Benutzer wurde von der Blacklist entfernt." });
   });
 });
-  
-// Blacklist-Eintrag suchen
+
+/**
+ * Sucht nach einem Blacklist-Eintrag für einen bestimmten Server.
+ *
+ * @route GET /blacklist/:serverId/search
+ * @param {Request} req - Der Request mit Parameter serverId und Query user_id.
+ * @param {Response} res - Die Response.
+ */
 router.get('/blacklist/:serverId/search', (req, res) => {
   const serverId = req.params.serverId;
   const userId = req.query.user_id;

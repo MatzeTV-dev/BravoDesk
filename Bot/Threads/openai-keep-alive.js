@@ -1,11 +1,16 @@
 import { parentPort } from 'worker_threads';
 import dotenv from 'dotenv';
 import axios from 'axios';
+
 dotenv.config();
 
 const openAiApiKey = process.env.OPENAI_API_KEY;
 
-// Funktion für die API-Anfrage
+/**
+ * Führt eine API-Anfrage an die OpenAI API aus und sendet die Antwort über parentPort.
+ *
+ * @returns {Promise<void>}
+ */
 const makeApiRequest = async () => {
   try {
     const response = await axios.post(
@@ -13,7 +18,7 @@ const makeApiRequest = async () => {
       {
         model: process.env.MODELL,
         messages: [{ role: 'user', content: "Test" }],
-        max_tokens: 1 // Hier wird die Ausgabe auf maximal 1 Token begrenzt
+        max_tokens: 1
       },
       {
         headers: {
@@ -23,7 +28,6 @@ const makeApiRequest = async () => {
       }
     );
 
-    // API-Antwort prüfen und extrahieren
     if (
       response.data &&
       response.data.choices &&
@@ -43,7 +47,9 @@ const makeApiRequest = async () => {
   }
 };
 
-// Alle 15 Minuten die Anfrage ausführen
+/**
+ * Startet alle 15 Minuten eine API-Anfrage.
+ */
 setInterval(() => {
   parentPort.postMessage('Starte API-Anfrage...');
   makeApiRequest();
