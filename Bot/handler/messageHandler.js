@@ -1,9 +1,9 @@
 import { getCategories, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
-import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
+//import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
 import { getServerInformation } from '../Database/database.js';
 import { getData, upload } from '../Database/qdrant.js';
-import axios from 'axios';
 import Logger from '../helper/loggerHelper.js';
+import axios from 'axios';
 import 'dotenv/config';
 
 /**
@@ -33,25 +33,13 @@ function getCategoryFromChannelTopic(channel) {
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
-  /*let result = await GetActivationKey(lastMessage.guild.id);
-  if (!result.activation_key) {
-    return "Es wurde kein Key gefunden...";
-  }
-
-  result = await checkKeyValidity(result.activation_key);
-  if (!result.is_valid) {
-    return "Es tut mir leid so wie es aussieht ist der Key ausgelaufen, bitte informiere einen Administrator...";
-  }*/
-
   let knowledgeBaseText = '';
   let knowledgebasetextTwo = '';
-
   try {
     lastMessage.channel.sendTyping();
     const collectionName = `guild_${lastMessage.guild.id}`;
     const data = await getData(collectionName, lastMessage.content);
     const dataTwo = await getData("GeneralInformation", lastMessage.content);
-
     if (data && data.length > 0) {
       knowledgeBaseText = data.map(item => item.payload.text).join('\n');
       knowledgebasetextTwo = dataTwo.map(item => item.payload.text).join('\n');
@@ -63,28 +51,19 @@ async function sendMessagesToAI(messages, lastMessage) {
     Logger.error(`Fehler beim Abrufen der Wissensdatenbank: ${error.message}\n${error.stack}`);
     knowledgeBaseText = 'Es gab ein Problem beim Abrufen der Serverdaten.';
   }
-
-  // Ermittele den Kategorien-Wert aus dem Channel-Topic
   const categoryValue = getCategoryFromChannelTopic(lastMessage.channel);
-
-  // Lade asynchron die Kategorien des Servers anhand der Guild-ID
   const categories = await getCategories(lastMessage.guild.id);
-  // Finde das passende Kategorien-Objekt
   let categoryObj = categories.find(cat => cat.value === categoryValue);
   if (!categoryObj) {
-    // Fallback: Falls die Kategorie nicht gefunden wird
     categoryObj = {
       aiPrompt: "Du bist ein AI-Supporter. Letzte Nachrichten: {messages}\nZusätzliches Wissen:\n{knowledgeBaseText}\n{knowledgebasetextTwo}\nAntworte: \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"",
       aiEnabled: true
     };
   }
-
-  // Ersetze die Platzhalter im AI-Prompt
   let systemPrompt = categoryObj.aiPrompt;
   systemPrompt = systemPrompt.replace(/{messages}/g, messages);
   systemPrompt = systemPrompt.replace(/{knowledgeBaseText}/g, knowledgeBaseText);
   systemPrompt = systemPrompt.replace(/{knowledgebasetextTwo}/g, knowledgebasetextTwo);
-
   try {
     const response = await axios.post(
       process.env.OPENAI_URL,
@@ -111,7 +90,6 @@ async function sendMessagesToAI(messages, lastMessage) {
 
 /**
  * Prüft, ob ein Kanal als Ticket-Kanal zu betrachten ist.
- * Hier wird beispielsweise angenommen, dass der Kanalname mit "s-ticket" endet.
  *
  * @param {Channel} channel - Der zu prüfende Channel.
  * @returns {boolean} - true, wenn es ein Ticket-Kanal ist, sonst false.
@@ -161,13 +139,10 @@ async function isAiSupportTicket(channel) {
 async function collectMessagesFromChannel(channel, client, triggeringMessage) {
   const collectedMessages = [];
   const allMessages = new Map();
-
   const aiBotUserId = client.user.id;
   allMessages.set(triggeringMessage.id, triggeringMessage);
-
   let lastMessageId = null;
   const maxMessages = 10;
-
   while (allMessages.size < maxMessages) {
     const options = { limit: 50 };
     if (lastMessageId) {
@@ -183,9 +158,7 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     lastMessageId = messages.last().id;
     await new Promise(resolve => setTimeout(resolve, 200));
   }
-
   const messageArray = Array.from(allMessages.values()).sort((a, b) => a.createdTimestamp - b.createdTimestamp);
-
   for (const msg of messageArray) {
     let prefix = '';
     if (msg.author.id === aiBotUserId) {
@@ -198,26 +171,20 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
     const content = msg.content || '';
     collectedMessages.push(`${prefix}${content}`);
   }
-
   return collectedMessages.join('\n').trim();
 }
 
 /**
  * Haupt-Message-Handler.
+ *
+ * @param {Client} client - Der Discord-Client.
+ * @param {Message} message - Die empfangene Nachricht.
+ * @returns {Promise<void>}
  */
 export default async (client, message) => {
-  // Bots ignorieren
   if (message.author.bot) return;
-
-  // Falls die Nachricht als DM gesendet wurde, kann hier zusätzliche Logik implementiert werden.
-  if (!message.guild) {
-    return;
-  }
-
+  if (!message.guild) return;
   const serverInformation = await getServerInformation(message.guild.id);
-
-  // Wenn die Nachricht im Ticket-System-Channel gesendet wird,
-  // aktualisiere das Dropdown-Menü und beende die Verarbeitung.
   if (message.channel.id === serverInformation[0][0].ticket_system_channel_id) {
     try {
       await updateTicketCreationMessage(message.guild);
@@ -226,16 +193,12 @@ export default async (client, message) => {
     }
     return;
   }
-
-  // Ticket-Logik: Nur fortfahren, wenn der Kanal als Ticket-Kanal gilt
   if (isTicketChannel(message.channel)) {
     try {
-      // Vorübergehend Schreibrechte des Nutzers entfernen
       await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: false });
     } catch (err) {
       Logger.error(`Fehler beim Entfernen der Senderechte für ${message.author.id}: ${err.message}`);
     }
-
     try {
       const isAiTicket = await isAiSupportTicket(message.channel);
       if (!isAiTicket) {
@@ -246,7 +209,6 @@ export default async (client, message) => {
         }
         return;
       }
-
       const messagesCollected = await collectMessagesFromChannel(message.channel, client, message);
       if (!messagesCollected.includes("ein menschlicher Supporter wird das Ticket übernehmen!")) {
         const aiResponse = await sendMessagesToAI(messagesCollected, message);
@@ -263,9 +225,6 @@ export default async (client, message) => {
       }
     }
   }
-
-  // 3. DM-Check: Key-Generierung
-  //    (Nur, wenn keine Guild vorhanden ist: !message.guild und User-ID stimmt)
   if (!message.guild) {
     if (message.author.id !== '639759741555310612') {
       Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
@@ -274,39 +233,26 @@ export default async (client, message) => {
       if (message.content.startsWith('!generate')) {
         const args = message.content.trim().split(/\s+/);
         const amountToGenerate = parseInt(args[1], 10);
-
-        // Parameter extrahieren (z.B. "5" => 5 Keys)
         if (isNaN(amountToGenerate) || amountToGenerate <= 0) {
           return message.reply('Bitte gib eine gültige Anzahl ein!');
         }
-
-        // Funktion: generiere 1 Key
         function generateUniqueKey() {
-          // 10 Buchstaben (A-Z) + 5 Ziffern (0-9) = 15 Zeichen
           const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
           const digits = '0123456789';
-
           let partLetters = '';
           for (let i = 0; i < 10; i++) {
             partLetters += letters.charAt(Math.floor(Math.random() * letters.length));
           }
-
           let partDigits = '';
           for (let i = 0; i < 5; i++) {
             partDigits += digits.charAt(Math.floor(Math.random() * digits.length));
           }
-
-          // Zusammenfügen: Buchstaben gefolgt von Ziffern
           return partLetters + partDigits;
         }
-
-        // Keys erzeugen
         const keysArray = [];
         for (let i = 0; i < amountToGenerate; i++) {
           keysArray.push(generateUniqueKey());
         }
-
-        // Keys in der Datenbank speichern
         try {
           for (const key of keysArray) {
             await Insert(
@@ -314,7 +260,6 @@ export default async (client, message) => {
               [key]
             );
           }
-          // Antwort an dich mit den erzeugten Keys
           await message.reply(`Ich habe dir ${amountToGenerate} Key(s) erstellt:\n` + keysArray.join('\n'));
         } catch (error) {
           Logger.error(`Fehler beim Speichern der Keys in der Datenbank: ${error.message}\n${error.stack}`);
@@ -326,23 +271,16 @@ export default async (client, message) => {
       Logger.debug(`Fehler bei der Key-Generierung: ${error.message}\n${error.stack}`);
     }
   }
-
-  // 4. DM-Check: Upload für Daten zur GeneralInformation Collection
   if (!message.guild) {
     if (message.author.id !== '639759741555310612') {
       Logger.report(`Username: ${message.author.username}, Tag: ${message.author.tag}, ID: ${message.author.id} hat probiert neue Keys zu erstellen`);
     }
-
     try {
       if (message.content.startsWith('!upload')) {
         try {
-          // Entfernt den Befehl '!upload' und speichert nur den Text danach
           const content = message.content.slice('!upload'.length).trim();
-
           await upload('GeneralInformation', content);
-
           Logger.info(`Gespeicherter Text: ${content}`);
-
           await message.reply('Deine Daten wurden erfolgreich gespeichert.');
         } catch (error) {
           Logger.error(`Fehler beim Uploaden der Daten: ${error.message}`);

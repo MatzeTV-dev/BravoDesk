@@ -1,17 +1,21 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { error as errorEmbed } from '../../helper/embedHelper.js';
+import { error } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
 
 export default {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('zeigt alle commands und deren Beschreibungen an'),
+  /**
+   * Führt den /help-Command aus, um alle Befehle und deren Beschreibungen in einem Embed anzuzeigen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     try {
-      // deferReply mit ephemeral: true
       await interaction.deferReply({ ephemeral: true });
 
-      // Embed erstellen und als Antwort senden
       const embed = new EmbedBuilder()
         .setTitle('**Befehlsliste**')
         .addFields(
@@ -34,12 +38,10 @@ export default {
       });
     } catch (err) {
       Logger.error(`Ein Fehler ist aufgetreten: ${err.message}\n${err.stack}`);
-
-      // Fallback: Fehler an den Benutzer melden
       try {
         if (!interaction.replied) {
           await interaction.followUp({
-            embeds: [errorEmbed('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
+            embeds: [error('Error!', 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.')],
           });
         }
       } catch (replyError) {

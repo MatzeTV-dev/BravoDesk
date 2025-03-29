@@ -1,11 +1,6 @@
-// category.js
-
-// Global: Aktuelle Guild-ID (wird aus der globalen Variable "guild" übernommen)
-let currentCategoryId = null;  // Aktuell ausgewählte Kategorie-ID
+let currentCategoryId = null;
 let guildID = null;
-// ------------------------
-// Ticket-Kategorien laden und Dropdown füllen
-// ------------------------
+
 function loadTicketCategories(guildId) {
   guildID = guildId;
   fetch(`/api/ticket_categories/${guildId}`)
@@ -36,9 +31,6 @@ function loadTicketCategories(guildId) {
     .catch(err => console.error("Fehler beim Laden der Ticket-Kategorien:", err));
 }
 
-// ------------------------
-// Beim Wechsel im Dropdown: Kategorie-Daten laden
-// ------------------------
 function loadCategoryData(categoryId) {
   fetch(`/api/ticket_categories/${guildID}`)
     .then(response => response.json())
@@ -52,15 +44,11 @@ function loadCategoryData(categoryId) {
     .catch(err => console.error("Fehler beim Laden der Kategorie:", err));
 }
 
-// ------------------------
-// Füllt die Eingabefelder mit den Daten der ausgewählten Kategorie
-// ------------------------
 function fillCategoryFields(cat) {
   document.getElementById("kategorieEmoji").value = cat.emoji || "";
   document.getElementById("kategorieBeschreibung").value = cat.description || "";
   document.getElementById("kategorieAIPrompt").value = cat.ai_prompt || "";
   
-  // If-Abfrage: Prüft, ob die KI aktiviert ist
   if (cat.ki_aktiviert && cat.ki_aktiviert == 1) {
     document.getElementById("kategorieEnabled").checked = true;
   } else {
@@ -74,10 +62,6 @@ function fillCategoryFields(cat) {
   }
 }
 
-
-// ------------------------
-// Speichert Änderungen an der aktuell ausgewählten Kategorie (PATCH)
-// ------------------------
 function saveCategoryChanges() {
   if (!currentCategoryId) {
     notify("Keine Kategorie ausgewählt", 3000, "warn")
@@ -117,9 +101,6 @@ function saveCategoryChanges() {
     .catch(err => console.error("Fehler beim Aktualisieren der Kategorie:", err));
 }
 
-// ------------------------
-// Löscht die aktuell ausgewählte Kategorie (DELETE)
-// ------------------------
 function deleteCategory() {
   if (!currentCategoryId) {
     notify("Keine Kategorie ausgewählt", 3000, "error")
@@ -143,9 +124,6 @@ function deleteCategory() {
     .catch(err => console.error("Fehler beim Löschen der Kategorie:", err));
 }
 
-// ------------------------
-// Popup: Neue Kategorie erstellen
-// ------------------------
 function openCreateCategoryPopup() {
   document.getElementById("createCategoryPopup").classList.add("show");
 }
@@ -157,13 +135,9 @@ function closeCreateCategoryPopup() {
   document.getElementById("newCategoryDescription").value = "";
   document.getElementById("newCategoryAIPrompt").value = "";
   document.getElementById("newCategoryEnabled").checked = true;
-  // Leere zunächst das Dropdown
   document.getElementById("newCategoryPermission").innerHTML = "";
 }
 
-// ------------------------
-// Erstellt eine neue Kategorie (POST)
-// ------------------------
 function createCategory() {
   const label = document.getElementById("newCategoryName").value.trim();
   const emoji = document.getElementById("newCategoryEmoji").value.trim();
@@ -203,19 +177,14 @@ function createCategory() {
     .catch(err => console.error("Fehler beim Erstellen der Kategorie:", err));
 }
 
-// ------------------------
-// Lädt die Rollen des aktuellen Guilds und füllt das Permission-Dropdown
-// ------------------------
 function loadGuildRoles() {
   fetch(`/api/roles/${guildID}`)
     .then(response => response.json())
     .then(data => {
       console.log("Guild Rollen erhalten:", data);
 
-      // 1) Erstes Dropdown (kategoriePermission)
       const permissionSelect = document.getElementById("kategoriePermission");
       permissionSelect.innerHTML = "";
-      // Standardoption
       const defaultOption = document.createElement("option");
       defaultOption.value = "";
       defaultOption.textContent = "Keine";
@@ -232,15 +201,13 @@ function loadGuildRoles() {
         permissionSelect.innerHTML = `<option value="">Keine Rollen gefunden</option>`;
       }
 
-      // 2) Zweites Dropdown (newCategoryPermission)
       const permissionSelect2 = document.getElementById("newCategoryPermission");
-      permissionSelect2.innerHTML = ""; // ACHTUNG: Hier muss permissionSelect2 geleert werden, nicht nochmal permissionSelect
+      permissionSelect2.innerHTML = "";
 
-      // Standardoption
       const defaultOption2 = document.createElement("option");
       defaultOption2.value = "";
       defaultOption2.textContent = "Keine";
-      permissionSelect2.appendChild(defaultOption2); // ACHTUNG: Hier musst du defaultOption2 anhängen, nicht defaultOption
+      permissionSelect2.appendChild(defaultOption2);
 
       if (data && data.length) {
         data.forEach(role => {
@@ -257,14 +224,9 @@ function loadGuildRoles() {
     .catch(err => console.error("Fehler beim Laden der Guild Rollen:", err));
 }
 
-
-// ------------------------
-// Event Listener setzen
-// ------------------------
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("kategorieSelect").addEventListener("change", function() {
     loadCategoryData(this.value);
   });
-  // Rollen laden und Permission-Dropdown füllen
   loadGuildRoles();
 });
