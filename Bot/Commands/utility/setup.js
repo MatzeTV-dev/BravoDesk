@@ -17,13 +17,13 @@ let kiadminRoleID = '';
 export default {
   data: new SlashCommandBuilder()
     .setName('setup')
-    .setDescription('Startet den automatischen setup Prozess.')
-    .addStringOption((option) =>
+    .setDescription('Startet den automatischen setup Prozess.'),
+    /*.addStringOption((option) =>
       option
         .setName('key')
         .setDescription('Fügen Sie Ihren Aktivierungsschlüssel ein.')
         .setRequired(true)
-    ),
+    ),*/
   /**
    * Führt den /setup-Command aus, der den automatischen Setup-Prozess startet.
    * Dabei werden zunächst AGBs und Datenschutzerklärung abgefragt, bevor Rollen, Kanäle und Kategorien erstellt und
