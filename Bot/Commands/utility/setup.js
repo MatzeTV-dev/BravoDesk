@@ -52,7 +52,7 @@ export default {
       }
   
       await interaction.editReply({
-        embeds: [info("Datenschutzerklärung & AGB", 'Bevor das Setup gestartet wird, müssen Sie unsere AGBs und Datenschutzerklärung akzeptieren. Mit klicken des Buttons unten akzeptieren Sie diese!')],
+        embeds: [info("Datenschutzerklärung & AGB", 'Bevor das Setup gestartet wird, müssen Sie unsere [AGBs](https://bravodesk.eu/agb.html) und [Datenschutzerklärung](https://bravodesk.eu/dataprivacy.html) akzeptieren. Mit klicken des Buttons unten akzeptieren Sie diese und bestätigen das Sie die AGBs und Datenschutzerklärung gelesen haben!')],
         components: [
           new ActionRowBuilder().addComponents(
             new ButtonBuilder()
