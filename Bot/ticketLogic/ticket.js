@@ -228,10 +228,3 @@ function replacePlaceholders(text, placeholders) {
   }
   return text;
 }
-
-export {
-  getCategories,
-  createCategory,
-  deleteCategory,
-  updateTicketCreationMessage
-};

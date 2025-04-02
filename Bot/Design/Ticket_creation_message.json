@@ -1,0 +1,18 @@
+{
+    "content": null,
+    "embeds": [
+      {
+        "title": "Ticket System",
+        "description": "Hallo haben Sie Probleme, Anliegen oder Verbesserungsvorschläge?\n\nZögern Sie bitte nicht ein Ticket zu eröffnen um Ihre Frage beantworten zu lassen.\nWir bieten ein 24h Service in unserem Ticket Support an, daher können Sie zu jeder zeit ein ticket eröffnen!",
+        "color": 5763719,
+        "footer": {
+          "text": "Ticketsystem by MatzeTV"
+        },
+        "thumbnail": {
+          "url": "https://cdn.discordapp.com/attachments/1308408726851555351/1314933550679851098/Bern-00-Transparent.png?ex=675592cc&is=6754414c&hm=27ea9f068d13e1ee857933e2ad1be8f1d2a27adb604fe107d86c2e1bf6d4f868&"
+        }
+      }
+    ],
+    "username": "Bern",
+    "attachments": []
+  }

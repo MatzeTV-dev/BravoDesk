@@ -78,7 +78,7 @@ const loadModules = async (directory, collection) => {
         Logger.warn(`[WARN] Das Modul ${filePath} hat nicht die erforderlichen Eigenschaften.`);
       }
     } catch (error) {
-      Logger.error(`[ERROR] Fehler beim Laden von ${filePath}:`, error);
+      Logger.error(`[ERROR] Fehler beim Laden von ${filePath}: ${error, error.stack}`);
     }
   }
 };

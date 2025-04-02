@@ -1,0 +1,29 @@
+{
+    "content": null,
+    "embeds": [
+      {
+        "title": "Danke für das erstellen des Tickets!",
+        "description": "Alle Nachrichten in diesem Chat werden für das Training des KI Modells benutzt daher bitte teilen Sie kein persönliche Daten wie Name, E-Mail, Passwörter etc. Sollten Sie damit nicht einverstanden sein bitten wir Sie nach einem echtem Supporter zu Fragen.",
+        "color": 7049073,
+        "fields": [
+          {
+            "name": "Kategorie",
+            "value": "{category}"
+          },
+          {
+            "name": "User ID",
+            "value": "{user_ID}"
+          },
+          {
+            "name": "Support",
+            "value": "{support_type}"
+          }
+        ],
+        "author": {
+          "name": "Ticket System"
+        }
+      }
+    ],
+    "username": "Bern",
+    "attachments": []
+  }
