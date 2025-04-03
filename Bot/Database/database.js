@@ -39,7 +39,7 @@ export async function initializeDatabaseConnection() {
   }
 }
 
-async function executeQuery(query, params = []) {
+export async function executeQuery(query, params = []) {
   try {
     const [results] = await pool.query(query, params);
     return results;

@@ -1,4 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { updateArchivCategoryID } from '../helper/verification.js';
 import { getServerInformation } from '../Database/database.js';
 import { info } from '../helper/embedHelper.js';
 import Logger from '../helper/loggerHelper.js';
@@ -237,13 +238,20 @@ async function updateChannelPermissions(channel, data) {
     ViewChannel: false,
   });
 
-  const archiveCategory = channel.guild.channels.cache.find(
-    c => c.id === data.ticket_archiv_category_id && c.type === 4
+  let archiveCategory = await channel.guild.channels.cache.find(
+    c => c.id === data.ticket_archiv_category_id
   );
-  if (archiveCategory) {
-    await channel.setParent(archiveCategory.id);
-    Logger.info(`Channel "${channel.name}" wurde in die Kategorie "${archiveCategory.name}" verschoben.`);
-  } else {
-    Logger.warn('Archiv-Kategorie nicht gefunden. Überspringe das Verschieben des Kanals.');
+
+  if (!archiveCategory) {
+    try {
+      archiveCategory = await updateArchivCategoryID(channel.guild);
+      
+    } catch (error) {
+      Logger.error("Error beim updaten der Archiv Kategorie");
+    }
   }
+
+  await channel.setParent(archiveCategory.id);
+  Logger.info(`Channel "${channel.name}" wurde in die Kategorie "${archiveCategory.name}" verschoben.`);
+
 }

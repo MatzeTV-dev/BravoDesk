@@ -1,5 +1,6 @@
 import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
 import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { updateTicketSystemChannelID } from './verification.js';
 import { getServerInformation } from '../Database/database.js';
 
 /**
@@ -106,8 +107,17 @@ async function deleteCategory(guildId, label) {
  */
 async function updateTicketCreationMessage(guild) {
   const serverInformation = await getServerInformation(guild.id);
-  const channel = guild.channels.cache.get(serverInformation[0][0].ticket_system_channel_id);
-  if (!channel) return;
+  
+  let channel = guild.channels.cache.get(serverInformation[0][0].ticket_system_channel_id);
+  if (!channel) {
+    try {
+      channel = updateTicketSystemChannelID(guild);
+    } catch (error) {
+      Logger.error("Fehler beim Updaten der Ticket System Channel ID");
+    }
+  }
+
+
   const messages = await channel.messages.fetch({ limit: 1, after: '0' });
   const ticketMessage = messages.first();
   if (!ticketMessage) return;
