@@ -1,7 +1,7 @@
 import { getCategories, createCategory, updateTicketCreationMessage } from '../../helper/ticketCategoryHelper.js';
+import { SlashCommandBuilder, PermissionsBitField } from 'discord.js';
 import { info, success, error } from '../../helper/embedHelper.js';
 import Logger from '../../helper/loggerHelper.js';
-import { SlashCommandBuilder } from 'discord.js';
 
 /**
  * Prüft, ob das übergebene Emoji gültig ist:
@@ -71,6 +71,14 @@ export default {
    */
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
+
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      return interaction.reply({ 
+        embeds: [error('Berechtigung', 'Du hast keine Berechtigung, diesen Befehl zu verwenden.')], 
+        ephemeral: true 
+      });
+    }
+
     const guildId = interaction.guild.id;
     const label = interaction.options.getString('label');
     const description = interaction.options.getString('description');

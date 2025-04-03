@@ -220,6 +220,7 @@ export default async (client, message) => {
     } finally {
       try {
         await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
+        Logger.success(`Wiederherstellen des Senderrechts für ${message.author.id} erfolgreich`)
       } catch (err) {
         Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
       }

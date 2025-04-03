@@ -1,4 +1,5 @@
 import { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { updateSupportRoleID, updateTicketCategoryID } from '../helper/verification.js'
 import { getServerInformation, checkUserBlacklisted } from '../Database/database.js';
 import { getCategories } from '../helper/ticketCategoryHelper.js';
 import { error, info } from '../helper/embedHelper.js';
@@ -73,13 +74,16 @@ async function createTicket(interaction, categoryObj) {
     }
 
     const guild = interaction.guild;
-    const supporterRole = guild.roles.cache.get(data.support_role_id);
-    if (!supporterRole) {
-      Logger.error('Support-Rolle nicht gefunden.');
-      await interaction.followUp({
-        embeds: [error('Error!', 'Es scheint ein Problem mit der Konfiguration zu geben. Bitte kontaktiere einen Administrator.')]
-      });
-      return;
+    let supporterRole = null;
+
+    try {
+      supporterRole = guild.roles.cache.get(data.support_role_id);
+
+      if (!supporterRole) {
+        supporterRole = await updateSupportRoleID(guild);
+      }
+    } catch (error) {
+      console.log(error)      
     }
 
     const channelName = `${interaction.user.username}s-Ticket`;
@@ -134,11 +138,20 @@ async function createTicket(interaction, categoryObj) {
       }
     }
 
+    let categoryID = guild.channels.cache.get(data.ticket_category_id);
+    if (!categoryID) {
+      try {
+        categoryID = await updateTicketCategoryID(guild);
+      } catch(error) {
+        Logger.error("Error beim updaten von der Ticket Category ID");
+      }
+    }
+
     const createdChannel = await guild.channels.create({
       name: channelName,
       type: ChannelType.GuildText,
       topic: `Ticket erstellt. Kategorie: ${categoryObj.label}`,
-      parent: data.ticket_category_id,
+      parent: categoryID.id,
       permissionOverwrites,
     });
 

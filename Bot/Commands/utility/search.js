@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { getServerInformation } from '../../Database/database.js';
+import { updateKiAdminID } from '../../helper/verification.js'
 import { error } from '../../helper/embedHelper.js';
 import { getData } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
@@ -26,8 +27,20 @@ export default {
       await interaction.deferReply({ ephemeral: true });
       const ServerInformation = await getServerInformation(interaction.guildId);
       const member = interaction.member;
+
+      let kiadminRole = interaction.guild.roles.cache.get(ServerInformation[0][0].kiadmin_role_id);
+
+      try {
+        if (!kiadminRole) {
+          kiadminRole = await updateKiAdminID(interaction.guild);
+        }
+      } catch (error) {
+        console.log(error)      
+      }
+
+
       const hasRole = member.roles.cache.some(
-        (role) => role.id === ServerInformation[0][0].kiadmin_role_id
+        (role) => role.id === kiadminRole.id
       );
 
       if (!hasRole) {

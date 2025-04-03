@@ -1,5 +1,6 @@
 import { getServerInformation } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
+import { updateKiAdminID } from '../../helper/verification.js'
 import { upload } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
 import { SlashCommandBuilder } from 'discord.js';
@@ -25,9 +26,19 @@ export default {
       await interaction.deferReply({ ephemeral: true });
 
       const ServerInformation = await getServerInformation(interaction.guildId);
+      let kiadminRole = interaction.guild.roles.cache.get(ServerInformation[0][0].kiadmin_role_id);
+
+      try {
+        if (!kiadminRole) {
+          kiadminRole = await updateKiAdminID(interaction.guild);
+        }
+      } catch (error) {
+        console.log(error)      
+      }
+
       const member = interaction.member;
       const hasRole = member.roles.cache.some(
-        (role) => role.id === ServerInformation[0][0].kiadmin_role_id
+        (role) => role.id === kiadminRole.id
       );
 
       if (!hasRole) {
