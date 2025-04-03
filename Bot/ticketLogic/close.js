@@ -2,7 +2,6 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getServerInformation } from '../Database/database.js';
 import { info } from '../helper/embedHelper.js';
 import Logger from '../helper/loggerHelper.js';
-import PDFDocument from 'pdfkit';
 import fs from 'fs';
 
 export default {
@@ -10,7 +9,7 @@ export default {
     name: 'close_ticket_button',
   },
   /**
-   * Schließt ein Ticket, indem der Schließen-Button deaktiviert, ein Transcript als PDF erstellt, an den Benutzer gesendet
+   * Schließt ein Ticket, indem der Schließen-Button deaktiviert, ein Transcript als HTML erstellt, an den Benutzer gesendet
    * und anschließend Kanalberechtigungen angepasst werden.
    *
    * @param {CommandInteraction} interaction - Die Discord-Interaktion.
@@ -27,7 +26,7 @@ export default {
 
       await disableCloseButton(interaction);
       const messages = await fetchChannelMessages(channel);
-      const transcriptPath = await createPDFTranscript(channel, interaction, messages);
+      const transcriptPath = await createHTMLTranscript(channel, interaction, messages);
       await sendTranscriptToUser(interaction, transcriptPath);
       await updateChannelPermissions(channel, data);
 
@@ -73,74 +72,133 @@ async function fetchChannelMessages(channel) {
 }
 
 /**
- * Erstellt ein PDF-Transcript aus den abgerufenen Nachrichten eines Channels.
+ * Erstellt ein HTML-Transcript aus den abgerufenen Nachrichten eines Channels mit verbessertem Design.
  *
  * @param {TextChannel} channel - Der Discord-Channel.
  * @param {CommandInteraction} interaction - Die Discord-Interaktion.
  * @param {Collection<string, Message>} messages - Die gesammelten Nachrichten.
- * @returns {Promise<string>} Der Pfad zur erstellten PDF-Datei.
+ * @returns {Promise<string>} Der Pfad zur erstellten HTML-Datei.
  */
-async function createPDFTranscript(channel, interaction, messages) {
+async function createHTMLTranscript(channel, interaction, messages) {
   const transcriptFolder = './transcripts_tmp';
   if (!fs.existsSync(transcriptFolder)) {
     fs.mkdirSync(transcriptFolder);
   }
 
-  const pdfPath = `${transcriptFolder}/Ticket-${channel.id}.pdf`;
-  const doc = new PDFDocument({ margin: 40 });
-  const stream = fs.createWriteStream(pdfPath);
-  doc.pipe(stream);
-
+  const htmlPath = `${transcriptFolder}/Ticket-${channel.id}.html`;
   const messagesArray = Array.from(messages.values());
-  const totalPages = Math.ceil(messagesArray.length / 10);
-  let currentPage = 1;
 
-  // Fügt optional Kopf- und Fußzeilen hinzu.
-  const addHeaderFooter = (pageNumber) => {
-    // Hier können Kopf- und Fußzeile eingefügt werden.
-  };
-
-  addHeaderFooter(currentPage);
-  doc.fontSize(16).fillColor('black').text(`Transcript für Ticket: ${channel.name}`, { align: 'center', underline: true });
-  doc.moveDown();
-
-  for (let index = 0; index < messagesArray.length; index++) {
-    const message = messagesArray[index];
-    const time = new Date(message.createdTimestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    const author = `${message.author.tag}`;
-    const content = message.content || '[Embed]';
-
-    doc.fontSize(10).fillColor('black').text(`[${time}] ${author}: ${content}`);
-    doc.moveDown();
-
-    if (doc.y > doc.page.height - 80) {
-      currentPage++;
-      doc.addPage();
-      addHeaderFooter(currentPage);
+  let htmlContent = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript für Ticket: ${channel.name}</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 900px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .header, .footer {
+    background-color: #1c6b3e;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 2em;
+  }
+  .messages {
+    padding: 20px;
+  }
+  .message {
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .message .meta {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .message .content {
+    font-size: 1em;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  @media (max-width: 600px) {
+    .container {
+      margin: 10px;
+    }
+    .header, .footer {
+      padding: 15px;
+    }
+    .message {
+      padding: 10px;
     }
   }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Transcript für Ticket: ${channel.name}</h1>
+  </div>
+  <div class="messages">
+`;
 
-  doc.end();
-  await new Promise((resolve) => stream.on('finish', resolve));
-  return pdfPath;
+  messagesArray.forEach(message => {
+    const time = new Date(message.createdTimestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const author = message.author.tag;
+    const content = message.content || '[Embed]';
+    htmlContent += `<div class="message">
+      <div class="meta">[${time}] ${author}</div>
+      <div class="content">${content}</div>
+    </div>`;
+  });
+
+  htmlContent += `
+  </div>
+  <div class="footer">
+    <p>Transcript erstellt am ${new Date().toLocaleString('de-DE')}</p>
+  </div>
+</div>
+</body>
+</html>`;
+
+  fs.writeFileSync(htmlPath, htmlContent);
+  return htmlPath;
 }
 
 /**
- * Sendet das PDF-Transcript als private Nachricht an den Benutzer und löscht anschließend die Datei.
+ * Sendet das HTML-Transcript als private Nachricht an den Benutzer und löscht anschließend die Datei.
  *
  * @param {CommandInteraction} interaction - Die Discord-Interaktion.
- * @param {string} pdfPath - Der Pfad zur PDF-Datei.
+ * @param {string} htmlPath - Der Pfad zur HTML-Datei.
  * @returns {Promise<void>}
  */
-async function sendTranscriptToUser(interaction, pdfPath) {
+async function sendTranscriptToUser(interaction, htmlPath) {
   try {
-    if (!pdfPath) {
-      throw new Error('PDF-Pfad ist nicht definiert.');
+    if (!htmlPath) {
+      throw new Error('HTML-Pfad ist nicht definiert.');
     }
 
     await interaction.user.send({
-      embeds: [info("Ticket System", "Hey, hier ist ein Transcript von dem Ticket, das gerade geschlossen worden ist!")],
-      files: [pdfPath],
+      embeds: [info("Ticket System", "Hey, hier ist das Transcript von dem Ticket, das gerade geschlossen worden ist!")],
+      files: [htmlPath],
     });
 
     Logger.success(`Transcript wurde privat an ${interaction.user.tag} gesendet.`);
@@ -148,9 +206,9 @@ async function sendTranscriptToUser(interaction, pdfPath) {
     Logger.error(`Konnte Transcript nicht an ${interaction.user.tag} senden: ${error.message}`);
   } finally {
     try {
-      if (pdfPath && fs.existsSync(pdfPath)) {
-        fs.unlinkSync(pdfPath);
-        Logger.info(`Transcript-Datei wurde gelöscht: ${pdfPath}`);
+      if (htmlPath && fs.existsSync(htmlPath)) {
+        fs.unlinkSync(htmlPath);
+        Logger.info(`Transcript-Datei wurde gelöscht: ${htmlPath}`);
       }
     } catch (unlinkError) {
       Logger.error(`Fehler beim Löschen der Datei: ${unlinkError.message}`);
