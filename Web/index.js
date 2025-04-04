@@ -24,6 +24,7 @@ app.use(session({
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 /**
  * GET /
@@ -123,7 +124,7 @@ const guildDataStore = {};
  * @param {express.Request} req
  * @param {express.Response} res
  */
-app.post('/api/guilds/:id', express.json(), (req, res) => {
+app.post('/api/guilds/:id', (req, res) => {
   const guildId = req.params.id;
   const guildData = req.body;
   
@@ -159,6 +160,7 @@ import memoryRoutes from './modules/Memory.js';
 import blacklistRoutes from './modules/Blacklist.js';
 import categoryRoutes from './modules/Category.js';
 import designRoutes from './modules/Design.js';
+import botNotificationRoutes from './modules/botNotifications.js';
 
 app.use('/api', serverSelector);
 app.use('/api', userMenu);
@@ -166,6 +168,7 @@ app.use('/api', memoryRoutes);
 app.use('/api', blacklistRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', designRoutes);
+app.use('/api', botNotificationRoutes);
 
 /**
  * Startet den Express-Server.

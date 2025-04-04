@@ -24,7 +24,6 @@ router.get('/guilds', async (req, res) => {
   if (!accessToken) {
     return res.status(401).json({ error: "Nicht eingeloggt" });
   }
-  console.log(`Bot ${process.env.DISCORD_BOT_TOKEN}`);
   try {
     const response = await fetch("https://discord.com/api/users/@me/guilds", {
       headers: {
