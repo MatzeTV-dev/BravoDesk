@@ -3,6 +3,38 @@ import { getServerInformation, Delete } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
 import { deleteAll } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
+import axios from 'axios';
+
+
+const WEBSERVER_NOTIFICATION_URL = process.env.WEBSERVER_URL + '/api/notify/reset';
+const WEBSERVER_API_SECRET = process.env.DASHBOARD_API_TOKEN;
+
+async function notifyWebsiteOfReset(guildId) {
+  if (!WEBSERVER_NOTIFICATION_URL || !WEBSERVER_API_SECRET) {
+    Logger.warn('Webserver Benachrichtigungs-URL oder Secret nicht konfiguriert. Überspringe Benachrichtigung.');
+    return;
+  }
+
+  try {
+    Logger.info(`Sende Reset-Benachrichtigung für Guild ${guildId} an ${WEBSERVER_NOTIFICATION_URL}`);
+    await axios.post(WEBSERVER_NOTIFICATION_URL,
+    {
+      guildId: guildId
+    },
+    {
+      headers: {
+      'Authorization': `Bearer ${WEBSERVER_API_SECRET}`
+      },
+        timeout: 5000
+      });
+      Logger.success(`Website für Guild ${guildId} erfolgreich benachrichtigt.`);
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`
+        : error.message;
+      Logger.error(`Fehler beim Benachrichtigen der Website für Guild ${guildId}: ${errorMessage}`);
+    }
+}
 
 export default {
   data: new SlashCommandBuilder()
@@ -120,6 +152,8 @@ export default {
               });
               return;
             }
+
+            await notifyWebsiteOfReset(guild.id);
 
             await i.followUp({
               embeds: [info('Reset Abgeschlossen', 'Alle Daten, Rollen und Channels wurden erfolgreich gelöscht!')],
