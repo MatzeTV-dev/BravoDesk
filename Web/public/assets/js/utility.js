@@ -1,20 +1,14 @@
-  /* Tabs umschalten */
   function showSection(sectionId, navItem) {
-    // Alle Tabs ausblenden
     document.querySelectorAll('.content-section').forEach(section => {
       section.classList.remove('active');
     });
-    // Gewünschten Tab anzeigen
     document.getElementById(sectionId).classList.add('active');
-    // Navigation reset
     document.querySelectorAll('.nav li').forEach(li => {
       li.classList.remove('active');
     });
-    // Geklicktes Nav-Item hervorheben
     navItem.classList.add('active');
   }
 
-  /* Server-Dropdown */
   function toggleMenu(menuId, arrowId) {
     var menu = document.getElementById(menuId);
     var arrow = arrowId ? document.getElementById(arrowId) : null;
@@ -38,16 +32,13 @@
     toggleMenu("serverDropdown");
   }
 
-  /* Klick außerhalb schließt Menüs */
   document.addEventListener("click", function(event) {
-    // Server-Dropdown
     if (!event.target.closest("#serverButton") && !event.target.closest("#serverDropdown")) {
       var serverDropdown = document.getElementById("serverDropdown");
       if (serverDropdown && serverDropdown.style.display === "block") {
         toggleMenu("serverDropdown");
       }
     }
-    // User-Menü
     if (!event.target.closest(".user-info") && !event.target.closest("#userMenu")) {
       var userMenu = document.getElementById("userMenu");
       if (userMenu && userMenu.style.display === "block") {
@@ -56,7 +47,6 @@
     }
 });
 
-// Beispiel: Notify-Funktion, zeigt maximal 5 Benachrichtigungen an (ältere werden entfernt)
 function notify(message, duration = 3000, type = "info") {
     const container = document.getElementById("notifyContainer");
     if (container.children.length >= 5) {
@@ -73,12 +63,9 @@ function notify(message, duration = 3000, type = "info") {
     }, duration);
   }
 
-  // Initialisierung des vanillaEmojiPicker für alle Felder mit der Klasse "emoji-field".
-  // Hier bauen wir ein Trigger-Array, das jedem Feld als eindeutigen Trigger zugeordnet wird.
   var emojiFields = document.querySelectorAll('.emoji-field');
   var triggers = [];
   emojiFields.forEach(function(el) {
-    // Nutze die ID des Elements für den eindeutigen Selector.
     triggers.push({
       selector: '#' + el.id,
       insertInto: '#' + el.id
@@ -86,7 +73,7 @@ function notify(message, duration = 3000, type = "info") {
   });
   new EmojiPicker({
     trigger: triggers,
-    closeButton: true,      // Schließt den Picker über einen Button
-    closeOnSelect: true,    // Schließt den Picker nach Auswahl eines Emojis
-    specialButtons: 'green' // Setzt den Hintergrund der Sonderbuttons auf grün
+    closeButton: true,
+    closeOnSelect: true,
+    specialButtons: 'green'
   });

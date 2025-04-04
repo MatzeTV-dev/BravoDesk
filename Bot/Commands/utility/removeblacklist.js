@@ -12,8 +12,13 @@ export default {
         .setDescription('Der Benutzer, der von der Blacklist entfernt werden soll.')
         .setRequired(true)
     ),
+  /**
+   * Führt den /removeblacklist-Command aus, um einen Benutzer von der Blacklist zu entfernen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
-    // Prüfe, ob der ausführende Member Administrator-Rechte hat
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return interaction.reply({
         embeds: [error('Berechtigung', 'Du hast keine Berechtigung, diesen Befehl zu verwenden.')],

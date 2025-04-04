@@ -1,12 +1,9 @@
-// UserMenu.js
-
 function loadUserInfo() {
   fetch('/api/user')
     .then(response => response.json())
     .then(user => {
-      console.log("User-Daten:", user); // Zum Debuggen
+      console.log("User-Daten:", user);
 
-      // Benutzername aktualisieren: Zeige "#discriminator" nur, wenn vorhanden und nicht "0"
       const userNameSpan = document.querySelector('.user-name');
       if (userNameSpan && user.global_name) {
         if (user.discriminator && user.discriminator !== "0") {
@@ -16,7 +13,6 @@ function loadUserInfo() {
         }
       }
 
-      // Profilbild aktualisieren
       const userAvatar = document.querySelector('.user-avatar');
       if (userAvatar) {
         const avatarUrl = user.avatar 

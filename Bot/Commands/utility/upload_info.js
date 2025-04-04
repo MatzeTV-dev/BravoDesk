@@ -1,8 +1,9 @@
-import { SlashCommandBuilder } from 'discord.js';
-import { upload } from '../../Database/qdrant.js';
-import { error, info } from '../../helper/embedHelper.js';
-import Logger from '../../helper/loggerHelper.js';
 import { getServerInformation } from '../../Database/database.js';
+import { error, info } from '../../helper/embedHelper.js';
+import { updateKiAdminID } from '../../helper/verification.js'
+import { upload } from '../../Database/qdrant.js';
+import Logger from '../../helper/loggerHelper.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -14,13 +15,31 @@ export default {
         .setDescription('Ein einfacher Satz, um Informationen an die KI zu übermitteln.')
         .setRequired(true)
     ),
+  /**
+   * Führt den /upload-Command aus, um neues Wissen in das KI Brain hochzuladen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     try {
       await interaction.deferReply({ ephemeral: true });
 
       const ServerInformation = await getServerInformation(interaction.guildId);
+      let kiadminRole = interaction.guild.roles.cache.get(ServerInformation[0][0].kiadmin_role_id);
+
+      try {
+        if (!kiadminRole) {
+          kiadminRole = await updateKiAdminID(interaction.guild);
+        }
+      } catch (error) {
+        console.log(error)      
+      }
+
       const member = interaction.member;
-      const hasRole = member.roles.cache.some((role) => role.id === ServerInformation[0][0].kiadmin_role_id);
+      const hasRole = member.roles.cache.some(
+        (role) => role.id === kiadminRole.id
+      );
 
       if (!hasRole) {
         await interaction.editReply({
@@ -30,8 +49,6 @@ export default {
       }
 
       const string = interaction.options.getString('daten');
-
-      // Maximal 10 Wörter prüfen
       const wordCount = string.split(/\s+/).length;
       if (wordCount > 10) {
         await interaction.editReply({
@@ -40,7 +57,6 @@ export default {
         return;
       }
 
-      // Regex: Kein Wort länger als 20 Zeichen erlaubt
       const longWordMatch = string.match(/\b\w{21,}\b/);
       if (longWordMatch) {
         await interaction.editReply({

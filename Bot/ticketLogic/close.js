@@ -1,14 +1,21 @@
-import fs from 'fs';
-import PDFDocument from 'pdfkit';
-import { info } from '../helper/embedHelper.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { updateArchivCategoryID } from '../helper/verification.js';
 import { getServerInformation } from '../Database/database.js';
+import { info } from '../helper/embedHelper.js';
 import Logger from '../helper/loggerHelper.js';
+import fs from 'fs';
 
 export default {
   data: {
     name: 'close_ticket_button',
   },
+  /**
+   * Schließt ein Ticket, indem der Schließen-Button deaktiviert, ein Transcript als HTML erstellt, an den Benutzer gesendet
+   * und anschließend Kanalberechtigungen angepasst werden.
+   *
+   * @param {CommandInteraction} interaction - Die Discord-Interaktion.
+   * @returns {Promise<void>}
+   */
   async execute(interaction) {
     const channel = interaction.channel;
     const guild = interaction.guild;
@@ -18,19 +25,10 @@ export default {
       const rawData = await getServerInformation(guild_id);
       const data = rawData[0][0];
 
-      // Schritt 1: Button deaktivieren und Nachricht aktualisieren
       await disableCloseButton(interaction);
-
-      // Schritt 2: Nachrichten abrufen
       const messages = await fetchChannelMessages(channel);
-
-      // Schritt 3: Transcript als PDF erstellen
-      const transcriptPath = await createPDFTranscript(channel, interaction, messages);
-
-      // Schritt 4: PDF an den Benutzer senden und löschen
+      const transcriptPath = await createHTMLTranscript(channel, interaction, messages);
       await sendTranscriptToUser(interaction, transcriptPath);
-
-      // Schritt 5: Kanalrechte anpassen
       await updateChannelPermissions(channel, data);
 
       Logger.success(`Ticket "${channel.name}" wurde erfolgreich geschlossen.`);
@@ -44,6 +42,12 @@ export default {
   },
 };
 
+/**
+ * Deaktiviert den "close ticket" Button und aktualisiert die Nachricht.
+ *
+ * @param {CommandInteraction} interaction - Die Discord-Interaktion.
+ * @returns {Promise<void>}
+ */
 async function disableCloseButton(interaction) {
   const buttonRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -57,84 +61,145 @@ async function disableCloseButton(interaction) {
   await interaction.update({ components: [buttonRow] });
 }
 
+/**
+ * Ruft die letzten 100 Nachrichten eines Channels ab und sortiert sie chronologisch.
+ *
+ * @param {TextChannel} channel - Der Discord-Channel.
+ * @returns {Promise<Collection<string, Message>>} Eine Sammlung der sortierten Nachrichten.
+ */
 async function fetchChannelMessages(channel) {
   const messages = await channel.messages.fetch({ limit: 100 });
   return messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 }
 
-async function createPDFTranscript(channel, interaction, messages) {
+/**
+ * Erstellt ein HTML-Transcript aus den abgerufenen Nachrichten eines Channels mit verbessertem Design.
+ *
+ * @param {TextChannel} channel - Der Discord-Channel.
+ * @param {CommandInteraction} interaction - Die Discord-Interaktion.
+ * @param {Collection<string, Message>} messages - Die gesammelten Nachrichten.
+ * @returns {Promise<string>} Der Pfad zur erstellten HTML-Datei.
+ */
+async function createHTMLTranscript(channel, interaction, messages) {
   const transcriptFolder = './transcripts_tmp';
   if (!fs.existsSync(transcriptFolder)) {
     fs.mkdirSync(transcriptFolder);
   }
 
-  const pdfPath = `${transcriptFolder}/Ticket-${channel.id}.pdf`;
-  const doc = new PDFDocument({ margin: 40 });
-
-  const stream = fs.createWriteStream(pdfPath);
-  doc.pipe(stream);
-
+  const htmlPath = `${transcriptFolder}/Ticket-${channel.id}.html`;
   const messagesArray = Array.from(messages.values());
-  const totalPages = Math.ceil(messagesArray.length / 10); // Geschätzte Seitenanzahl
-  let currentPage = 1;
 
-  // Funktion: Kopf- und Fußzeilen hinzufügen
-  const addHeaderFooter = (pageNumber) => {
-    // Kopfzeile: (optional) Hier könnte z. B. der Servername ausgegeben werden.
-    // Fußzeile: Datum, Seitenzahl, Ticketname (Beispiel auskommentiert)
-    /*
-    doc.text(
-      `${new Date().toLocaleDateString('de-DE')} | Seite ${pageNumber} von ${totalPages} | Ticket: ${channel.name}`,
-      40,
-      doc.page.height - 40,
-      { align: 'center' }
-    );
-    */
-  };
-
-  // Titel und Kopfzeile für die erste Seite hinzufügen
-  addHeaderFooter(currentPage);
-
-  // Füge den Titel hinzu und bewege den Cursor nach unten
-  doc.fontSize(16).fillColor('black').text(`Transcript für Ticket: ${channel.name}`, { align: 'center', underline: true });
-  doc.moveDown();
-
-  // Nachrichten hinzufügen
-  for (let index = 0; index < messagesArray.length; index++) {
-    const message = messagesArray[index];
-    const time = new Date(message.createdTimestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); // Nur Uhrzeit
-    const author = `${message.author.tag}`;
-    const content = message.content || '[Embed]';
-
-    // Nachricht hinzufügen
-    doc.fontSize(10).fillColor('black').text(`[${time}] ${author}: ${content}`);
-    doc.moveDown();
-
-    // Seitenwechsel, falls kein Platz mehr vorhanden
-    if (doc.y > doc.page.height - 80) { // Platz für Fußzeile einplanen
-      currentPage++;
-      doc.addPage();
-      addHeaderFooter(currentPage);
+  let htmlContent = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript für Ticket: ${channel.name}</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 900px;
+    margin: auto;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .header, .footer {
+    background-color: #1c6b3e;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 2em;
+  }
+  .messages {
+    padding: 20px;
+  }
+  .message {
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .message .meta {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .message .content {
+    font-size: 1em;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  @media (max-width: 600px) {
+    .container {
+      margin: 10px;
+    }
+    .header, .footer {
+      padding: 15px;
+    }
+    .message {
+      padding: 10px;
     }
   }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Transcript für Ticket: ${channel.name}</h1>
+  </div>
+  <div class="messages">
+`;
 
-  // Dokument beenden
-  doc.end();
+  messagesArray.forEach(message => {
+    const time = new Date(message.createdTimestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const author = message.author.tag;
+    const content = message.content || '[Embed]';
+    htmlContent += `<div class="message">
+      <div class="meta">[${time}] ${author}</div>
+      <div class="content">${content}</div>
+    </div>`;
+  });
 
-  // Warte, bis das Schreiben abgeschlossen ist
-  await new Promise((resolve) => stream.on('finish', resolve));
-  return pdfPath;
+  htmlContent += `
+  </div>
+  <div class="footer">
+    <p>Transcript erstellt am ${new Date().toLocaleString('de-DE')}</p>
+  </div>
+</div>
+</body>
+</html>`;
+
+  fs.writeFileSync(htmlPath, htmlContent);
+  return htmlPath;
 }
 
-async function sendTranscriptToUser(interaction, pdfPath) {
+/**
+ * Sendet das HTML-Transcript als private Nachricht an den Benutzer und löscht anschließend die Datei.
+ *
+ * @param {CommandInteraction} interaction - Die Discord-Interaktion.
+ * @param {string} htmlPath - Der Pfad zur HTML-Datei.
+ * @returns {Promise<void>}
+ */
+async function sendTranscriptToUser(interaction, htmlPath) {
   try {
-    if (!pdfPath) {
-      throw new Error('PDF-Pfad ist nicht definiert.');
+    if (!htmlPath) {
+      throw new Error('HTML-Pfad ist nicht definiert.');
     }
 
     await interaction.user.send({
-      embeds: [info("Ticket System", "Hey, hier ist ein Transcript von dem Ticket, das gerade geschlossen worden ist!")],
-      files: [pdfPath],
+      embeds: [info("Ticket System", "Hey, hier ist das Transcript von dem Ticket, das gerade geschlossen worden ist!")],
+      files: [htmlPath],
     });
 
     Logger.success(`Transcript wurde privat an ${interaction.user.tag} gesendet.`);
@@ -142,9 +207,9 @@ async function sendTranscriptToUser(interaction, pdfPath) {
     Logger.error(`Konnte Transcript nicht an ${interaction.user.tag} senden: ${error.message}`);
   } finally {
     try {
-      if (pdfPath && fs.existsSync(pdfPath)) {
-        fs.unlinkSync(pdfPath);
-        Logger.info(`Transcript-Datei wurde gelöscht: ${pdfPath}`);
+      if (htmlPath && fs.existsSync(htmlPath)) {
+        fs.unlinkSync(htmlPath);
+        Logger.info(`Transcript-Datei wurde gelöscht: ${htmlPath}`);
       }
     } catch (unlinkError) {
       Logger.error(`Fehler beim Löschen der Datei: ${unlinkError.message}`);
@@ -152,8 +217,14 @@ async function sendTranscriptToUser(interaction, pdfPath) {
   }
 }
 
+/**
+ * Aktualisiert die Kanalberechtigungen, um Support-Rechte zu entziehen, und verschiebt den Kanal in die Archiv-Kategorie.
+ *
+ * @param {TextChannel} channel - Der Discord-Channel.
+ * @param {Object} data - Serverinformationen, die unter anderem die Support-Rolle und Archiv-Kategorie enthalten.
+ * @returns {Promise<void>}
+ */
 async function updateChannelPermissions(channel, data) {
-  // Supporter-Rolle und allgemeine Benutzerrechte entziehen
   const supporterRole = channel.guild.roles.cache.find(role => role.id === data.support_role_id);
   if (supporterRole) {
     await channel.permissionOverwrites.edit(supporterRole, {
@@ -167,14 +238,20 @@ async function updateChannelPermissions(channel, data) {
     ViewChannel: false,
   });
 
-  // Kanal in die Archiv-Kategorie verschieben
-  const archiveCategory = channel.guild.channels.cache.find(
-    c => c.id === data.ticket_archiv_category_id && c.type === 4
+  let archiveCategory = await channel.guild.channels.cache.find(
+    c => c.id === data.ticket_archiv_category_id
   );
-  if (archiveCategory) {
-    await channel.setParent(archiveCategory.id);
-    Logger.info(`Channel "${channel.name}" wurde in die Kategorie "${archiveCategory.name}" verschoben.`);
-  } else {
-    Logger.warn('Archiv-Kategorie nicht gefunden. Überspringe das Verschieben des Kanals.');
+
+  if (!archiveCategory) {
+    try {
+      archiveCategory = await updateArchivCategoryID(channel.guild);
+      
+    } catch (error) {
+      Logger.error("Error beim updaten der Archiv Kategorie");
+    }
   }
+
+  await channel.setParent(archiveCategory.id);
+  Logger.info(`Channel "${channel.name}" wurde in die Kategorie "${archiveCategory.name}" verschoben.`);
+
 }

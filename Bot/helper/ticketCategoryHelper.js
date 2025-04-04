@@ -1,8 +1,13 @@
 import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
 import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { updateTicketSystemChannelID } from './verification.js';
 import { getServerInformation } from '../Database/database.js';
 
-// Standard-Kategorien (mit vollständigen AI‑Prompts)
+/**
+ * Liefert die Standard-Kategorien mit vollständigen AI‑Prompts.
+ *
+ * @returns {Array<Object>} Array der Standard-Kategorien.
+ */
 function getDefaultCategories() {
   return [
     {
@@ -40,8 +45,13 @@ function getDefaultCategories() {
   ];
 }
 
-// Holt die Kategorien für einen Guild aus der DB.
-// Falls noch keine Kategorien vorhanden sind, werden die Default-Kategorien in die DB eingefügt.
+/**
+ * Holt die Kategorien für einen Guild aus der Datenbank.
+ * Falls keine Kategorien vorhanden sind, werden die Default-Kategorien eingefügt.
+ *
+ * @param {string} guildId - Die ID des Guilds.
+ * @returns {Promise<Array<Object>>} Array der Kategorien.
+ */
 async function getCategories(guildId) {
   let categories = await dbGetCategories(guildId);
   if (!categories || categories.length === 0) {
@@ -51,7 +61,6 @@ async function getCategories(guildId) {
     }
     categories = defaults;
   } else {
-    // Falls permission als JSON-String gespeichert wurde, parse sie
     categories = categories.map(cat => {
       if (cat.permission) {
         try {
@@ -68,12 +77,24 @@ async function getCategories(guildId) {
   return categories;
 }
 
-// Legt eine neue Kategorie in der DB an.
+/**
+ * Legt eine neue Kategorie in der Datenbank an.
+ *
+ * @param {string} guildId - Die ID des Guilds.
+ * @param {Object} category - Das Kategorie-Objekt.
+ * @returns {Promise<void>}
+ */
 async function createCategory(guildId, category) {
   await dbCreateCategory(guildId, category);
 }
 
-// Löscht eine Kategorie anhand des Labels (case-insensitive)
+/**
+ * Löscht eine Kategorie anhand des Labels (case-insensitive).
+ *
+ * @param {string} guildId - Die ID des Guilds.
+ * @param {string} label - Das Label der Kategorie.
+ * @returns {Promise<void>}
+ */
 async function deleteCategory(guildId, label) {
   await dbDeleteCategory(guildId, label);
 }
@@ -82,12 +103,21 @@ async function deleteCategory(guildId, label) {
  * Aktualisiert das Dropdown-Menü im "ticket-system"-Channel des angegebenen Servers.
  *
  * @param {Guild} guild - Der Discord-Server.
+ * @returns {Promise<void>}
  */
 async function updateTicketCreationMessage(guild) {
-
   const serverInformation = await getServerInformation(guild.id);
-  const channel = guild.channels.cache.get(serverInformation[0][0].ticket_system_channel_id);
-  if (!channel) return;
+  
+  let channel = guild.channels.cache.get(serverInformation[0][0].ticket_system_channel_id);
+  if (!channel) {
+    try {
+      channel = updateTicketSystemChannelID(guild);
+    } catch (error) {
+      Logger.error("Fehler beim Updaten der Ticket System Channel ID");
+    }
+  }
+
+
   const messages = await channel.messages.fetch({ limit: 1, after: '0' });
   const ticketMessage = messages.first();
   if (!ticketMessage) return;
@@ -96,9 +126,7 @@ async function updateTicketCreationMessage(guild) {
   
   const options = categories.map(cat => ({
     label: cat.label,
-    description: cat.description
-      ? (cat.description.length > 100 ? cat.description.slice(0, 97) + "..." : cat.description)
-      : ' ',
+    description: cat.description ? (cat.description.length > 100 ? cat.description.slice(0, 97) + "..." : cat.description) : ' ',
     value: cat.value || cat.label
   }));
   
@@ -119,23 +147,17 @@ async function updateTicketCreationMessage(guild) {
   try {
     await ticketMessage.edit({ components: [row] });
   } catch (err) {
-    // Falls der Fehler wegen ungültiger Emojis kommt, entferne alle Emojis und versuche es erneut
     if (err.message.includes("Invalid emoji")) {
-      console.error("Ungültige Emojis gefunden – versuche ohne Emojis.");
-      
       options.forEach(option => {
         if (option.emoji) {
           delete option.emoji;
         }
       });
-      
       newSelectMenu = new StringSelectMenuBuilder()
         .setCustomId('create_ticket_ticket_category')
         .setPlaceholder('Wählen Sie eine Kategorie aus...')
         .addOptions(options);
-      
       row = new ActionRowBuilder().addComponents(newSelectMenu);
-      
       try {
         await ticketMessage.edit({ components: [row] });
         console.log("Dropdown-Menü wurde ohne Emojis aktualisiert.");

@@ -1,4 +1,5 @@
 import { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { updateSupportRoleID, updateTicketCategoryID } from '../helper/verification.js'
 import { getServerInformation, checkUserBlacklisted } from '../Database/database.js';
 import { getCategories } from '../helper/ticketCategoryHelper.js';
 import { error, info } from '../helper/embedHelper.js';
@@ -9,10 +10,17 @@ export default {
   data: {
     customId: 'create_ticket_ticket_category',
   },
+  /**
+   * Verarbeitet die Interaktion zur Ticket-Erstellung. Zunächst wird geprüft, ob der User
+   * nicht geblacklisted ist. Anschließend werden die ausgewählten Kategorien geladen und für jede
+   * gefundene Kategorie wird ein Ticket erstellt. Abschließend erhält der Benutzer eine Bestätigung.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>}
+   */
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
-    // Prüfe, ob der User auf der Blacklist steht
     const isBlacklisted = await checkUserBlacklisted(interaction.guild.id, interaction.user.id);
     if (isBlacklisted) {
       Logger.info(`User ${interaction.user.tag} ist in dieser Guild geblacklisted.`);
@@ -22,18 +30,13 @@ export default {
       return;
     }
 
-    // Die ausgewählten Werte (Kategorie-Namen) aus dem Select Menu
     const selectedValues = interaction.values;
-
-    // Lade für den aktuellen Server alle definierten Kategorien
     const categories = await getCategories(interaction.guild.id);
 
     for (const selectedLabel of selectedValues) {
-      // Verwende einen case-insensitiven Vergleich und trimme beide Werte
-      const categoryObj = categories.find(
-        cat => (cat.value || '').trim().toLowerCase() === (selectedLabel || '').trim().toLowerCase()
+      const categoryObj = categories.find(cat =>
+        (cat.value || '').trim().toLowerCase() === (selectedLabel || '').trim().toLowerCase()
       );
-
       if (!categoryObj) {
         Logger.warn(`Unbekannte Kategorie ausgewählt: ${selectedLabel}`);
         continue;
@@ -45,13 +48,19 @@ export default {
       }
     }
 
-    // Antwort an den Benutzer
-    await interaction.editReply({ 
-      embeds: [info('Info', 'Dein Ticket wurde erstellt')] 
+    await interaction.editReply({
+      embeds: [info('Info', 'Dein Ticket wurde erstellt')]
     });
   },
 };
 
+/**
+ * Erstellt ein Ticket basierend auf der angegebenen Kategorie.
+ *
+ * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+ * @param {Object} categoryObj - Das Kategorie-Objekt mit Eigenschaften wie label, aiEnabled und permission.
+ * @returns {Promise<void>}
+ */
 async function createTicket(interaction, categoryObj) {
   try {
     const rawData = await getServerInformation(interaction.guild.id);
@@ -65,19 +74,19 @@ async function createTicket(interaction, categoryObj) {
     }
 
     const guild = interaction.guild;
-    const supporterRole = guild.roles.cache.get(data.support_role_id);
+    let supporterRole = null;
 
-    if (!supporterRole) {
-      Logger.error('Support-Rolle nicht gefunden.');
-      await interaction.followUp({
-        embeds: [error('Error!', 'Es scheint ein Problem mit der Konfiguration zu geben. Bitte kontaktiere einen Administrator.')]
-      });
-      return;
+    try {
+      supporterRole = guild.roles.cache.get(data.support_role_id);
+
+      if (!supporterRole) {
+        supporterRole = await updateSupportRoleID(guild);
+      }
+    } catch (error) {
+      console.log(error)      
     }
 
     const channelName = `${interaction.user.username}s-Ticket`;
-
-    // Erstelle die grundlegenden Berechtigungsüberschreibungen
     const permissionOverwrites = [
       {
         id: interaction.user.id,
@@ -103,7 +112,6 @@ async function createTicket(interaction, categoryObj) {
       },
     ];
 
-    // Falls **keine** custom permissions gesetzt sind, füge die Supporter-Rolle hinzu
     if (!(categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0)) {
       permissionOverwrites.push({
         id: supporterRole.id,
@@ -116,7 +124,6 @@ async function createTicket(interaction, categoryObj) {
       });
     }
 
-    // Falls custom permissions vorhanden sind, füge diese Rollen hinzu
     if (categoryObj.permission && Array.isArray(categoryObj.permission) && categoryObj.permission.length > 0) {
       for (const roleId of categoryObj.permission) {
         permissionOverwrites.push({
@@ -131,19 +138,24 @@ async function createTicket(interaction, categoryObj) {
       }
     }
 
-    // Erstelle einen neuen Ticket-Channel mit dem Topic, das die Kategorie enthält.
+    let categoryID = guild.channels.cache.get(data.ticket_category_id);
+    if (!categoryID) {
+      try {
+        categoryID = await updateTicketCategoryID(guild);
+      } catch(error) {
+        Logger.error("Error beim updaten von der Ticket Category ID");
+      }
+    }
+
     const createdChannel = await guild.channels.create({
       name: channelName,
       type: ChannelType.GuildText,
       topic: `Ticket erstellt. Kategorie: ${categoryObj.label}`,
-      parent: data.ticket_category_id,
+      parent: categoryID.id,
       permissionOverwrites,
     });
 
-    // Lade und verarbeite die Begrüßungsnachricht (Embeds) aus der Design-Datei
     const embedData = JSON.parse(fs.readFileSync('./Design/Welcome_message.json', 'utf-8'));
-
-    // Ersetze Platzhalter in den Embeds. Der Platzhalter {support_type} wird abhängig von der KI-Einstellung angepasst.
     const embeds = embedData.embeds.map(embed => {
       const processedEmbed = {
         ...embed,
@@ -171,8 +183,6 @@ async function createTicket(interaction, categoryObj) {
       return processedEmbed;
     });
 
-    // Erstelle die Buttons. Standardmäßig werden "Schließen" und "Gelöst" erstellt.
-    // Falls die KI aktiviert ist (aiEnabled true), wird zusätzlich der "Menschen Support" Button hinzugefügt.
     const buttons = [
       new ButtonBuilder()
         .setCustomId('close_ticket_button')
@@ -198,14 +208,12 @@ async function createTicket(interaction, categoryObj) {
 
     const actionRow = new ActionRowBuilder().addComponents(...buttons);
 
-    // Sende die Begrüßungsnachricht in den Ticket-Channel
     await createdChannel.send({
       content: embedData.content || '',
       embeds,
       components: [actionRow],
     });
 
-    // Zusätzliche Nachricht im Channel
     await createdChannel.send(
       `Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein ${categoryObj.aiEnabled ? "KI-gestützter" : "menschlicher"} Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit ${categoryObj.aiEnabled ? "einem Menschen" : "mir"} sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
     );
@@ -219,6 +227,13 @@ async function createTicket(interaction, categoryObj) {
   }
 }
 
+/**
+ * Ersetzt Platzhalter im Text anhand des übergebenen Objekts.
+ *
+ * @param {string} text - Der Text mit Platzhaltern.
+ * @param {Object} placeholders - Ein Objekt mit Schlüssel-Wert-Paaren zum Ersetzen.
+ * @returns {string} Der verarbeitete Text.
+ */
 function replacePlaceholders(text, placeholders) {
   if (!text) return '';
   for (const [placeholder, value] of Object.entries(placeholders)) {

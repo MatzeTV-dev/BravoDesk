@@ -1,6 +1,6 @@
+import Logger from '../helper/loggerHelper.js';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-import Logger from '../helper/loggerHelper.js';
 
 dotenv.config();
 
@@ -16,7 +16,7 @@ export async function initializeDatabaseConnection() {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      multipleStatements: true  // Damit Multi-Statement-Queries (z.B. CALL + SELECT) funktionieren
+      multipleStatements: true
     });
 
     pool.on('connection', (connection) => {
@@ -39,7 +39,7 @@ export async function initializeDatabaseConnection() {
   }
 }
 
-async function executeQuery(query, params = []) {
+export async function executeQuery(query, params = []) {
   try {
     const [results] = await pool.query(query, params);
     return results;
@@ -48,8 +48,6 @@ async function executeQuery(query, params = []) {
     throw error;
   }
 }
-
-// Bestehende Funktionen...
 
 export async function saveServerInformation(server_id, ticket_system_channel_id, ticket_category_id, support_role_ID, kiadmin_role_id, ticket_archiv_category_id) {
   const query = `CALL Save_Server_Information(?, ?, ?, ?, ?, ?)`;
@@ -113,14 +111,10 @@ export async function removeUserFromBlacklist(serverId, userId) {
 }
 
 export async function checkUserBlacklisted(serverId, userId) {
-  // Zuerst die Stored Procedure ausführen, die den OUT-Parameter setzt
   await executeQuery(`CALL Check_User_Blacklisted(?, ?, @is_blacklisted)`, [serverId, userId]);
-  // Dann den OUT-Parameter abfragen
   const result = await executeQuery(`SELECT @is_blacklisted AS is_blacklisted`);
   return result[0] && result[0].is_blacklisted === 1;
 }
-
-// Neue Funktionen für Ticket-Categories
 
 /**
  * Ruft über die Stored Procedure GetCategories alle Kategorien für den angegebenen Guild ab.
@@ -129,7 +123,6 @@ export async function checkUserBlacklisted(serverId, userId) {
  */
 export async function dbGetCategories(guildId) {
   const results = await executeQuery('CALL GetCategories(?)', [guildId]);
-  // MySQL gibt hier möglicherweise mehrere Result-Sets zurück – wir nehmen das erste
   return results[0] || [];
 }
 
@@ -139,7 +132,6 @@ export async function dbGetCategories(guildId) {
  * @param {Object} category 
  */
 export async function dbCreateCategory(guildId, category) {
-  // Wenn permission als Array vorliegt, in JSON umwandeln
   const permission = category.permission && Array.isArray(category.permission)
     ? JSON.stringify(category.permission)
     : null;

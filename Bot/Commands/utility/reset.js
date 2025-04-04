@@ -1,46 +1,56 @@
-import { getServerInformation, Delete } from '../../Database/database.js';
 import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { deleteAll } from '../../Database/qdrant.js';
+import { getServerInformation, Delete } from '../../Database/database.js';
 import { error, info } from '../../helper/embedHelper.js';
+import { deleteAll } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
-import fs from 'fs';
-import path from 'path';
+import axios from 'axios';
 
-// Pfad zur JSON-Datei, in der die Ticket-Kategorien gespeichert sind
-const ticketCategoriesPath = path.join(new URL('.', import.meta.url).pathname, '../../data/ticket_categories.json');
 
-/**
- * Entfernt den Eintrag für eine bestimmte Guild (Server) aus der JSON-Datei.
- *
- * @param {string} guildId - Die ID der Guild, die entfernt werden soll.
- */
-function removeGuildFromJSON(guildId) {
-  if (!fs.existsSync(ticketCategoriesPath)) return;
-  const rawData = fs.readFileSync(ticketCategoriesPath, 'utf-8');
-  let data;
-  try {
-    data = JSON.parse(rawData);
-  } catch (e) {
-    Logger.error("Fehler beim Parsen der ticket_categories.json", e);
+const WEBSERVER_NOTIFICATION_URL = process.env.WEBSERVER_URL + '/api/notify/reset';
+const WEBSERVER_API_SECRET = process.env.DASHBOARD_API_TOKEN;
+
+async function notifyWebsiteOfReset(guildId) {
+  if (!WEBSERVER_NOTIFICATION_URL || !WEBSERVER_API_SECRET) {
+    Logger.warn('Webserver Benachrichtigungs-URL oder Secret nicht konfiguriert. Überspringe Benachrichtigung.');
     return;
   }
-  if (data.guilds && data.guilds[guildId]) {
-    delete data.guilds[guildId];
-    fs.writeFileSync(ticketCategoriesPath, JSON.stringify(data, null, 2));
-    Logger.info(`Server ${guildId} aus der ticket_categories.json entfernt.`);
-  }
+
+  try {
+    Logger.info(`Sende Reset-Benachrichtigung für Guild ${guildId} an ${WEBSERVER_NOTIFICATION_URL}`);
+    await axios.post(WEBSERVER_NOTIFICATION_URL,
+    {
+      guildId: guildId
+    },
+    {
+      headers: {
+      'Authorization': `Bearer ${WEBSERVER_API_SECRET}`
+      },
+        timeout: 5000
+      });
+      Logger.success(`Website für Guild ${guildId} erfolgreich benachrichtigt.`);
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`
+        : error.message;
+      Logger.error(`Fehler beim Benachrichtigen der Website für Guild ${guildId}: ${errorMessage}`);
+    }
 }
 
 export default {
   data: new SlashCommandBuilder()
     .setName('reset')
     .setDescription('Löscht alle Wissenseinträge, Rollen und erstellte Channels von BravoDesk.'),
+  /**
+   * Führt den /reset-Command aus, um alle Wissenseinträge, Rollen und Channels von BravoDesk zu löschen.
+   *
+   * @param {CommandInteraction} interaction - Das Interaktionsobjekt von Discord.
+   * @returns {Promise<void>} Ein Promise, das resolved, wenn der Command abgeschlossen ist.
+   */
   async execute(interaction) {
     const guild = interaction.guild;
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Überprüfung: Nur der Serverbesitzer darf den Befehl ausführen
       if (guild.ownerId !== interaction.user.id) {
         await interaction.editReply({
           embeds: [error('Error', 'This action can only be performed by the server owner! An administrator has been informed about your attempt.')]
@@ -57,7 +67,6 @@ export default {
         return;
       }
       
-      // Suchen des Ticket-Channels
       const ticket_channel = guild.channels.cache.find(
         (channel) => channel.name === 'ticket-system'
       );
@@ -68,7 +77,6 @@ export default {
         return;
       }
 
-      // Bestätigungs-Buttons erstellen
       const confirmButton = new ButtonBuilder()
         .setCustomId('confirm_reset')
         .setLabel('Bestätigen')
@@ -79,13 +87,11 @@ export default {
         .setStyle(ButtonStyle.Secondary);
       const row = new ActionRowBuilder().addComponents(cancelButton, confirmButton);
 
-      // Bestätigungsnachricht senden
       const confirmationMessage = await interaction.editReply({
         embeds: [info('Reset Bestätigung', 'Bist du sicher, dass du alle Daten von BravoDesk zurücksetzen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!')],
         components: [row],
       });
 
-      // Collector für Button-Interaktionen
       const filter = (i) => i.user.id === interaction.user.id;
       const collector = confirmationMessage.createMessageComponentCollector({
         filter,
@@ -101,7 +107,6 @@ export default {
               embeds: [info('Reset Process', 'Der Prozess wurde gestartet!')]
             });
 
-            // Reset-Logik
             const rawData = await getServerInformation(guild.id);
             if (!rawData || rawData.length === 0) {
               await i.followUp({
@@ -112,7 +117,6 @@ export default {
             }
             const data = rawData[0][0];
 
-            // Ressourcen löschen
             try {
               const channel = guild.channels.cache.get(data.ticket_system_channel_id);
               if (channel) await channel.delete().catch(Logger.error);
@@ -137,7 +141,6 @@ export default {
               return;
             }
 
-            // Datenbank & KI-Daten löschen
             try {
               await Delete('CALL Delete_Server_Information(?)', guild.id);
               await deleteAll('guild_' + guild.id);
@@ -150,8 +153,7 @@ export default {
               return;
             }
 
-            // Entferne den Server aus der JSON-Datei (Ticket-Kategorien)
-            removeGuildFromJSON(guild.id);
+            await notifyWebsiteOfReset(guild.id);
 
             await i.followUp({
               embeds: [info('Reset Abgeschlossen', 'Alle Daten, Rollen und Channels wurden erfolgreich gelöscht!')],
@@ -194,5 +196,4 @@ export default {
       });
     }
   },
-  removeGuildFromJSON, // Exportiere diese Funktion ebenfalls, falls sie extern benötigt wird
 };
