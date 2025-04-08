@@ -49,7 +49,7 @@ function fillCategoryFields(cat) {
   document.getElementById("kategorieBeschreibung").value = cat.description || "";
   document.getElementById("kategorieAIPrompt").value = cat.ai_prompt || "";
   
-  if (cat.ki_aktiviert && cat.ki_aktiviert == 1) {
+  if (cat.ai_enabled && cat.ai_enabled == 1) {
     document.getElementById("kategorieEnabled").checked = true;
   } else {
     document.getElementById("kategorieEnabled").checked = false;
