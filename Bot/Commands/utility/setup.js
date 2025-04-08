@@ -2,6 +2,7 @@ import { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder
 //import { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } from '../../helper/keyHelper.js';
 import { saveServerInformation, chefIfServerExists } from '../../Database/database.js';
 import { error, success, warning, info } from '../../helper/embedHelper.js';
+import { saveCategoriesToDB } from '../../helper/ticketCategoryHelper.js'
 import { generateCollection } from '../../Database/qdrant.js';
 import Logger from '../../helper/loggerHelper.js';
 import fs from 'fs';
@@ -133,7 +134,8 @@ export default {
         await createChannel(interaction);
         await createCategories(interaction);
         await generateCollection("guild_" + guildID);
-  
+        
+        await saveCategoriesToDB(interaction.guildID);
         await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID, ticketArchivCategoryID);
   
         await interaction.editReply({
