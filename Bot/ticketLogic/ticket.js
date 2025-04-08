@@ -215,7 +215,7 @@ async function createTicket(interaction, categoryObj) {
     });
 
     await createdChannel.send(
-      `Hallo ${interaction.user.username}! Mein Name ist Bern, ich bin ein ${categoryObj.aiEnabled ? "KI-gestützter" : "menschlicher"} Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit ${categoryObj.aiEnabled ? "einem Menschen" : "mir"} sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
+      `Hallo ${interaction.user.username}! Mein Name ist BravoDesk, ich bin ein ${categoryObj.aiEnabled ? "KI-gestützter" : "menschlicher"} Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit ${categoryObj.aiEnabled ? "einem Menschen" : "mir"} sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
     );
 
     Logger.info(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);

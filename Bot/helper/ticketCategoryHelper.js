@@ -1,7 +1,8 @@
 import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
 import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
 import { updateTicketSystemChannelID } from './verification.js';
-import { getServerInformation } from '../Database/database.js';
+import { getServerInformation, Insert } from '../Database/database.js';
+import Logger from './loggerHelper.js';
 
 /**
  * Liefert die Standard-Kategorien mit vollständigen AI‑Prompts.
@@ -15,7 +16,7 @@ function getDefaultCategories() {
       description: "Fragen zu technischen Problemen",
       value: "technical_support",
       emoji: "📺",
-      aiPrompt: "Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf technischen Support für FiveM-Server.\n\nRegeln:\n- Beantworte ausschließlich Fragen zu FiveM, z. B. Installation, Connection Probleme, Saltychat.\n- Für Fragen, die nichts mit FiveM zu tun haben, antworte höflich und erkläre, dass du nicht helfen kannst. Beispiel: \"Es tut mir leid, ich bin spezialisiert auf FiveM-Themen und kann dir bei dieser Frage leider nicht weiterhelfen.\"\n\nWenn du nicht weiter weißt:\n- Antworte mit \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"\n\nKontext:\n- Letzte Nachrichten im Ticket: {messages}\n- Zusätzliches Wissen:\n  {knowledgeBaseText}\n  {knowledgebasetextTwo}\n\nZiel:\n- Biete technische Unterstützung für FiveM-bezogene Themen an und leite Nutzer präzise an.",
+      aiPrompt: "Biete technische Unterstützung für FiveM-bezogene Themen an und leite Nutzer präzise an.",
       aiEnabled: true
     },
     {
@@ -23,7 +24,7 @@ function getDefaultCategories() {
       description: "Haben Sie allgemeine Fragen?",
       value: "general_questions",
       emoji: "❓",
-      aiPrompt: "Du bist BravoDesk, ein spezialisierter KI-Supporter. Deine Aufgabe ist es, ausschließlich Nutzerfragen zu FiveM zu beantworten.\n\nRegeln:\n1. **Nur FiveM-bezogene Themen beantworten:** Reagiere nur auf Fragen zu Regeln, Connection Probleme oder Modding in Bezug auf FiveM.\n2. **Keine Antworten zu allgemeinen Themen:** Falls die Frage nicht mit FiveM zu tun hat, antworte höflich, aber klar: \"Es tut mir leid, ich bin spezialisiert auf FiveM-Themen und kann dir bei dieser Frage leider nicht weiterhelfen.\"\n3. **Ignoriere allgemeines Wissen:** Beantworte niemals Fragen zu allgemeinen Themen, selbst wenn die Antwort offensichtlich ist.\n\nWenn du nicht weiter weißt:\n- Antworte mit \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"\n\nKontext:\n- Letzte Nachrichten im Ticket: {messages}\n- Zusätzliches Wissen:\n  {knowledgeBaseText}\n  {knowledgebasetextTwo}\n\nZiel:\n- Antworte höflich und unterstützend, sofern es sich um FiveM-Themen handelt.",
+      aiPrompt: "Deine Aufgabe ist es, ausschließlich Nutzerfragen zu FiveM zu beantworten.",
       aiEnabled: true
     },
     {
@@ -31,7 +32,7 @@ function getDefaultCategories() {
       description: "Teilen Sie uns Ihre Vorschläge mit",
       value: "suggestions",
       emoji: "⭐",
-      aiPrompt: "Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf das Sammeln und Verwalten von Verbesserungsvorschlägen für FiveM-Server.\n\nRegeln:\n- Beantworte nur Vorschläge, die sich auf FiveM und den Discord-Server beziehen.\n- Für Themen, die nichts mit FiveM oder Discord zu tun haben, antworte höflich und erkläre, dass du nicht helfen kannst. Beispiel: \"Es tut mir leid, ich bin spezialisiert auf FiveM-Themen und kann dir bei dieser Frage leider nicht weiterhelfen.\"\n\nWenn du nicht weiter weißt:\n- Antworte mit \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"\n\nKontext:\n- Letzte Nachrichten im Ticket: {messages}\n- Zusätzliches Wissen:\n  {knowledgeBaseText}\n  {knowledgebasetextTwo}\n\nZiel:\n- Reagiere positiv auf Vorschläge und ermutige den Benutzer, weitere Ideen einzubringen.",
+      aiPrompt: "Reagiere positiv auf Vorschläge und ermutige den Benutzer, weitere Ideen einzubringen.",
       aiEnabled: true
     },
     {
@@ -39,10 +40,30 @@ function getDefaultCategories() {
       description: "Haben Sie einen Fehler gefunden?",
       value: "bug_report",
       emoji: "👾",
-      aiPrompt: "Du bist ein AI-Supporter namens BravoDesk, spezialisiert auf die Bearbeitung von Bug Reports für FiveM.\n\nRegeln:\n- Unterstütze nur bei der Meldung und Analyse von Fehlern, die mit FiveM zu tun haben.\n- Bei anderen Themen antworte höflich und erkläre, dass du nicht helfen kannst. Beispiel: \"Es tut mir leid, ich bin spezialisiert auf FiveM-Themen und kann dir bei dieser Frage leider nicht weiterhelfen.\"\n\nWenn du nicht weiter weißt:\n- Antworte mit \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"\n\nKontext:\n- Letzte Nachrichten im Ticket: {messages}\n- Zusätzliches Wissen:\n  {knowledgeBaseText}\n  {knowledgebasetextTwo}\n\nZiel:\n- Hilf dem Benutzer, Bugs zu identifizieren, und fordere weitere Details an, wenn nötig.",
+      aiPrompt: "Hilf dem Benutzer, Bugs zu identifizieren, und fordere weitere Details an, wenn nötig.",
       aiEnabled: true
     }
   ];
+}
+
+/**
+ * Speichert die Standard-Kategorien in die Datenbank für den angegebenen Server.
+ *
+ * @param {string} guildID - Die ID des Discord-Servers.
+ * @returns {Promise<void>} - Signalisiert den Abschluss der Speicherung.
+ */
+export async function saveCategoriesToDB(guildID) {
+  const categories = getDefaultCategories();
+  try {
+    for (const category of categories) {
+      const statement = "INSERT INTO ticket_categories (guild_id, label, description, value, emoji, ai_prompt, ai_enabled) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      const aiEnabled = category.aiEnabled !== undefined ? category.aiEnabled : true;
+      const dataInput = [guildID, category.label, category.description, category.value, category.emoji, category.aiPrompt, aiEnabled];
+      await Insert(statement, dataInput);
+    }
+  } catch (error) {
+    Logger.error(`Fehler beim speichern von den default Categories ${error.message, error.stack}`);
+  }
 }
 
 /**
