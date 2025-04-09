@@ -6,17 +6,19 @@ function loadUserInfo() {
 
       const userNameSpan = document.querySelector('.user-name');
       if (userNameSpan && user.global_name) {
+        // Nutzung von textContent statt innerText, um sicherzustellen, dass keine HTML-Injektionen möglich sind
         if (user.discriminator && user.discriminator !== "0") {
-          userNameSpan.innerText = `${user.global_name}#${user.discriminator}`;
+          userNameSpan.textContent = `${user.global_name}#${user.discriminator}`;
         } else {
-          userNameSpan.innerText = user.global_name;
+          userNameSpan.textContent = user.global_name;
         }
       }
 
       const userAvatar = document.querySelector('.user-avatar');
       if (userAvatar) {
+        // URL-Komponenten werden mittels encodeURIComponent sicher eingebettet
         const avatarUrl = user.avatar 
-          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+          ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.png`
           : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
         userAvatar.style.backgroundImage = `url(${avatarUrl})`;
       }
@@ -24,7 +26,7 @@ function loadUserInfo() {
       // Status setzen (statisch, da /users/@me keine Presence liefert)
       /*const statusSpan = document.querySelector('.user-status');
       if (statusSpan) {
-        statusSpan.innerText = "Online";
+        statusSpan.textContent = "Online";
         statusSpan.style.color = "limegreen";
       }*/
     })

@@ -1,105 +1,14 @@
+// Öffnet das Popup zum Erstellen eines Wissenseintrags.
 function openPopup() {
   document.getElementById("popupModal").classList.add("show");
 }
 
+// Schließt das Popup zum Erstellen eines Wissenseintrags.
 function closePopup() {
   document.getElementById("popupModal").classList.remove("show");
 }
 
-function saveEntry() {
-  var newEntry = document.getElementById("newEntryText").value.trim();
-  if (newEntry !== "") {
-    var tbody = document.querySelector("table tbody");
-    var newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td class="wissen-cell" data-fulltext="${newEntry.replace(/"/g, '&quot;')}">
-        ${newEntry}
-      </td>
-      <td style="vertical-align: middle;">
-        <span style="cursor: pointer;" onclick="openEditPopup(this)">✏️</span>
-        <span style="cursor: pointer; margin-left: 10px;" onclick="deleteEntry(this)">❌</span>
-      </td>
-    `;
-    tbody.appendChild(newRow);
-    document.getElementById("newEntryText").value = "";
-    closePopup();
-    notify("Wissenseintrag wurde hinzugefügt!", 3000, "success")
-  }
-}
-
-function openEditPopup(el) {
-  var row = el.parentElement.parentElement;
-  currentEditRow = row;
-  var currentText = row.cells[0].innerText;
-  document.getElementById("editEntryText").value = currentText;
-  document.getElementById("editPopupModal").classList.add("show");
-}
-
-function closeEditPopup() {
-  document.getElementById("editPopupModal").classList.remove("show");
-}
-
-function saveEditEntry() {
-  var newText = document.getElementById("editEntryText").value.trim();
-  if (currentEditRow && newText !== "") {
-    currentEditRow.cells[0].innerText = newText;
-    currentEditRow.cells[0].setAttribute("data-fulltext", newText);
-    closeEditPopup();
-    currentEditRow = null;
-    notify("Wissenseintrage wrude erfolgreich gespeichert!", 3000, "success")
-  }
-}
-
-function deleteEntry(el) {
-  if (confirm("Eintrag wirklich löschen?")) {
-    var row = el.parentElement.parentElement;
-    row.remove();
-  }
-}
-
-function loadKnowledgeEntries(guildId) {
-  fetch(`/api/wissenseintraege/${guildId}`)
-    .then(response => response.json())
-    .then(data => {
-      console.log("Wissenseinträge erhalten:", data);
-      const tbody = document.querySelector('#wissenseintraege tbody');
-      tbody.innerHTML = '';
-
-      if (data && data.length) {
-        data.forEach(point => {
-          const tr = document.createElement('tr');
-
-          const tdContent = document.createElement('td');
-          tdContent.classList.add('wissen-cell');
-          tdContent.setAttribute('data-fulltext', point.payload.text || '');
-          tdContent.innerText = point.payload.text || 'Kein Inhalt';
-
-          const tdActions = document.createElement('td');
-          tdActions.style.verticalAlign = 'middle';
-          tdActions.innerHTML = `<span style="cursor:pointer;" onclick="openEditPopup(this)">✏️</span>
-                                 <span style="cursor:pointer; margin-left:10px;" onclick="deleteEntry(this)">❌</span>`;
-
-          tr.appendChild(tdContent);
-          tr.appendChild(tdActions);
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = `<tr><td colspan="2">Keine Einträge gefunden.</td></tr>`;
-      }
-    })
-    .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
-}
-
-let currentGuildId = null;
-
-function openPopup() {
-  document.getElementById("popupModal").classList.add("show");
-}
-
-function closePopup() {
-  document.getElementById("popupModal").classList.remove("show");
-}
-
+// Speichert einen neuen Wissenseintrag über den API-Endpunkt.
 function saveEntry() {
   const newEntryText = document.getElementById("newEntryText").value.trim();
   if (newEntryText !== "" && currentGuildId) {
@@ -119,9 +28,7 @@ function saveEntry() {
   }
 }
 
-let currentEditRow = null;
-let currentEditEntryId = null;
-
+// Öffnet das Popup zur Bearbeitung eines bestehenden Wissenseintrags.
 function openEditPopup(el) {
   const row = el.parentElement.parentElement;
   currentEditRow = row;
@@ -131,10 +38,12 @@ function openEditPopup(el) {
   document.getElementById("editPopupModal").classList.add("show");
 }
 
+// Schließt das Bearbeitungs-Popup.
 function closeEditPopup() {
   document.getElementById("editPopupModal").classList.remove("show");
 }
 
+// Speichert die Änderungen eines bearbeiteten Wissenseintrags über den API-Endpunkt.
 function saveEditEntry() {
   const newText = document.getElementById("editEntryText").value.trim();
   if (currentEditRow && currentEditEntryId && newText !== "" && currentGuildId) {
@@ -155,6 +64,7 @@ function saveEditEntry() {
   }
 }
 
+// Löscht einen Wissenseintrag über den API-Endpunkt.
 function deleteEntry(el) {
   if (confirm("Eintrag wirklich löschen?") && currentGuildId) {
     const row = el.parentElement.parentElement;
@@ -166,12 +76,13 @@ function deleteEntry(el) {
       .then(data => {
         console.log("Eintrag gelöscht:", data);
         loadKnowledgeEntries(currentGuildId);
-        notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success")
+        notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success");
       })
       .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));
   }
 }
 
+// Lädt alle Wissenseinträge für die angegebene Guild von der API.
 function loadKnowledgeEntries(guildId) {
   currentGuildId = guildId;
   fetch(`/api/wissenseintraege/${guildId}`)
@@ -193,6 +104,7 @@ function loadKnowledgeEntries(guildId) {
           
           const tdActions = document.createElement("td");
           tdActions.style.verticalAlign = "middle";
+          // Da dies statischer HTML-Code mit fixen Inhalten ist (keine Nutzereingaben), ist die Verwendung von innerHTML hier vertretbar.
           tdActions.innerHTML = `<span style="cursor:pointer;" onclick="openEditPopup(this)">✏️</span>
                                   <span style="cursor:pointer; margin-left:10px;" onclick="deleteEntry(this)">❌</span>`;
           
@@ -206,3 +118,15 @@ function loadKnowledgeEntries(guildId) {
     })
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
+
+// Globale Variablen für den aktuellen Guild-Kontext und Editierstatus.
+let currentGuildId = null;
+let currentEditRow = null;
+let currentEditEntryId = null;
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Bindet den Änderungs-Event für das Dropdown zur Kategorieauswahl.
+  document.getElementById("wissenseintraege").addEventListener("change", function() {
+    loadKnowledgeEntries(this.value);
+  });
+});

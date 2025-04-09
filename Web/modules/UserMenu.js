@@ -1,4 +1,5 @@
 import express from 'express';
+import fetch from 'node-fetch';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
  * @returns {Promise<void>}
  */
 router.get('/user', async (req, res) => {
-  if (!req.session.access_token) {
+  if (!req.session || !req.session.access_token) {
     return res.status(401).json({ error: "Nicht eingeloggt" });
   }
   try {
@@ -20,6 +21,13 @@ router.get('/user', async (req, res) => {
         "Authorization": `Bearer ${req.session.access_token}`
       }
     });
+    
+    // Überprüft, ob die Antwort der Discord-API erfolgreich war.
+    if (!userRes.ok) {
+      console.error("Discord API Fehler:", userRes.statusText);
+      return res.status(500).json({ error: "Fehler beim Abrufen der User-Daten" });
+    }
+    
     const userJson = await userRes.json();
     return res.json(userJson);
   } catch (err) {

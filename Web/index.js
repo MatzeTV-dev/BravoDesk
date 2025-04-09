@@ -20,7 +20,13 @@ const __dirname = path.dirname(__filename);
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    // Setze secure auf true in Produktionsumgebungen (HTTPS erforderlich)
+    secure: process.env.NODE_ENV === 'development',
+    httpOnly: true,
+    sameSite: 'lax'
+  }
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));

@@ -1,6 +1,13 @@
 let currentCategoryId = null;
 let guildID = null;
 
+// Hilfsfunktion zur HTML-Escape, falls dynamische Inhalte per innerHTML eingefügt werden müssen
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.innerText = str;
+  return div.innerHTML;
+}
+
 function loadTicketCategories(guildId) {
   guildID = guildId;
   fetch(`/api/ticket_categories/${guildId}`)
@@ -13,7 +20,7 @@ function loadTicketCategories(guildId) {
         data.forEach(cat => {
           const opt = document.createElement("option");
           opt.value = cat.id;
-          opt.textContent = cat.label;
+          opt.textContent = cat.label; // Nutzung von textContent verhindert XSS
           select.appendChild(opt);
         });
         currentCategoryId = data[0].id;
@@ -21,6 +28,7 @@ function loadTicketCategories(guildId) {
         fillCategoryFields(data[0]);
       } else {
         currentCategoryId = null;
+        // Statischer Text ist sicher
         select.innerHTML = `<option value="">Keine Kategorien vorhanden</option>`;
         document.getElementById("kategorieEmoji").value = "";
         document.getElementById("kategorieBeschreibung").value = "";
@@ -75,16 +83,22 @@ function saveCategoryChanges() {
   const ai_enabled = document.getElementById("kategorieEnabled").checked ? 1 : 0;
   const permission = document.getElementById("kategoriePermission").value;
   
+  // Zusätzliche Validierung: Beispielsweise maximale Länge des Kategorienamens
+  if (label.length > 100) {
+    notify("Kategoriename ist zu lang.", 3000, "error");
+    return;
+  }
+  
   fetch(`/api/ticket_categories/${guildID}/${currentCategoryId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      label,
-      description,
-      emoji,
-      ai_prompt,
-      ai_enabled,
-      permission
+      label: label,
+      description: description,
+      emoji: emoji,
+      ai_prompt: ai_prompt,
+      ai_enabled: ai_enabled,
+      permission: permission
     })
   })
     .then(response => response.json())
@@ -107,6 +121,7 @@ function deleteCategory() {
     return;
   }
   const label = document.getElementById("kategorieSelect").selectedOptions[0].textContent;
+  // textContent liefert sicheren Text; daher ist der Einsatz in confirm unbedenklich.
   if (!confirm(`Kategorie "${label}" wirklich löschen?`)) return;
   fetch(`/api/ticket_categories/${guildID}/${currentCategoryId}`, {
     method: "DELETE"
@@ -151,16 +166,22 @@ function createCategory() {
     return;
   }
   
+  // Zusätzliche Validierung: Beispielsweise maximale Länge des Kategorienamens
+  if (label.length > 100) {
+    notify("Kategoriename ist zu lang.", 3000, "error");
+    return;
+  }
+  
   fetch(`/api/ticket_categories/${guildID}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      label,
-      description,
-      emoji,
-      ai_prompt,
-      ai_enabled,
-      permission
+      label: label,
+      description: description,
+      emoji: emoji,
+      ai_prompt: ai_prompt,
+      ai_enabled: ai_enabled,
+      permission: permission
     })
   })
     .then(response => response.json())
@@ -194,16 +215,16 @@ function loadGuildRoles() {
         data.forEach(role => {
           const opt = document.createElement("option");
           opt.value = role.id;
-          opt.textContent = role.name;
+          opt.textContent = role.name;  // textContent verhindert XSS
           permissionSelect.appendChild(opt);
         });
       } else {
+        // Statischer Text
         permissionSelect.innerHTML = `<option value="">Keine Rollen gefunden</option>`;
       }
 
       const permissionSelect2 = document.getElementById("newCategoryPermission");
       permissionSelect2.innerHTML = "";
-
       const defaultOption2 = document.createElement("option");
       defaultOption2.value = "";
       defaultOption2.textContent = "Keine";
