@@ -16,7 +16,8 @@ function loadServers() {
 
         const img = document.createElement('img');
         if (guild.icon) {
-          img.src = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`;
+          // URL-Komponenten werden sicher encodiert
+          img.src = `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${encodeURIComponent(guild.icon)}.png`;
         } else {
           img.src = '/assets/img/avatar.jpg';
         }
@@ -28,7 +29,8 @@ function loadServers() {
         div.appendChild(img);
 
         const span = document.createElement('span');
-        span.innerText = guild.name;
+        // Nutzung von textContent, um sicherzustellen, dass keine HTML-Injektionen erfolgen
+        span.textContent = guild.name;
         div.appendChild(span);
 
         div.onclick = () => {
@@ -43,7 +45,7 @@ function loadServers() {
       }
       
       const inviteButton = document.createElement('button');
-      inviteButton.innerText = '+ Server Hinzufügen';
+      inviteButton.textContent = '+ Server Hinzufügen';
       inviteButton.style.display = 'block';
       inviteButton.style.width = '100%';
       inviteButton.style.padding = '10px';
@@ -67,7 +69,8 @@ function loadServers() {
 }
 
 function selectServer(guild, automatic_open) {
-  document.getElementById("selectedServer").innerText = guild.name;
+  // textContent statt innerText verwenden, um sicherzustellen, dass unerwünschte HTML-Interpretation unterbunden wird
+  document.getElementById("selectedServer").textContent = guild.name;
 
   if (automatic_open) {
     toggleMenu("serverDropdown");

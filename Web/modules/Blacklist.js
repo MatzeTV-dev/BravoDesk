@@ -4,6 +4,26 @@ import express from 'express';
 const router = express.Router();
 
 /**
+ * Middleware, die sicherstellt, dass der Benutzer authentifiziert ist.
+ */
+function ensureAuthenticated(req, res, next) {
+  if (!req.session || !req.session.access_token) {
+    return res.status(401).json({ error: "Nicht authentifiziert." });
+  }
+  next();
+}
+
+/**
+ * Helper-Funktion zur Validierung von serverId (Discord Snowflake: 17 bis 19 Ziffern).
+ */
+function validateServerId(serverId) {
+  return /^\d{17,19}$/.test(serverId);
+}
+
+// Alle nachfolgenden Routen erfordern Authentifizierung.
+router.use(ensureAuthenticated);
+
+/**
  * Ruft Blacklist-Einträge für einen bestimmten Server ab.
  *
  * @route GET /blacklist/:serverId
@@ -12,6 +32,9 @@ const router = express.Router();
  */
 router.get('/blacklist/:serverId', (req, res) => {
   const serverId = req.params.serverId;
+  if (!validateServerId(serverId)) {
+    return res.status(400).json({ error: "Ungültige Server ID." });
+  }
   db.query("CALL sp_GetBlacklist(?)", [serverId], (err, results) => {
     if (err) {
       console.error("Fehler beim Abrufen der Blacklist:", err);
@@ -30,6 +53,9 @@ router.get('/blacklist/:serverId', (req, res) => {
  */
 router.post('/blacklist/:serverId', express.json(), (req, res) => {
   const serverId = req.params.serverId;
+  if (!validateServerId(serverId)) {
+    return res.status(400).json({ error: "Ungültige Server ID." });
+  }
   const { user_id, reason } = req.body;
   
   if (!user_id || !reason) {
@@ -62,6 +88,9 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
  */
 router.delete('/blacklist/:serverId/:userId', (req, res) => {
   const serverId = req.params.serverId;
+  if (!validateServerId(serverId)) {
+    return res.status(400).json({ error: "Ungültige Server ID." });
+  }
   const userId = req.params.userId;
   
   if (!/^\d{18}$/.test(userId)) {
@@ -86,10 +115,17 @@ router.delete('/blacklist/:serverId/:userId', (req, res) => {
  */
 router.get('/blacklist/:serverId/search', (req, res) => {
   const serverId = req.params.serverId;
+  if (!validateServerId(serverId)) {
+    return res.status(400).json({ error: "Ungültige Server ID." });
+  }
   const userId = req.query.user_id;
   
   if (!userId) {
     return res.status(400).json({ error: "user_id Query-Parameter ist erforderlich." });
+  }
+  
+  if (!/^\d{18}$/.test(userId)) {
+    return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
   }
   
   db.query("CALL sp_SearchBlacklist(?, ?)", [serverId, userId], (err, results) => {
