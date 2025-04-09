@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body style="background: #1a1e1b;">
+
+  <div id="preloader">
+    <div class="spinner"></div>
+  </div>
+
   <div class="layout">
     <!-- SIDEBAR -->
     <div class="sidebar">
@@ -368,8 +373,17 @@
       loadBlacklistEntries(guild.id);
       loadTicketCategories(guild.id);
       loadGuildRoles();
+
+      var preloader = document.getElementById('preloader');
+      preloader.style.transition = 'opacity 0.3s ease';
+      preloader.style.opacity = '0';
+      preloader.style.pointerEvents = 'none';
+      setTimeout(function() {
+        preloader.style.display = 'none';
+      }, 300);
     }
-    window.addEventListener("load", loadAll);
-  </script>
+
+  window.addEventListener("load", loadAll);
+</script>
 </body>
 </html>
