@@ -135,7 +135,7 @@ export default {
         await createCategories(interaction);
         await generateCollection("guild_" + guildID);
         
-        await saveCategoriesToDB(interaction.guildID);
+        await saveCategoriesToDB(guildID);
         await saveDatabase(guildID, ticketChannelID, ticketCategoryID, supportRoleID, kiadminRoleID, ticketArchivCategoryID);
   
         await interaction.editReply({
