@@ -31,6 +31,7 @@ app.use(session({
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+app.set('trust proxy', 1)
 
 /**
  * GET /
