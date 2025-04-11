@@ -24,12 +24,11 @@ function getCategoryFromChannelTopic(channel) {
 }
 
 /**
- * Sendet die gesammelten Nachrichten und den aktuellen Input an die OpenAI-API.
- * Dabei wird der in der Kategorie hinterlegte AI-Prompt verwendet, in dem Platzhalter
- * wie {messages}, {knowledgeBaseText} und {knowledgebasetextTwo} automatisch ersetzt werden.
+ * Sendet die gesammelten Nachrichten sowie Wissenskontexte und den aktuellen User-Input an die OpenAI-API.
+ * Der zusammengefasste Kontext wird als zusätzlicher User-Input an ChatGPT übermittelt, ohne dass der Endnutzer diesen sieht.
  *
- * @param {string} messages - Die gesammelten Nachrichten des Tickets.
- * @param {Message} lastMessage - Die zuletzt eingegangene Nachricht (als Trigger).
+ * @param {string} messages - Der Ticket-Verlauf (gesammelte Nachrichten).
+ * @param {Message} lastMessage - Die zuletzt eingegangene Nachricht.
  * @returns {Promise<string>} - Die Antwort der KI oder eine Fehlermeldung.
  */
 async function sendMessagesToAI(messages, lastMessage) {
@@ -56,21 +55,32 @@ async function sendMessagesToAI(messages, lastMessage) {
   let categoryObj = categories.find(cat => cat.value === categoryValue);
   if (!categoryObj) {
     categoryObj = {
-      aiPrompt: "Du bist ein AI-Supporter. Letzte Nachrichten: {messages}\nZusätzliches Wissen:\n{knowledgeBaseText}\n{knowledgebasetextTwo}\nAntworte: \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"",
+      aiPrompt: "Du bist ein AI-Supporter namens BravoDesk. Antworte: \"ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!\"",
       aiEnabled: true
     };
   }
-  let systemPrompt = categoryObj.aiPrompt;
-  systemPrompt = systemPrompt.replace(/{messages}/g, messages);
-  systemPrompt = systemPrompt.replace(/{knowledgeBaseText}/g, knowledgeBaseText);
-  systemPrompt = systemPrompt.replace(/{knowledgebasetextTwo}/g, knowledgebasetextTwo);
+
+  const behaviourPrompt = `Du bist ein AI-Support namens Bravodesk
+  Regeln:
+  - Sei immer höfflich
+  - Beantworte ausschließlich Fragen zu FiveM eine ausnahme sind Fragen über BravoDesk.
+  - Für Fragen, die nichts mit FiveM zu tun haben, antworte höflich und erkläre, dass du nicht helfen kannst. Beispiel: "Es tut mir leid, ich bin spezialisiert auf FiveM-Themen und kann dir bei dieser Frage leider nicht weiterhelfen. eine ausnahme sind Fragen über BravoDesk"
+  - Antworte auf allgemeine Fragen die nichts mit FiveM zu tun haben mit "Dabei kann ich dir leider nicht weiterhelfen eine ausnahme sind Fragen über BravoDesk"
+
+  Wenn du nicht weiter weißt:
+  - Antworte mit "ich weiß leider nicht weiter, ein menschlicher Supporter wird das Ticket übernehmen!"`;
+  
+  const baseSystemPrompt = categoryObj.aiPrompt;
+  const hiddenContext = `Ticket Verlauf:\n${messages}\n\nWissensauszug:\n${knowledgeBaseText}\n\nAllgemeinwissen:\n${knowledgebasetextTwo}`;
   try {
     const response = await axios.post(
       process.env.OPENAI_URL,
       {
         model: process.env.MODELL,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: behaviourPrompt },
+          { role: 'system', content: baseSystemPrompt },
+          { role: 'system', content: hiddenContext },
           { role: 'user', content: lastMessage.content }
         ]
       },
@@ -220,7 +230,7 @@ export default async (client, message) => {
     } finally {
       try {
         await message.channel.permissionOverwrites.edit(message.author.id, { SendMessages: true });
-        Logger.success(`Wiederherstellen des Senderrechts für ${message.author.id} erfolgreich`)
+        Logger.success(`Wiederherstellen des Senderrechts für ${message.author.id} erfolgreich`);
       } catch (err) {
         Logger.error(`Fehler beim Wiederherstellen der Senderechte für ${message.author.id}: ${err.message}`);
       }

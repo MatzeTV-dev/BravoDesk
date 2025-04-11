@@ -1,3 +1,10 @@
+// Hilfsfunktion zur HTML-Escape, um potenzielle XSS-Angriffe zu verhindern
+function escapeHTML(str) {
+  var div = document.createElement('div');
+  div.innerText = str;
+  return div.innerHTML;
+}
+
 function loadBlacklistEntries(guildId) {
   currentGuildId = guildId;
   fetch(`/api/blacklist/${guildId}`)
@@ -110,9 +117,9 @@ function performBlacklistSearch() {
           data.forEach(entry => {
             resultsHtml += `
               <p>
-                <strong>User ID:</strong> ${entry.user_id}<br>
-                <strong>Grund:</strong> ${entry.reason}<br>
-                <strong>Datum:</strong> ${new Date(entry.created_at).toLocaleString()}
+                <strong>User ID:</strong> ${escapeHTML(entry.user_id)}<br>
+                <strong>Grund:</strong> ${escapeHTML(entry.reason)}<br>
+                <strong>Datum:</strong> ${escapeHTML(new Date(entry.created_at).toLocaleString())}
               </p>`;
           });
         } else {

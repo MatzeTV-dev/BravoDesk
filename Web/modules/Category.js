@@ -8,14 +8,34 @@ dotenv.config({ path: '../.env' });
 const router = express.Router();
 
 /**
+ * Middleware, die sicherstellt, dass der Benutzer authentifiziert ist.
+ */
+function ensureAuthenticated(req, res, next) {
+  if (!req.session || !req.session.access_token) {
+    return res.status(401).json({ error: "Nicht authentifiziert." });
+  }
+  next();
+}
+
+/**
+ * Helper-Funktion zur Validierung von guildId (Discord Snowflake: 17 bis 19 Ziffern).
+ */
+function validateGuildId(guildId) {
+  return /^\d{17,19}$/.test(guildId);
+}
+
+/**
  * Ruft alle Ticket-Kategorien für einen bestimmten Server ab.
  *
  * @route GET /ticket_categories/:guildId
  * @param {Request} req - Der Request, der die Server-ID als Parameter enthält.
  * @param {Response} res - Die Response, die das Ergebnis als JSON zurückgibt.
  */
-router.get('/ticket_categories/:guildId', (req, res) => {
+router.get('/ticket_categories/:guildId', ensureAuthenticated, (req, res) => {
   const guildId = req.params.guildId;
+  if (!validateGuildId(guildId)) {
+    return res.status(400).json({ error: "Ungültige guildId." });
+  }
   
   db.query("CALL sp_GetTicketCategories(?)", [guildId], (err, results) => {
     if (err) {
@@ -33,8 +53,11 @@ router.get('/ticket_categories/:guildId', (req, res) => {
  * @param {Request} req - Der Request mit JSON-Body { label, description, emoji, ai_prompt, ai_enabled, permission }.
  * @param {Response} res - Die Response, die das Ergebnis als JSON zurückgibt.
  */
-router.post('/ticket_categories/:guildId', express.json(), async (req, res) => {
+router.post('/ticket_categories/:guildId', ensureAuthenticated, express.json(), async (req, res) => {
   const guildId = req.params.guildId;
+  if (!validateGuildId(guildId)) {
+    return res.status(400).json({ error: "Ungültige guildId." });
+  }
   const { label, description, emoji, ai_prompt, ai_enabled, permission } = req.body;
   
   const sanitizedText = label.replace(/\s+/g, '_');
@@ -84,8 +107,11 @@ router.post('/ticket_categories/:guildId', express.json(), async (req, res) => {
  * @param {Request} req - Der Request mit JSON-Body { label, description, emoji, ai_prompt, ai_enabled, permission }.
  * @param {Response} res - Die Response, die das Ergebnis als JSON zurückgibt.
  */
-router.patch('/ticket_categories/:guildId/:categoryId', express.json(), async (req, res) => {
+router.patch('/ticket_categories/:guildId/:categoryId', ensureAuthenticated, express.json(), async (req, res) => {
   const guildId = req.params.guildId;
+  if (!validateGuildId(guildId)) {
+    return res.status(400).json({ error: "Ungültige guildId." });
+  }
   const categoryId = parseInt(req.params.categoryId, 10);
   let { label, description, emoji, ai_prompt, ai_enabled, permission } = req.body;
   
@@ -133,8 +159,11 @@ router.patch('/ticket_categories/:guildId/:categoryId', express.json(), async (r
  * @param {Request} req - Der Request, der Parameter guildId und categoryId enthält.
  * @param {Response} res - Die Response, die das Ergebnis als JSON zurückgibt.
  */
-router.delete('/ticket_categories/:guildId/:categoryId', async (req, res) => {
+router.delete('/ticket_categories/:guildId/:categoryId', ensureAuthenticated, async (req, res) => {
   const guildId = req.params.guildId;
+  if (!validateGuildId(guildId)) {
+    return res.status(400).json({ error: "Ungültige guildId." });
+  }
   const categoryId = parseInt(req.params.categoryId, 10);
   
   db.query("CALL sp_DeleteTicketCategory(?, ?)", [categoryId, guildId], (err) => {
@@ -170,12 +199,16 @@ router.delete('/ticket_categories/:guildId/:categoryId', async (req, res) => {
  * @param {Request} req - Der Request, der die Server-ID als Parameter enthält.
  * @param {Response} res - Die Response, die die Rollen als JSON zurückgibt.
  */
-router.get('/roles/:guildId', async (req, res) => {
+router.get('/roles/:guildId', ensureAuthenticated, async (req, res) => {
   const guildId = req.params.guildId;
+  if (!validateGuildId(guildId)) {
+    return res.status(400).json({ error: "Ungültige guildId." });
+  }
   try {
     const rolesRes = await fetch(`https://discord.com/api/guilds/${guildId}/roles`, {
       headers: {
-        "Authorization": `Bot MTMxNDIyNzQ0ODMyOTY2NjU5MQ.GMTqCE.4g-zsjR-vo94dpInBaZYU5PfTcQN4EvD6sUlYA`
+        // Nutzung des Bot-Tokens aus den Umgebungsvariablen statt eines hardcodierten Tokens
+        "Authorization": `Bot ${process.env.DISCORD_BOT_TOKEN}`
       }
     });
     if (!rolesRes.ok) {

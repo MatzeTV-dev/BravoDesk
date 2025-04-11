@@ -143,9 +143,10 @@ export default {
 
             try {
               await Delete('CALL Delete_Server_Information(?)', guild.id);
+              await Delete('CALL Delete_categories(?)', guild.id);
               await deleteAll('guild_' + guild.id);
             } catch (dbError) {
-              Logger.error(`Fehler beim Löschen der Daten: ${dbError}`);
+              Logger.error(`Fehler beim Löschen der ServerInformationen: ${dbError}`);
               await i.followUp({ 
                 embeds: [error('Reset Process', 'Fehler beim Löschen der Daten')],
                 ephemeral: true

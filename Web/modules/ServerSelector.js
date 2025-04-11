@@ -20,10 +20,11 @@ const router = express.Router();
  * @returns {Promise<void>}
  */
 router.get('/guilds', async (req, res) => {
-  const accessToken = req.session.access_token;
+  const accessToken = req.session && req.session.access_token;
   if (!accessToken) {
     return res.status(401).json({ error: "Nicht eingeloggt" });
   }
+  
   try {
     const response = await fetch("https://discord.com/api/users/@me/guilds", {
       headers: {
@@ -32,16 +33,19 @@ router.get('/guilds', async (req, res) => {
     });
     const guilds = await response.json();
 
+    // Überprüfen, ob die Rückgabe ein Array ist.
     if (!Array.isArray(guilds)) {
       console.error("Unerwartetes Format:", guilds);
       return res.status(500).json({ error: "Unerwartete Antwort vom Discord-API" });
     }
     
+    // Filtert nur Gilden, bei denen der Benutzer Administratorrechte (0x8) besitzt.
     const adminGuilds = guilds.filter(guild => {
-      const perms = parseInt(guild.permissions);
+      const perms = parseInt(guild.permissions, 10);
       return (perms & 0x8) === 0x8;
     });
 
+    // Prüft für jede gefilterte Gilde, ob der Bot Mitglied ist.
     const guildChecks = await Promise.all(
       adminGuilds.map(async guild => {
         try {
@@ -60,10 +64,11 @@ router.get('/guilds', async (req, res) => {
       })
     );
 
+    // Entfernt null-Werte.
     const finalGuilds = guildChecks.filter(guild => guild !== null);
     res.json(finalGuilds);
   } catch (err) {
-    console.error(err);
+    console.error("Fehler beim Abrufen der Server:", err);
     res.status(500).json({ error: "Fehler beim Abrufen der Server" });
   }
 });
