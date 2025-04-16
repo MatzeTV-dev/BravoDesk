@@ -71,6 +71,7 @@
         </table>
         <div style="text-align: right; margin-top: 15px;">
           <button onclick="openPopup()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Neu</button>
+          <button onclick="openFileUploadModal()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Datei hochladen</button>
         </div>
       </div>
 
@@ -292,6 +293,20 @@
       </div>
     </div>
   </div>
+
+  <!-- POPUP: Datei Upload -->
+<div id="fileUploadModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Datei Upload</h3>
+    <div style="margin-bottom: 10px;">
+      <input style="background-color: #1a1e1b;" type="file" id="fileInput" accept=".txt">
+    </div>
+    <div class="popup-buttons">
+      <button onclick="uploadFile()">Hochladen</button>
+      <button onclick="closeFileUploadModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
 
   <!-- POPUP: Blacklist Eintrag hinzufügen -->
   <div id="blacklistAddModal" class="popup-modal">

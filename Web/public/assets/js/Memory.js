@@ -119,6 +119,49 @@ function loadKnowledgeEntries(guildId) {
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
 
+function openFileUploadModal() {
+  document.getElementById("fileUploadModal").classList.add("show");
+}
+
+function closeFileUploadModal() {
+  document.getElementById("fileUploadModal").classList.remove("show");
+}
+
+function uploadFile() {
+  const fileInput = document.getElementById("fileInput");
+  if (!fileInput.files || fileInput.files.length === 0) {
+    alert("Bitte wählen Sie eine Datei aus.");
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append("file", file);
+  
+  // Stelle sicher, dass currentGuildId gesetzt ist (so wie in deinen anderen Funktionen)
+  fetch(`/api/upload-file/${currentGuildId}`, {
+    method: "POST",
+    body: formData
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert("Fehler: " + data.error);
+      } else {
+        alert("Datei erfolgreich hochgeladen. Eingefügte Einträge: " +
+              data.inserted + ", Übersprungene: " + data.skipped);
+        // Optional: Liste der Wissenseinträge neu laden
+        loadKnowledgeEntries(currentGuildId);
+      }
+      closeFileUploadModal();
+    })
+    .catch(err => {
+      console.error("Fehler beim Datei Upload:", err);
+      alert("Fehler beim Datei Upload.");
+    });
+}
+
+
 // Globale Variablen für den aktuellen Guild-Kontext und Editierstatus.
 let currentGuildId = null;
 let currentEditRow = null;

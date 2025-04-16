@@ -2,6 +2,7 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import express from 'express';
+import multer from 'multer';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -18,6 +19,20 @@ const QdrantAPIkey = process.env.QDRANT_API_KEY;
 const qdrantClient = new QdrantClient({
   url: QdrantURL,
   apiKey: QdrantAPIkey,
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    // Erlaube nur .txt Dateien
+    if (file.mimetype === 'text/plain') {
+      cb(null, true);
+    } else {
+      cb(new Error("Nur .txt Dateien erlaubt"), false);
+    }
+  },
+  limits: { fileSize: 1024 * 1024 } // 1 MB Größenlimit
 });
 
 /**
@@ -43,6 +58,57 @@ function countWords(text) {
   const transitions = text.match(/(?<=[a-zäöüß])(?=[A-ZÄÖÜ])/g);
   return 1 + (transitions ? transitions.length : 0);
 }
+
+router.post('/upload-file/:guildId', upload.single('file'), async (req, res) => {
+  const guildId = req.params.guildId;
+  const collectionName = `guild_${guildId}`;
+  
+  // Fehlerbehandlung: Datei vorhanden?
+  if (!req.file) {
+    return res.status(400).json({ error: "Keine Datei hochgeladen." });
+  }
+  
+  // Dateiinhalt als Text auslesen (UTF-8)
+  const fileContent = req.file.buffer.toString('utf-8');
+  
+  // Text an jedem Punkt trennen, trimmen und leere Segmente entfernen
+  let segments = fileContent.split('.').map(segment => segment.trim()).filter(segment => segment !== "");
+  
+  let invalidEntries = [];
+  let points = [];
+  
+  // Prüfe jeden Eintrag: maximal 10 Wörter erlaubt
+  for (let segment of segments) {
+    if (countWords(segment) > 10) {
+      invalidEntries.push(segment);
+      continue; // Überspringe Einträge, die das Limit überschreiten
+    }
+    const entryId = randomUUID();
+    const dummyVector = Array(1024).fill(0);
+    points.push({
+      id: entryId,
+      vector: dummyVector,
+      payload: { text: segment }
+    });
+  }
+  
+  // Optional: Entscheide, ob du den gesamten Upload ablehnen möchtest, wenn ungültige Einträge enthalten sind.
+  // Hier fahren wir fort und speichern nur die gültigen Einträge.
+  
+  try {
+    const response = await qdrantClient.upsert(collectionName, { points });
+    console.log("Datei-Upload: Einträge eingefügt:", response);
+    return res.json({
+      success: true,
+      inserted: points.length,
+      skipped: invalidEntries.length,
+      // Bei Bedarf: invalidEntries zur weiteren Information zurückgeben (aber Vorsicht beim Ausgeben von sensiblen Daten)
+    });
+  } catch (error) {
+    console.error(`Fehler beim Einfügen der Einträge: ${error.message}\n${error.stack}`);
+    return res.status(500).json({ error: "Fehler beim Einfügen der Wissenseintrags aus der Datei" });
+  }
+});
 
 /**
  * GET /api/wissenseintraege/:guildId
