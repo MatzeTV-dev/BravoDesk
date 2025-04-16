@@ -1,3 +1,5 @@
+import { QdrantClient } from '@qdrant/js-client-rest';
+import Logger from '../helper/loggerHelper.js';
 import { parentPort } from 'worker_threads';
 import dotenv from 'dotenv';
 import axios from 'axios';
@@ -5,6 +7,10 @@ import axios from 'axios';
 dotenv.config();
 
 const openAiApiKey = process.env.OPENAI_API_KEY;
+const qdrantClient = new QdrantClient({
+  url: process.env.QDRANT_URL,
+  apiKey: process.env.QDRANT_API_KEY,
+});
 
 /**
  * Führt eine API-Anfrage an die OpenAI API aus und sendet die Antwort über parentPort.
@@ -48,9 +54,30 @@ const makeApiRequest = async () => {
 };
 
 /**
+ * Führt einen Verbindungs-Check mit Qdrant durch.
+ * Hier nutzen wir getCollections(), um zu prüfen, ob der Client erreichbar ist.
+ */
+const checkQdrantConnection = async () => {
+  try {
+    const collectionsResponse = await qdrantClient.getCollections();
+    if (collectionsResponse && collectionsResponse.collections) {
+      parentPort.postMessage('Qdrant Verbindung: OK');
+      Logger.info('Qdrant-Verbindungs-Check erfolgreich: Collections abgerufen.');
+    } else {
+      parentPort.postMessage('Qdrant Verbindung: Unerwartetes Ergebnis.');
+      Logger.warn('Unerwartetes Ergebnis beim Qdrant-Verbindungs-Check:', collectionsResponse);
+    }
+  } catch (error) {
+    parentPort.postMessage(`Fehler beim Qdrant-Verbindungs-Check: ${error.message}`);
+    Logger.error('Fehler beim Qdrant-Verbindungs-Check:', error);
+  }
+};
+
+/**
  * Startet alle 15 Minuten eine API-Anfrage.
  */
 setInterval(() => {
-  parentPort.postMessage('Starte API-Anfrage...');
+  parentPort.postMessage('Starte API-Anfrage openai & Qdrant...');
   makeApiRequest();
-}, 15 * 60 * 1000);
+  checkQdrantConnection();
+}, 1 * 60 * 1000);
