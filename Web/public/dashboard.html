@@ -34,7 +34,7 @@
         <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
         <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
         <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
-        <li onclick="//showSection('design', this)">🎨 Design [COMING SOON]</li>
+        <li onclick="showSection('design', this)">🎨 Design</li>
       </ul>
       <!-- User Info -->
       <div class="user-info" onclick="toggleMenu('userMenu','userArrow')" style="position: relative;">
@@ -219,40 +219,43 @@
           <button id="btnBlacklistSearch" class="btn-bl">Suchen</button>
         </div>
       </div>
-
-      <!-- DESIGN (NEU) -->
+     <!-- Statt der bisherigen design‑Container im <div id="design"> -->
       <div id="design" class="content-section">
         <h2 style="text-align:center;">Design</h2>
-        <div class="design-wrapper">
-          <div class="design-container">
-            <div class="design-top">
-              <div class="design-image">
-                <img src="assets/img/logo_transparent.png" alt="Bot-Logo">
-                <div style="margin-top:10px;">
-                  <button style="background-color: grey;" class="design-button" onclick="uploadImage()">Bild hochladen</button>
-                </div>
-              </div>
-              <div class="design-fields">
-                <div style="margin-bottom: 10px;">
-                  <label for="botName" class="label-container">
-                    Bot Name 
-                    <span class="help-icon" title="Geben Sie den Namen des Bots ein.">?</span>
-                  </label>
-                  <input type="text" id="botName" placeholder="Bot Name">
-                </div>
-                <div>
-                  <label for="botStatus" class="label-container">
-                    Bot Status 
-                    <span class="help-icon" title="Geben Sie den Status des Bots ein.">?</span>
-                  </label>
-                  <input type="text" id="botStatus" placeholder="Bot Status">
-                </div>
-              </div>
-            </div>
+
+        <!-- 1) Embed‑Liste -->
+        <div class="design-list">
+          <ul>
+            <li data-embed-id="ticket_creation" onclick="openEmbedEditor('ticket_creation')">
+              Ticket Creation Embed
+            </li>
+            <li data-embed-id="welcome_message" onclick="openEmbedEditor('welcome_message')">
+              Welcome Message Embed
+            </li>
+          </ul>
+        </div>
+
+        <!-- 2) Embed‑Editor (initial versteckt) -->
+        <div class="design-editor">
+          <button class="back-button" onclick="showList()">← Zurück zur Liste</button>
+          <form>
+            <label>Title<br>
+              <input type="text" id="embedTitle">
+            </label>
+            <label>Description<br>
+              <textarea id="embedDescription" rows="3"></textarea>
+            </label>
+            <label>Color<br>
+              <input type="color" id="embedColor">
+            </label>
+            <label>Footer Text<br>
+              <input type="text" id="embedFooter">
+            </label>
+            <!-- Weitere Felder wie thumbnail URL, fields etc. -->
             <div class="design-bottom">
-              <button class="design-button" onclick="saveDesign()">Speichern</button>
+              <button type="submit" class="design-button">Speichern</button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

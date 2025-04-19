@@ -180,4 +180,41 @@ const Categories = {
   }
 };
 
-export { db, Blacklist, Categories };
+/**
+ * Liefert beide Embeds für eine Guild.
+ */
+export async function getGuildEmbeds(guildId) {
+  return new Promise((resolve, reject) => {
+    db.query(
+      'SELECT ticket_creation_embed, welcome_message_embed FROM guild_embeds WHERE guild_id = ?',
+      [guildId],
+      (err, results) => {
+        if (err) return reject(err);
+        resolve(results[0] || null);
+      }
+    );
+  });
+}
+
+/**
+ * Aktualisiert genau ein Embed‑Feld einer Guild.
+ * @param {string} guildId
+ * @param {'ticket_creation_embed'|'welcome_message_embed'} column
+ * @param {object} embedPayload
+ */
+export async function updateGuildEmbed(guildId, column, embedPayload) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      UPDATE guild_embeds
+         SET ${column} = ?, updated_at = NOW()
+       WHERE guild_id = ?
+    `;
+    db.query(sql, [ JSON.stringify(embedPayload), guildId ], (err, res) => {
+      err ? reject(err) : resolve(res);
+    });
+  });
+}
+
+
+// Export ergänzen
+export { db, Blacklist, Categories, };
