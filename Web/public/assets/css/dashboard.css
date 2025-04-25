@@ -1,419 +1,404 @@
-/* Allgemein */
+:root {
+  /* dark theme cards */
+  --bg-card:   #2a2a2a;           /* same as your panels */
+  --text-main: #ffffff;           /* white text on dark */
+  --accent:    #1c6b3e;           /* your green highlight */
+  --shadow:    rgba(0, 0, 0, 0.5); /* softer but still visible */
+  --radius:    12px;
+  --gap:       1rem;
+}
+
+
+/* ======================================
+   Allgemein
+   ====================================== */
 * {
-    box-sizing: border-box;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-  textarea {
-    resize: vertical;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    background-color: #1a1e1b;
-    font-family: sans-serif;
-    color: #fff;
-  }
-  h2 {
-    margin-top: 0;
-  }
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+textarea {
+  resize: vertical;
+}
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1e1b;
+  font-family: sans-serif;
+  color: #fff;
+}
+h2 {
+  margin-top: 0;
+}
 
-  /* Layout: Sidebar + Hauptbereich */
-  .layout {
-    display: flex;
-    min-height: 100vh;
-  }
-  .sidebar {
-    width: 280px;
-    background-color: #1e1e1e;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-    border-right: 2px solid #2a2a2a;
-  }
-  .main-content {
-    flex-grow: 1;
-    background-color: #1a1e1b;
-    padding: 20px;
-  }
+/* ======================================
+   Layout: Sidebar + Hauptbereich
+   ====================================== */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: 280px;
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+  border-right: 2px solid #2a2a2a;
+}
+.main-content {
+  flex-grow: 1;
+  background-color: #1a1e1b;
+  padding: 20px;
+}
 
-  /* Navigation Sidebar */
-  .nav {
-    display: flex;
-    flex-direction: column;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .nav li {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    background-color: #1e1e1e;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  .nav li:hover,
-  .nav li.active {
-    background-color: #1c6b3e;
-  }
+/* ======================================
+   Navigation Sidebar
+   ====================================== */
+.nav {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.nav li {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background-color: #1e1e1e;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.nav li:hover,
+.nav li.active {
+  background-color: #1c6b3e;
+}
 
-  /* User-Info */
-  .user-info {
-    margin-top: auto;
-    padding: 12px;
-    background-color: #2a2a2a;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  .user-info:hover {
-    background-color: #1c6b3e;
-  }
+/* ======================================
+   User-Info
+   ====================================== */
+.user-info {
+  margin-top: auto;
+  padding: 12px;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.user-info:hover {
+  background-color: #1c6b3e;
+}
 
-  /* Content Sections (Tabs) */
-  .content-section {
-    display: none;
-  }
-  .content-section.active {
-    display: block;
-  }
+/* ======================================
+   Content Sections (Tabs)
+   ====================================== */
+.content-section {
+  display: none;
+}
+.content-section.active {
+  display: block;
+}
 
-  /* Tabelle für Wissenseinträge */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  }
-  th, td {
-    border: 1px solid #1e1e1e;
-    padding: 10px;
-    background-color: #1e1e1e;
-  }
-  .wissen-cell {
-    position: relative;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .wissen-cell:hover::after {
-    content: attr(data-fulltext);
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    background-color: #1e1e1e;
-    color: #fff;
-    padding: 5px;
-    border-radius: 4px;
-    width: 300px;
-    white-space: normal;
-    font-size: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    z-index: 10;
-  }
+/* ======================================
+   Tabelle für Wissenseinträge
+   ====================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+th, td {
+  border: 1px solid #1e1e1e;
+  padding: 10px;
+  background-color: #1e1e1e;
+}
+.wissen-cell {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.wissen-cell:hover::after {
+  content: attr(data-fulltext);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background-color: #1e1e1e;
+  color: #fff;
+  padding: 5px;
+  border-radius: 4px;
+  width: 300px;
+  white-space: normal;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  z-index: 10;
+}
 
-  /* Popup-Overlay */
-  .popup-modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    z-index: 100;
-  }
-  .popup-modal.show {
-    display: flex;
-    opacity: 1;
-    transform: scale(1);
-  }
-  /* Einheitlicher Popup-Stil */
-  .popup-content {
-    background-color: #2a2a2a;
-    padding: 20px;
-    border-radius: 8px;
-    width: 500px;
-    max-width: 90%;
-  }
-  .popup-content h3 {
-    margin: 0 0 15px;
-    color: #fff;
-  }
-  /* Kürzere Inputs (wie die Beschreibung) */
-  .popup-content input,
-  .popup-content textarea {
-    width: 100%;
-    font-size: 12px;
-    color: #ccc;
-    background-color: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 4px;
-    margin-bottom: 5px;
-  }
-  /* Buttons im Popup linksbündig */
-  .popup-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-start;
-  }
-  .popup-buttons button {
-    background-color: #1c6b3e;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    padding: 6px 12px;
-    font-size: 14px;
-  }
-  .popup-buttons button:hover {
-    background-color: #13843d;
-  }
+/* ======================================
+   Popup-Overlay & Popup-Content
+   ====================================== */
+.popup-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 100;
+}
+.popup-modal.show {
+  display: flex;
+  opacity: 1;
+  transform: scale(1);
+}
+.popup-content {
+  background-color: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+}
+.popup-content h3 {
+  margin: 0 0 15px;
+  color: #fff;
+}
+.popup-content input,
+.popup-content textarea {
+  width: 100%;
+  font-size: 12px;
+  color: #ccc;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px;
+  margin-bottom: 5px;
+}
+.popup-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+.popup-buttons button {
+  background-color: #1c6b3e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+.popup-buttons button:hover {
+  background-color: #13843d;
+}
 
-/* =========================
-   Kategorien-Container
-   ========================= */
-   .kategorien-container {
-    background: linear-gradient(to bottom right, #2e2e2e, #1f1f1f);
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    max-width: 500px;
-    margin: 0 auto;
-  }
-  
-  /* Überschrift im Container */
-  .kategorien-container h3 {
-    font-size: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-    color: #fff;
-  }
-  
-  /* Jede Zeile (Emoji+Beschreibung, AI Prompt, Checkbox+Permission) */
-  .kategorien-single-line {
-    display: flex;
-    flex-wrap: wrap;     /* Zeilenumbruch auf schmalen Bildschirmen */
-    gap: 15px;
-    margin-top: 20px;
-    align-items: flex-start;  /* Elemente am oberen Rand ausrichten */
-  }
-  
-  /* =========================
-     Emoji + Beschreibung
-     ========================= */
-  /* Überschreibt inline-styles bei #kategorieEmoji */
-  #kategorieEmoji {
-    width: 40px !important;   /* Feste Breite fürs Emoji */
-    background-color: #1a1e1b !important;
-    border: 1px solid #444 !important;
-    border-radius: 6px !important;
-    color: #ccc !important;
-    padding: 6px 10px !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* Beschreibung soll restliche Breite nutzen, aber Höhe nicht erzwingen */
-  #kategorieBeschreibung {
-    width: 100% !important;   /* Nimmt den verfügbaren Platz */
-    height: 30px !important;  /* Keine feste Höhe erzwingen */
-    background-color: #1a1e1b !important;
-    border: 1px solid #444 !important;
-    border-radius: 6px !important;
-    color: #ccc !important;
-    padding: 6px 10px !important;
-    box-sizing: border-box !important;
-    resize: none;         /* User kann Höhe anpassen, falls gewünscht */
-  }
-  
-  .kategorien-field label {
-    display: block;
-    margin-bottom: 5px; /* Abstand zwischen Label und Eingabefeld */
-  }
-  
+/* ======================================
+   Kategorien-Container & Felder
+   ====================================== */
+.kategorien-container {
+  background: linear-gradient(to bottom right, #2e2e2e, #1f1f1f);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  max-width: 500px;
+  margin: 0 auto;
+}
+.kategorien-container h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #fff;
+}
+.kategorien-single-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 20px;
+  align-items: flex-start;
+}
+#kategorieEmoji {
+  width: 40px !important;
+  background-color: #1a1e1b !important;
+  border: 1px solid #444 !important;
+  border-radius: 6px !important;
+  color: #ccc !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+}
+#kategorieBeschreibung {
+  width: 100% !important;
+  height: 30px !important;
+  background-color: #1a1e1b !important;
+  border: 1px solid #444 !important;
+  border-radius: 6px !important;
+  color: #ccc !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+  resize: none;
+}
+.kategorien-field label {
+  display: block;
+  margin-bottom: 5px;
+}
+#kategorieAIPrompt {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 400px !important;
+  background-color: #1a1e1b !important;
+  border: 1px solid #444 !important;
+  border-radius: 6px !important;
+  color: #ccc !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+}
+.kategorien-single-line:nth-of-type(3) .kategorien-field:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+#kategorieEnabled {
+  margin-left: 0 !important;
+  vertical-align: baseline !important;
+  margin-top: 6px !important;
+  transform: scale(1.0) !important;
+}
+.full-width-dropdown {
+  background-color: #1a1e1b !important;
+  border: 1px solid #444 !important;
+  border-radius: 6px !important;
+  color: #ccc !important;
+  padding: 6px 10px !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+  width: 100%;
+}
+.kategorien-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px !important;
+}
+.kategorien-buttons button {
+  background-color: #1c6b3e !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.kategorien-buttons button:hover {
+  background-color: #13843d !important;
+}
 
-  /* =========================
-     AI Prompt
-     ========================= */
-  #kategorieAIPrompt {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 400px !important;
-    background-color: #1a1e1b !important;
-    border: 1px solid #444 !important;
-    border-radius: 6px !important;
-    color: #ccc !important;
-    padding: 6px 10px !important;
-    box-sizing: border-box !important;
-  }
-  
-  /* =========================
-     Checkbox + Permission
-     ========================= */
-  /* Damit das Label oben und die Checkbox darunter sitzt */
-  .kategorien-single-line:nth-of-type(3) .kategorien-field:first-child {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  /* Überschreibt inline-styles bei #kategorieEnabled */
-  #kategorieEnabled {
-    margin-left: 0 !important;         /* Entfernt negative Margin */
-    vertical-align: baseline !important;
-    margin-top: 6px !important;        /* Schiebt die Checkbox etwas nach unten */
-    transform: scale(1.0) !important;  /* Normale Größe */
-  }
-  
-  /* =========================
-     Dropdowns
-     ========================= */
-  .full-width-dropdown {
-    background-color: #1a1e1b !important;
-    border: 1px solid #444 !important;
-    border-radius: 6px !important;
-    color: #ccc !important;
-    padding: 6px 10px !important;
-    font-size: 14px !important;
-    box-sizing: border-box !important;
-    width: 100%;
-  }
-  
-  /* =========================
-     Buttons
-     ========================= */
-  .kategorien-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px !important;
-  }
-  
-  /* Kleinere Buttons */
-  .kategorien-buttons button {
-    background-color: #1c6b3e !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 6px !important;
-    padding: 8px 16px !important; /* kompaktere Größe */
-    font-size: 14px !important;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .kategorien-buttons button:hover {
-    background-color: #13843d !important;
-  }
-  
-  /* -------------------------------------------
-     BLACKLIST-STYLES
-     ------------------------------------------- */
-  .btn-bl {
-    background-color: #1c6b3e;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    padding: 10px 20px;
-    margin: 0 5px;
-    transition: background 0.3s;
-  }
-  .btn-bl:hover {
-    background-color: #13843d;
-  }
+/* ======================================
+   BLACKLIST-STYLES
+   ====================================== */
+.btn-bl {
+  background-color: #1c6b3e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 10px 20px;
+  margin: 0 5px;
+  transition: background 0.3s;
+}
+.btn-bl:hover {
+  background-color: #13843d;
+}
 
-  /* -------------------------------------------
-     DESIGN-STYLES (angepasst)
-     ------------------------------------------- */
-  .design-wrapper {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-  .design-container {
-    background-color: #2a2a2a;
-    padding: 20px;
-    border-radius: 8px;
-    width: 600px; /* Passt du an */
-    max-width: 100%;
-    box-shadow: 0 0 8px rgba(0,0,0,0.4);
-  }
+/* ======================================
+   DESIGN-STYLES (angepasst)
+   ====================================== */
+.design-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.design-container {
+  background-color: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  width: 600px;
+  max-width: 100%;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+}
+.design-top {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+.design-image {
+  text-align: center;
+}
+.design-image img {
+  width: 131px;
+  height: 131px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.design-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+}
+.design-fields label {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 5px;
+  color: #fff;
+}
+.design-fields input {
+  font-size: 15px;
+  color: #ccc;
+  background-color: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 6px;
+}
+.design-bottom {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.design-button {
+  background-color: #1c6b3e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+.design-button:hover {
+  background-color: #13843d;
+}
 
-  /* Oberer Bereich: Bild links + Felder rechts */
-  .design-top {
-    display: flex;
-    gap: 30px;  /* Abstand zwischen Bild & Felder */
-    align-items: flex-start; /* Bild & Felder oben bündig */
-  }
-  .design-image {
-    text-align: center;
-  }
-  .design-image img {
-    width: 131px;
-    height: 131px;
-    background: #1e1e1e;
-    border-radius: 8px;
-    object-fit: cover;
-  }
-  .design-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 15px; /* Abstand zwischen Name & Status */
-    flex: 1;
-  }
-  .design-fields label {
-    font-weight: bold;
-    font-size: 15px;
-    margin-bottom: 5px;
-    color: #fff;
-  }
-  .design-fields input {
-    font-size: 15px;
-    color: #ccc;
-    background-color: #1e1e1e;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 6px;
-  }
-
-  /* Unterer Bereich: Buttons */
-  .design-bottom {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end; /* Speichern nach rechts */
-    gap: 10px;
-  }
-  .design-button {
-    background-color: #1c6b3e;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-  .design-button:hover {
-    background-color: #13843d;
-  }
-
-/* Container für mehrere Benachrichtigungen */
+/* ======================================
+   Notifications, Emoji Popup, Preloader
+   ====================================== */
 .notify-container {
   position: fixed;
   top: 20px;
@@ -423,7 +408,6 @@
   flex-direction: column;
   gap: 10px;
 }
-/* Einzelne Benachrichtigung */
 .notify {
   padding: 10px 20px;
   border-radius: 5px;
@@ -435,13 +419,11 @@
 .notify.show {
   opacity: 1;
 }
-/* Verschiedene Typen */
 .notify.info { background-color: #444; }
 .notify.success { background-color: #28a745; }
 .notify.warn { background-color: #ffc107; color: #000; }
 .notify.error { background-color: #dc3545; }
 
-/* Emoji Popup */
 .emoji-popup {
   position: absolute;
   display: none;
@@ -458,7 +440,6 @@
   margin: 5px;
 }
 
-/* Zusätzliche Styles für die Help-Icons neben den Labels */
 .help-icon {
   font-size: 12px;
   color: #ccc;
@@ -476,39 +457,132 @@
   color: #fff;
   border-color: #fff;
 }
-/* Optional: Labels in einem flex-Container, falls du mehr Kontrolle über den Abstand brauchst */
 .label-container {
   display: flex;
   align-items: center;
 }
 
-    /* Preloader-Container, der die gesamte Seite abdeckt */
 #preloader {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: transparent; /* Heller Hintergrund, mit Transparenz */
-  backdrop-filter: blur(5px);  /* Blur-Effekt auf den Hintergrund */
+  background: transparent;
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Über allen anderen Inhalten */
+  z-index: 9999;
 }
-
-/* Einfacher CSS-Spinner */
 .spinner {
-  border: 8px solid #f3f3f3;        /* Leicht grauer Rahmen */
-  border-top: 8px solid #1c6b3e;      /* Farbe für den animierten Teil */
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #1c6b3e;
   border-radius: 50%;
   width: 60px;
   height: 60px;
   animation: spin 1s linear infinite;
 }
-
-/* Animation für den Spinner */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* -------------------------------------
+   Modern Design List (uses variables)
+   ------------------------------------- */
+.content-section h2 {
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-main);
+}
+.design-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--gap);
+  max-width: 900px;
+}
+.design-list li {
+  background: var(--bg-card);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px var(--shadow);
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+}
+.design-list li::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.3s ease;
+}
+.design-list li:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px var(--shadow);
+}
+.design-list li:hover::before {
+  transform: scaleY(1);
+}
+.design-list li span {
+  z-index: 1;
+}
+
+.embed-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 800px;
+}
+.embed-list li {
+  background: #252528;           /* same dark tone as your table rows */
+  color: #fff;                   /* white text */
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  margin-bottom: var(--gap);
+  display: flex;
+  align-items: center;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+.embed-list li:hover {
+  background: #2a2a2e;           /* slight lift in brightness on hover */
+}
+
+/* kill the purple accent-strip from the “modern-list” styles */
+.embed-list li::before {
+  display: none;
+}
+
+.embed-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.embed-info .title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.embed-info .slug {
+  font-size: 0.875rem;
+  color: #aaa;
 }

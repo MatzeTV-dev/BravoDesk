@@ -145,6 +145,20 @@ export default {
               await Delete('CALL Delete_Server_Information(?)', guild.id);
               await Delete('CALL Delete_categories(?)', guild.id);
               await deleteAll('guild_' + guild.id);
+
+              try {
+                // lösche jetzt auch die Embed-Designs
+                await Delete('DELETE FROM guild_embeds WHERE guild_id = ?', [guild.id]);
+                Logger.success(`Embeds für Guild ${guild.id} gelöscht.`);
+              } catch (embedDelError) {
+                Logger.error(`Fehler beim Löschen der Embeds: ${embedDelError}`);
+                await i.followUp({
+                  embeds: [error('Reset Process', 'Fehler beim Löschen der Embed-Designs')],
+                  ephemeral: true
+                });
+                return;
+              }
+
             } catch (dbError) {
               Logger.error(`Fehler beim Löschen der ServerInformationen: ${dbError}`);
               await i.followUp({ 

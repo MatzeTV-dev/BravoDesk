@@ -174,7 +174,7 @@ app.use('/api', userMenu);
 app.use('/api', memoryRoutes);
 app.use('/api', blacklistRoutes);
 app.use('/api', categoryRoutes);
-app.use('/api', designRoutes);
+app.use('/api/embeds', designRoutes);
 app.use('/api', botNotificationRoutes);
 
 /**

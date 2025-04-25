@@ -6,6 +6,16 @@
   <title>BravoDesk Dashboard</title>
   <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.discordapp.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self';"> -->
   <link rel="stylesheet" href="assets/css/dashboard.css">
+
+  <script src="assets/js/vanillaEmojiPicker.js"></script>
+  <script src="assets/js/utility.js"></script>
+  <script src="assets/js/SeverSelector.js"></script>
+  <script src="assets/js/UserMenu.js"></script>
+  <script src="assets/js/Memory.js"></script>
+  <script src="assets/js/Blacklist.js"></script>
+  <script src="assets/js/Design.js"></script>
+  <script src="assets/js/Category.js"></script>
+
 </head>
 <body style="background: #1a1e1b;">
 
@@ -34,7 +44,7 @@
         <li id="navWissen" class="active" onclick="showSection('wissenseintraege', this)">📄 Wissenseinträge</li>
         <li id="navKategorien" onclick="showSection('kategorien', this)">📂 Kategorien</li>
         <li onclick="showSection('blacklist', this)">🔒 Blacklist</li>
-        <li onclick="//showSection('design', this)">🎨 Design [COMING SOON]</li>
+        <li onclick="showSection('design', this)">🎨 Design</li>
       </ul>
       <!-- User Info -->
       <div class="user-info" onclick="toggleMenu('userMenu','userArrow')" style="position: relative;">
@@ -71,6 +81,7 @@
         </table>
         <div style="text-align: right; margin-top: 15px;">
           <button onclick="openPopup()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Neu</button>
+          <button onclick="openFileUploadModal()" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Datei hochladen</button>
         </div>
       </div>
 
@@ -218,41 +229,49 @@
           <button id="btnBlacklistSearch" class="btn-bl">Suchen</button>
         </div>
       </div>
-
-      <!-- DESIGN (NEU) -->
       <div id="design" class="content-section">
-        <h2 style="text-align:center;">Design</h2>
-        <div class="design-wrapper">
-          <div class="design-container">
-            <div class="design-top">
-              <div class="design-image">
-                <img src="assets/img/logo_transparent.png" alt="Bot-Logo">
-                <div style="margin-top:10px;">
-                  <button style="background-color: grey;" class="design-button" onclick="uploadImage()">Bild hochladen</button>
-                </div>
-              </div>
-              <div class="design-fields">
-                <div style="margin-bottom: 10px;">
-                  <label for="botName" class="label-container">
-                    Bot Name 
-                    <span class="help-icon" title="Geben Sie den Namen des Bots ein.">?</span>
-                  </label>
-                  <input type="text" id="botName" placeholder="Bot Name">
-                </div>
-                <div>
-                  <label for="botStatus" class="label-container">
-                    Bot Status 
-                    <span class="help-icon" title="Geben Sie den Status des Bots ein.">?</span>
-                  </label>
-                  <input type="text" id="botStatus" placeholder="Bot Status">
-                </div>
-              </div>
+        <h2>Design</h2>
+        <ul class="embed-list">
+          <li data-embed-id="ticket_creation" onclick="openDesignModal('ticket_creation')">
+            <div class="embed-info">
+              <span class="title">Ticket Creation Embed</span>
+              <span class="slug">#ticket_creation</span>
             </div>
-            <div class="design-bottom">
-              <button class="design-button" onclick="saveDesign()">Speichern</button>
+          </li>
+          <li data-embed-id="welcome_message" onclick="openDesignModal('welcome_message')">
+            <div class="embed-info">
+              <span class="title">Welcome Message Embed</span>
+              <span class="slug">#welcome_message</span>
             </div>
-          </div>
-        </div>
+          </li>
+        </ul>
+      </div>      
+    </div>
+  </div>
+
+  <!-- POPUP: Embed bearbeiten -->
+  <div id="editEmbedModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Embed bearbeiten</h3>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedTitle" class="label-container">Title</label>
+        <input type="text" id="modalEmbedTitle" placeholder="Title">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedDescription" class="label-container">Beschreibung</label>
+        <textarea id="modalEmbedDescription" rows="3" placeholder="Description"></textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedColor" class="label-container">Farbe</label>
+        <input type="color" id="modalEmbedColor">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedFooter" class="label-container">Fußzeile Text</label>
+        <input type="text" id="modalEmbedFooter" placeholder="Footer Text">
+      </div>
+      <div class="popup-buttons">
+        <button onclick="saveDesignModal()">Speichern</button>
+        <button onclick="closeDesignModal()">Abbrechen</button>
       </div>
     </div>
   </div>
@@ -292,6 +311,20 @@
       </div>
     </div>
   </div>
+
+  <!-- POPUP: Datei Upload -->
+<div id="fileUploadModal" class="popup-modal">
+  <div class="popup-content">
+    <h3>Datei Upload</h3>
+    <div style="margin-bottom: 10px;">
+      <input style="background-color: #1a1e1b;" type="file" id="fileInput" accept=".txt">
+    </div>
+    <div class="popup-buttons">
+      <button onclick="uploadFile()">Hochladen</button>
+      <button onclick="closeFileUploadModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
 
   <!-- POPUP: Blacklist Eintrag hinzufügen -->
   <div id="blacklistAddModal" class="popup-modal">
@@ -358,15 +391,6 @@
   <!-- Notify-Container (für maximal 5 Notifys) -->
   <div id="notifyContainer" class="notify-container"></div>
 
-  <!-- WICHTIG: Vanilla Emoji Picker einbinden (stelle sicher, dass diese Datei lokal verfügbar ist) -->
-  <script src="assets/js/vanillaEmojiPicker.js"></script>
-  <script src="assets/js/utility.js"></script>
-  <script src="assets/js/SeverSelector.js"></script>
-  <script src="assets/js/UserMenu.js"></script>
-  <script src="assets/js/Memory.js"></script>
-  <script src="assets/js/Blacklist.js"></script>
-  <script src="assets/js/Design.js"></script>
-  <script src="assets/js/Category.js"></script>
   <script>
     function loadAll(guild) {
       loadServers();

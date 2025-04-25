@@ -1,5 +1,5 @@
+import { updateTicketCreationMessage, updateTicketSystemText } from './helper/ticketCategoryHelper.js';
 import { Client, Collection, GatewayIntentBits, Events, REST, Routes, Partials } from 'discord.js';
-import { updateTicketCreationMessage } from './helper/ticketCategoryHelper.js';
 import { initializeDatabaseConnection } from './Database/database.js';
 import interactionHandler from './handler/interactionHandler.js';
 import messageHandler from './handler/messageHandler.js';
@@ -180,6 +180,41 @@ app.post('/api/update-ticket-message', async (req, res) => {
   } catch (err) {
     Logger.error(`Fehler beim Hinzufügen der Kategorie: ${err.message}\n${err.stack}`);
     return res.status(500).json({ error: 'Es gab einen Fehler beim Hinzufügen der Kategorie.' });
+  }
+});
+
+/**
+ * POST /api/update-ticket-creation
+ * Wird von deinem Dashboard aufgerufen, wenn das Ticket-Embed geändert wurde.
+ * Body: { guildId: string }
+ * Header: Authorization: Bearer <DASHBOARD_API_TOKEN>
+ */
+app.post('/api/update-ticket-creation', async (req, res) => {
+  const authToken = req.headers.authorization;
+
+  if (!authToken || authToken !== process.env.DASHBOARD_API_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { guildId } = req.body;
+  if (!guildId) {
+    return res.status(400).json({ error: 'Missing guildId' });
+  }
+
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return res.status(404).json({ error: 'Guild not found' });
+  }
+
+  try {
+    await updateTicketSystemText(guild);
+
+    return res
+      .status(200)
+      .json({ message: 'Ticket-Erstellungs-Nachricht erfolgreich aktualisiert.' });
+  } catch (err) {
+    Logger.error(`Fehler beim Aktualisieren der Ticket-Nachricht: ${err.stack}`);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
