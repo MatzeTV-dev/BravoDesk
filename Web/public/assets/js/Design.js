@@ -1,119 +1,71 @@
-// Wird von deinem loadAll(guild) aufgerufen:
+// assets/js/DesignModal.js
+let currentDesignKey;
+
+// Wird von loadAll(guild) aufgerufen:
 function initDesign(guild) {
   currentGuildId = guild.id;
 }
 
-// Klick auf “Design” im Sidebar
-document.getElementById('navDesign').addEventListener('click', () => {
-  loadDesignList();
-  showList();
-});
-
-// Liste statisch (2 Einträge)
-function loadDesignList() {
-  const list = document.querySelector('.design-list ul');
-  list.innerHTML = '';
-  [
-    { key: 'ticket_creation', name: 'Ticket Creation Embed' },
-    { key: 'welcome_message', name: 'Welcome Message Embed' }
-  ].forEach(({key,name}) => {
-    const li = document.createElement('li');
-    li.textContent = name;
-    li.addEventListener('click', () => openEmbedEditor(key));
-    list.appendChild(li);
-  });
-}
-
-function openEmbedEditor(key) {
-  currentKey = key;
-  document.querySelector('.design-list').classList.add('hidden');
-  document.querySelector('.design-editor').classList.add('active');
-
-  fetch(`/api/embeds/${currentGuildId}/${key}`)
+// Öffnet das Modal, lädt die Daten, füllt das Formular und zeigt es an
+function openDesignModal(key) {
+  currentDesignKey = key;
+  const modal = document.getElementById('editEmbedModal');
+  fetch(`/api/embeds/getEmbeds/${currentGuildId}/${currentDesignKey}`)
     .then(res => {
       if (!res.ok) throw res;
       return res.json();
     })
     .then(data => {
-      console.log('Roh-Response:', data);
-
-      // 1) data.embed ist ein STRING, kein Objekt → parsen:
-      let parsed;
-      try {
-        parsed = JSON.parse(data.embed);
-      } catch (err) {
-        throw new Error('Fehler beim Parsen des Embed-JSON: ' + err.message);
-      }
-
-      // 2) Sicherstellen, dass embeds ein Array mit mindestens einem Eintrag ist:
-      if (!Array.isArray(parsed.embeds) || parsed.embeds.length === 0) {
-        throw new Error('Keine Embeds gefunden im JSON');
-      }
-
-      // 3) Erst jetzt das erste Embed-Objekt herausziehen:
-      const embed = parsed.embeds[0];
-      console.log('Embed-Objekt:', embed);
-      console.log('Title:',       embed.title);
-      console.log('Description:', embed.description);
-      console.log('Color:',       embed.color);
-      console.log('Footer-Text:', embed.footer?.text);
-
-      // 4) Inputs erst befüllen, **wenn** sie wirklich existieren:
-      const titleEl = document.getElementById('embedTitle');
-      const descEl  = document.getElementById('embedDescription');
-      const colEl   = document.getElementById('embedColor');
-      const footEl  = document.getElementById('embedFooter');
-
-      if (!titleEl || !descEl || !colEl || !footEl) {
-        console.warn('Ein oder mehrere Embed‑Felder fehlen im DOM:', {
-          titleEl, descEl, colEl, footEl
-        });
-        return; // oder: throw new Error('DOM-Inputs fehlen');
-      }
-
-      titleEl.value       = embed.title       || '';
-      descEl.value        = embed.description || '';
-      colEl.value         = '#' + (embed.color || 0)
-                                  .toString(16)
-                                  .padStart(6,'0');
-      footEl.value        = embed.footer?.text || '';
+      console.log(data)
+      const parsed = JSON.parse(data.embed);
+      const embed = Array.isArray(parsed.embeds) && parsed.embeds.length
+        ? parsed.embeds[0]
+        : {};
+      document.getElementById('modalEmbedTitle').value       = embed.title       || '';
+      document.getElementById('modalEmbedDescription').value = embed.description || '';
+      document.getElementById('modalEmbedColor').value       = '#' + (embed.color || 0)
+        .toString(16).padStart(6, '0');
+      document.getElementById('modalEmbedFooter').value      = embed.footer?.text || '';
+      modal.classList.add('show');
     })
     .catch(err => {
-      alert('Fehler beim Laden: ' + (err.message || err.statusText || err));
-      showList();
+      alert('Fehler beim Laden des Embeds: ' + (err.message || err.statusText || err));
     });
 }
 
-
-function showList() {
-  document.querySelector('.design-editor').classList.remove('active');
-  document.querySelector('.design-list').classList.remove('hidden');
+// Schließt das Modal
+function closeDesignModal() {
+  document.getElementById('editEmbedModal').classList.remove('show');
 }
 
-document.querySelector('.design-editor form').addEventListener('submit', saveDesign);
-function saveDesign(e) {
-  e.preventDefault();
-  const title       = document.getElementById('embedTitle').value.trim();
-  const description = document.getElementById('embedDescription').value.trim();
-  const colorHex    = document.getElementById('embedColor').value;
-  const footerText  = document.getElementById('embedFooter').value.trim();
-  const colorInt    = parseInt(colorHex.replace('#',''),16);
+// Sammelt die Formularwerte, sendet PUT und schließt das Modal
+function saveDesignModal() {
+  const title       = document.getElementById('modalEmbedTitle').value.trim();
+  const description = document.getElementById('modalEmbedDescription').value.trim();
+  const colorHex    = document.getElementById('modalEmbedColor').value;
+  const footerText  = document.getElementById('modalEmbedFooter').value.trim();
+  const colorInt    = parseInt(colorHex.replace('#',''), 16);
 
-  const payload = { embeds: [{ title, description, color: colorInt, footer: { text: footerText } }] };
+  const payload = {
+    embeds: [
+      { title, description, color: colorInt, footer: { text: footerText } }
+    ]
+  };
 
-  fetch(`/api/embeds/${currentGuildId}/${currentKey}`, {
+  console.log(currentGuildId, currentDesignKey)
+
+  fetch(`/api/embeds/${currentGuildId}/${currentDesignKey}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
     .then(res => {
-      if (!res.ok) return res.json().then(j=>Promise.reject(j.error||res.statusText));
+      if (!res.ok) return res.json().then(j => Promise.reject(j.error || res.statusText));
       alert('Embed gespeichert!');
-      showList();
+      closeDesignModal();
     })
-    .catch(msg => alert('Fehler beim Speichern: ' + msg));
+    .catch(err => {
+      alert('Fehler beim Speichern: ' + (err.message || err));
+    });
 }
 
-function uploadImage() {
-  alert("Hier könntest du einen Datei‑Dialog öffnen.");
-}

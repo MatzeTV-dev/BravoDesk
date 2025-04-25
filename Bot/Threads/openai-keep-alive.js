@@ -80,4 +80,4 @@ setInterval(() => {
   parentPort.postMessage('Starte API-Anfrage openai & Qdrant...');
   makeApiRequest();
   checkQdrantConnection();
-}, 1 * 60 * 1000);
+}, 15 * 60 * 1000);

@@ -6,6 +6,16 @@
   <title>BravoDesk Dashboard</title>
   <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.discordapp.com; font-src 'self' https://cdnjs.cloudflare.com; connect-src 'self';"> -->
   <link rel="stylesheet" href="assets/css/dashboard.css">
+
+  <script src="assets/js/vanillaEmojiPicker.js"></script>
+  <script src="assets/js/utility.js"></script>
+  <script src="assets/js/SeverSelector.js"></script>
+  <script src="assets/js/UserMenu.js"></script>
+  <script src="assets/js/Memory.js"></script>
+  <script src="assets/js/Blacklist.js"></script>
+  <script src="assets/js/Design.js"></script>
+  <script src="assets/js/Category.js"></script>
+
 </head>
 <body style="background: #1a1e1b;">
 
@@ -219,44 +229,49 @@
           <button id="btnBlacklistSearch" class="btn-bl">Suchen</button>
         </div>
       </div>
-     <!-- Statt der bisherigen design‑Container im <div id="design"> -->
       <div id="design" class="content-section">
-        <h2 style="text-align:center;">Design</h2>
-
-        <!-- 1) Embed‑Liste -->
-        <div class="design-list">
-          <ul>
-            <li data-embed-id="ticket_creation" onclick="openEmbedEditor('ticket_creation')">
-              Ticket Creation Embed
-            </li>
-            <li data-embed-id="welcome_message" onclick="openEmbedEditor('welcome_message')">
-              Welcome Message Embed
-            </li>
-          </ul>
-        </div>
-
-        <!-- 2) Embed‑Editor (initial versteckt) -->
-        <div class="design-editor">
-          <button class="back-button" onclick="showList()">← Zurück zur Liste</button>
-          <form>
-            <label>Title<br>
-              <input type="text" id="embedTitle">
-            </label>
-            <label>Description<br>
-              <textarea id="embedDescription" rows="3"></textarea>
-            </label>
-            <label>Color<br>
-              <input type="color" id="embedColor">
-            </label>
-            <label>Footer Text<br>
-              <input type="text" id="embedFooter">
-            </label>
-            <!-- Weitere Felder wie thumbnail URL, fields etc. -->
-            <div class="design-bottom">
-              <button type="submit" class="design-button">Speichern</button>
+        <h2>Design</h2>
+        <ul class="embed-list">
+          <li data-embed-id="ticket_creation" onclick="openDesignModal('ticket_creation')">
+            <div class="embed-info">
+              <span class="title">Ticket Creation Embed</span>
+              <span class="slug">#ticket_creation</span>
             </div>
-          </form>
-        </div>
+          </li>
+          <li data-embed-id="welcome_message" onclick="openDesignModal('welcome_message')">
+            <div class="embed-info">
+              <span class="title">Welcome Message Embed</span>
+              <span class="slug">#welcome_message</span>
+            </div>
+          </li>
+        </ul>
+      </div>      
+    </div>
+  </div>
+
+  <!-- POPUP: Embed bearbeiten -->
+  <div id="editEmbedModal" class="popup-modal">
+    <div class="popup-content">
+      <h3>Embed bearbeiten</h3>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedTitle" class="label-container">Title</label>
+        <input type="text" id="modalEmbedTitle" placeholder="Title">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedDescription" class="label-container">Beschreibung</label>
+        <textarea id="modalEmbedDescription" rows="3" placeholder="Description"></textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedColor" class="label-container">Farbe</label>
+        <input type="color" id="modalEmbedColor">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label for="modalEmbedFooter" class="label-container">Fußzeile Text</label>
+        <input type="text" id="modalEmbedFooter" placeholder="Footer Text">
+      </div>
+      <div class="popup-buttons">
+        <button onclick="saveDesignModal()">Speichern</button>
+        <button onclick="closeDesignModal()">Abbrechen</button>
       </div>
     </div>
   </div>
@@ -376,15 +391,6 @@
   <!-- Notify-Container (für maximal 5 Notifys) -->
   <div id="notifyContainer" class="notify-container"></div>
 
-  <!-- WICHTIG: Vanilla Emoji Picker einbinden (stelle sicher, dass diese Datei lokal verfügbar ist) -->
-  <script src="assets/js/vanillaEmojiPicker.js"></script>
-  <script src="assets/js/utility.js"></script>
-  <script src="assets/js/SeverSelector.js"></script>
-  <script src="assets/js/UserMenu.js"></script>
-  <script src="assets/js/Memory.js"></script>
-  <script src="assets/js/Blacklist.js"></script>
-  <script src="assets/js/Design.js"></script>
-  <script src="assets/js/Category.js"></script>
   <script>
     function loadAll(guild) {
       loadServers();

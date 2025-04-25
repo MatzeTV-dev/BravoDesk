@@ -1,7 +1,6 @@
-import { dbGetCategories, dbCreateCategory, dbDeleteCategory } from '../Database/database.js';
-import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { dbGetCategories, dbCreateCategory, dbDeleteCategory, getGuildEmbeds, getServerInformation, Insert } from '../Database/database.js';
+import { ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder, ChannelType } from 'discord.js';
 import { updateTicketSystemChannelID } from './verification.js';
-import { getServerInformation, Insert } from '../Database/database.js';
 import Logger from './loggerHelper.js';
 
 /**
@@ -191,9 +190,57 @@ async function updateTicketCreationMessage(guild) {
   }
 }
 
+async function updateTicketSystemText(guild) {
+  try {
+    const serverInfo = await getServerInformation(guild.id);
+    const channelId = serverInfo?.[0]?.[0]?.ticket_system_channel_id;
+    if (!channelId) return;
+
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel || channel.type !== ChannelType.GuildText) return;
+
+    const fetched = await channel.messages.fetch({ limit: 1 });
+    const last = fetched.first();
+    if (last) await last.delete();
+
+    const embedsRow = await getGuildEmbeds(guild.id);
+    const raw = embedsRow?.ticket_creation_embed;
+    if (!raw) return;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      console.error('Invalid JSON in ticket_creation_embed');
+      return;
+    }
+
+    const embedData = Array.isArray(parsed.embeds) && parsed.embeds.length
+      ? parsed.embeds[0]
+      : parsed;
+
+    const embed = new EmbedBuilder(embedData);
+    const hasContent =
+      embed.data.title ||
+      embed.data.description ||
+      (embed.data.fields && embed.data.fields.length > 0);
+    if (!hasContent) {
+      embed.setDescription('\u200B');
+    }
+
+    await channel.send({ embeds: [embed] });
+
+    await updateTicketCreationMessage(guild);
+
+  } catch (err) {
+    console.error('Fehler in updateTicketSystemText:', err);
+  }
+}
+
 export {
   getCategories,
   createCategory,
   deleteCategory,
-  updateTicketCreationMessage
+  updateTicketCreationMessage,
+  updateTicketSystemText
 };
