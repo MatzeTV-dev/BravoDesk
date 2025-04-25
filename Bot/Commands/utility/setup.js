@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionsBitField, ChannelType, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 //import { activateKey, checkKeyActivated, checkKeyValidity, checkKeyExists, CheckDiscordIDWithKey } from '../../helper/keyHelper.js';
-import { saveServerInformation, chefIfServerExists } from '../../Database/database.js';
+import { saveServerInformation, chefIfServerExists, upsertGuildEmbeds, getGuildEmbeds } from '../../Database/database.js';
 import { error, success, warning, info } from '../../helper/embedHelper.js';
 import { saveCategoriesToDB } from '../../helper/ticketCategoryHelper.js'
 import { generateCollection } from '../../Database/qdrant.js';
@@ -130,6 +130,10 @@ export default {
       const returnValue = await chefIfServerExists(guildID);
   
       if (returnValue) {
+        const ticketJson    = fs.readFileSync('./Design/Ticket_creation_message.json', 'utf-8');
+        const welcomeJson   = fs.readFileSync('./Design/Welcome_message.json', 'utf-8');
+        await upsertGuildEmbeds(guildID, ticketJson, welcomeJson);
+
         await createRoles(interaction);
         await createChannel(interaction);
         await createCategories(interaction);

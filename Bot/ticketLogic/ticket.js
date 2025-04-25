@@ -1,10 +1,9 @@
 import { PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { updateSupportRoleID, updateTicketCategoryID } from '../helper/verification.js'
-import { getServerInformation, checkUserBlacklisted } from '../Database/database.js';
+import { getServerInformation, checkUserBlacklisted, getGuildEmbeds } from '../Database/database.js';
+import { updateSupportRoleID, updateTicketCategoryID } from '../helper/verification.js';
 import { getCategories } from '../helper/ticketCategoryHelper.js';
 import { error, info } from '../helper/embedHelper.js';
 import Logger from '../helper/loggerHelper.js';
-import fs from 'fs';
 
 export default {
   data: {
@@ -63,7 +62,8 @@ export default {
  */
 async function createTicket(interaction, categoryObj) {
   try {
-    const rawData = await getServerInformation(interaction.guild.id);
+    const guildId = interaction.guild.id;
+    const rawData = await getServerInformation(guildId);
     const data = rawData[0][0];
     if (!data) {
       Logger.error('Serverinformationen konnten nicht geladen werden.');
@@ -74,16 +74,9 @@ async function createTicket(interaction, categoryObj) {
     }
 
     const guild = interaction.guild;
-    let supporterRole = null;
-
-    try {
-      supporterRole = guild.roles.cache.get(data.support_role_id);
-
-      if (!supporterRole) {
-        supporterRole = await updateSupportRoleID(guild);
-      }
-    } catch (error) {
-      console.log(error)      
+    let supporterRole = guild.roles.cache.get(data.support_role_id);
+    if (!supporterRole) {
+      supporterRole = await updateSupportRoleID(guild);
     }
 
     const channelName = `${interaction.user.username}s-Ticket`;
@@ -142,8 +135,8 @@ async function createTicket(interaction, categoryObj) {
     if (!categoryID) {
       try {
         categoryID = await updateTicketCategoryID(guild);
-      } catch(error) {
-        Logger.error("Error beim updaten von der Ticket Category ID");
+      } catch (error) {
+        Logger.error('Error beim updaten von der Ticket Category ID');
       }
     }
 
@@ -155,7 +148,14 @@ async function createTicket(interaction, categoryObj) {
       permissionOverwrites,
     });
 
-    const embedData = JSON.parse(fs.readFileSync('./Design/Welcome_message.json', 'utf-8'));
+    // Embed-Design aus der DB laden
+    const embedsRow = await getGuildEmbeds(guildId);
+    if (!embedsRow || !embedsRow.welcome_message_embed) {
+      throw new Error('Kein Embed‑Design in der DB gefunden.');
+    }
+    const embedData = JSON.parse(embedsRow.welcome_message_embed);
+
+    // Platzhalter ersetzen und Farbe setzen
     const embeds = embedData.embeds.map(embed => {
       const processedEmbed = {
         ...embed,
@@ -166,7 +166,7 @@ async function createTicket(interaction, categoryObj) {
         '{category}': categoryObj.label,
         '{user_ID}': interaction.user.id,
         '{username}': interaction.user.username,
-        '{support_type}': categoryObj.aiEnabled ? "KI" : "Mensch",
+        '{support_type}': categoryObj.aiEnabled ? 'KI' : 'Mensch',
       };
 
       processedEmbed.title = replacePlaceholders(processedEmbed.title, placeholders);
@@ -183,6 +183,7 @@ async function createTicket(interaction, categoryObj) {
       return processedEmbed;
     });
 
+    // Buttons
     const buttons = [
       new ButtonBuilder()
         .setCustomId('close_ticket_button')
@@ -193,9 +194,8 @@ async function createTicket(interaction, categoryObj) {
         .setCustomId('mark_as_solved_button')
         .setLabel('Gelöst')
         .setEmoji('✅')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
     ];
-
     if (categoryObj.aiEnabled) {
       buttons.push(
         new ButtonBuilder()
@@ -205,17 +205,18 @@ async function createTicket(interaction, categoryObj) {
           .setStyle(ButtonStyle.Secondary)
       );
     }
-
     const actionRow = new ActionRowBuilder().addComponents(...buttons);
 
+    // Embed senden
     await createdChannel.send({
       content: embedData.content || '',
       embeds,
       components: [actionRow],
     });
 
+    // Begrüßungstext
     await createdChannel.send(
-      `Hallo ${interaction.user.username}! Mein Name ist BravoDesk, ich bin ein ${categoryObj.aiEnabled ? "KI-gestützter" : "menschlicher"} Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit ${categoryObj.aiEnabled ? "einem Menschen" : "mir"} sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
+      `Hallo ${interaction.user.username}! Mein Name ist BravoDesk, ich bin ein ${categoryObj.aiEnabled ? 'KI-gestützter' : 'menschlicher'} Supporter. Ich werde dir dabei helfen, deine Angelegenheit zu klären. Solltest du zu irgendeiner Zeit mit ${categoryObj.aiEnabled ? 'einem Menschen' : 'mir'} sprechen wollen, teile mir dies mit, indem du auf einen der Buttons drückst!\n\nWie kann ich dir helfen?`
     );
 
     Logger.info(`Ticket erstellt: ${createdChannel.name} (ID: ${createdChannel.id})`);

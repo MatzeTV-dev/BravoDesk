@@ -155,3 +155,30 @@ export async function dbCreateCategory(guildId, category) {
 export async function dbDeleteCategory(guildId, label) {
   await executeQuery('CALL DeleteCategory(?, ?)', [guildId, label]);
 }
+
+/**
+ * Legt das Embed‑Design für einen Guild an oder updated es (Upsert).
+ */
+export async function upsertGuildEmbeds(guildId, ticketEmbedJson, welcomeEmbedJson) {
+  const query = `
+    INSERT INTO guild_embeds (guild_id, ticket_creation_embed, welcome_message_embed)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      ticket_creation_embed = VALUES(ticket_creation_embed),
+      welcome_message_embed = VALUES(welcome_message_embed);
+  `;
+  await executeQuery(query, [guildId, ticketEmbedJson, welcomeEmbedJson]);
+  Logger.success(`Embed‑Designs upserted for guild ${guildId}`);
+}
+
+/**
+ * Liest das Embed‑Design aus der DB für den gegebenen Guild.
+ */
+export async function getGuildEmbeds(guildId) {
+  const rows = await executeQuery(
+    'SELECT ticket_creation_embed, welcome_message_embed FROM guild_embeds WHERE guild_id = ?',
+    [guildId]
+  );
+  if (!rows.length) return null;
+  return rows[0];
+}
