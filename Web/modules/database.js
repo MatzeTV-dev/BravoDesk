@@ -12,19 +12,14 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
  * Stellt eine Verbindung zur MySQL-Datenbank her.
  * @type {mysql.Connection}
  */
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME_SERVER_INFORMATION
-});
-
-db.connect(err => {
-  if (err) {
-    console.error('Fehler bei der Datenbankverbindung:', err);
-  } else {
-    console.log('Erfolgreich mit der Datenbank verbunden');
-  }
+  database: process.env.DB_NAME_SERVER_INFORMATION,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 /**
