@@ -76,8 +76,40 @@ function selectServer(guild, automatic_open) {
     toggleMenu("serverDropdown");
   }
 
-  loadKnowledgeEntries(guild.id);
-  loadBlacklistEntries(guild.id);
-  loadTicketCategories(guild.id);
-  loadGuildRoles();
+  if (checkServerStatus(guild.id)) {
+    
+  } else {
+    loadKnowledgeEntries(guild.id);
+    loadBlacklistEntries(guild.id);
+    loadTicketCategories(guild.id);
+    loadGuildRoles();
+  }
+}
+
+function showOverlay() {
+  document.getElementById('setupOverlay').style.display = 'flex';
+}
+
+function hideOverlay() {
+  document.getElementById('setupOverlay').style.display = 'none';
+}
+
+function checkServerStatus(guildid) {
+  let check = null;
+  fetch(`/api/setupstatus/${guildid}`)
+    .then(r => r.json())
+    .then(data => {
+      const layout = document.querySelector('.layout');
+      check = data.result;
+      if (data.result) {
+        layout.classList.remove('blurred');
+        hideOverlay();
+      } else {
+        layout.classList.add('blurred');
+        showOverlay();
+      }
+    })
+    .catch(err => console.error('Fehler beim Abfragen des Setup Status:', err));
+
+    return check;
 }
