@@ -168,6 +168,7 @@ import blacklistRoutes from './modules/Blacklist.js';
 import categoryRoutes from './modules/Category.js';
 import designRoutes from './modules/Design.js';
 import botNotificationRoutes from './modules/botNotifications.js';
+import utilityRoutes from './modules/utility.js';
 
 app.use('/api', serverSelector);
 app.use('/api', userMenu);
@@ -176,6 +177,7 @@ app.use('/api', blacklistRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api/embeds', designRoutes);
 app.use('/api', botNotificationRoutes);
+app.use('/api', utilityRoutes);
 
 /**
  * Startet den Express-Server.
