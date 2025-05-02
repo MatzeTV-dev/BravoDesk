@@ -586,3 +586,30 @@ th, td {
   font-size: 0.875rem;
   color: #aaa;
 }
+
+/* nur die Main-Content-Box blur-fähig machen */
+.main-content.blurred {
+  filter: blur(5px);
+}
+
+/* Overlay innerhalb der Main-Content */
+#setupOverlay {
+  position: absolute;      /* relativ zu .main-content */
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.6);
+  display: none;           /* erst sichtbar, wenn aktiv */
+  align-items: center;
+  justify-content: center;
+  z-index: 100;            /* über dem Content, aber unter der Sidebar */
+}
+
+#setupOverlay .message {
+  color: #fff;
+  font-size: 1.5rem;
+  padding: 1rem 2rem;
+  background-color: rgba(28, 107, 62, 0.9);
+  border-radius: 8px;
+  text-align: center;
+}

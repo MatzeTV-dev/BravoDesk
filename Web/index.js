@@ -1,13 +1,16 @@
+import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 import express from 'express';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
 
 dotenv.config();
 
 const app = express();
+app.use(helmet());
 
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_SECRET;
@@ -22,13 +25,20 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    // Setze secure auf true in Produktionsumgebungen (HTTPS erforderlich)
     secure: process.env.NODE_ENV === 'development',
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: process.env.NODE_ENV === 'development' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000  // 1 Tag
   }
 }));
 
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'This IP got blocked because there are too many requests'
+});
+
+app.use(limiter);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.set('trust proxy', 1)
@@ -168,6 +178,7 @@ import blacklistRoutes from './modules/Blacklist.js';
 import categoryRoutes from './modules/Category.js';
 import designRoutes from './modules/Design.js';
 import botNotificationRoutes from './modules/botNotifications.js';
+import utilityRoutes from './modules/utility.js';
 
 app.use('/api', serverSelector);
 app.use('/api', userMenu);
@@ -176,6 +187,7 @@ app.use('/api', blacklistRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api/embeds', designRoutes);
 app.use('/api', botNotificationRoutes);
+app.use('/api', utilityRoutes);
 
 /**
  * Startet den Express-Server.
