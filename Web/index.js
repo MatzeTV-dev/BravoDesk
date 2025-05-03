@@ -10,8 +10,20 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-app.use(helmet());
-
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      scriptSrcElem: ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "https://cdn.discordapp.com"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      connectSrc: ["'self'"]
+    }
+  })
+);
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_SECRET;
 const PORT = process.env.PORT;

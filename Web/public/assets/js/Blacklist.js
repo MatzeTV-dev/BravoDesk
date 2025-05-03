@@ -51,25 +51,40 @@ function closeBlacklistAddModal() {
 function saveBlacklistEntry() {
   const userId = document.getElementById("blacklistAddUserId").value.trim();
   const reason = document.getElementById("blacklistAddReason").value.trim();
-  console.log("saveBlacklistEntry invoked", { userId, reason, currentGuildId });
-  if (userId !== "" && currentGuildId) {
-    fetch(`/api/blacklist/${currentGuildId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, reason: reason })
+  if (!userId || !currentGuildId) return;
+
+  fetch(`/api/blacklist/${currentGuildId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, reason: reason })
+  })
+    .then(async response => {
+      const text = await response.text();
+      // Versuche, das Ergebnis als JSON zu parsen, wenn’s JSON ist
+      let data;
+      try { data = JSON.parse(text); }
+      catch   { throw new Error(`Server antwortete nicht mit JSON:\n${text}`); }
+
+      if (!response.ok) {
+        // zieh dir die Error-Message
+        throw new Error(data.error || JSON.stringify(data));
+      }
+      return data;
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Blacklist-Eintrag gespeichert:", data);
-        loadBlacklistEntries(currentGuildId);
-        document.getElementById("blacklistAddUserId").value = "";
-        document.getElementById("blacklistAddReason").value = "";
-        closeBlacklistAddModal();
-        notify("User wurde zur Blacklist hinzugefügt", 3000, "success")
-      })
-      .catch(err => console.error("Fehler beim Speichern des Blacklist-Eintrags:", err));
-  }
+    .then(data => {
+      console.log("Blacklist-Eintrag gespeichert:", data);
+      loadBlacklistEntries(currentGuildId);
+      document.getElementById("blacklistAddUserId").value   = "";
+      document.getElementById("blacklistAddReason").value = "";
+      closeBlacklistAddModal();
+      notify("User wurde zur Blacklist hinzugefügt", 3000, "success");
+    })
+    .catch(err => {
+      console.error("Fehler beim Speichern des Blacklist-Eintrags:", err);
+      notify(`Fehler: ${err.message}`, 5000, "error");
+    });
 }
+
 
 function openBlacklistRemoveModal() {
   document.getElementById("blacklistRemoveModal").classList.add("show");

@@ -1,47 +1,111 @@
-import { db } from '../modules/database.js';
 import express from 'express';
-
+import { db } from '../modules/database.js';      // dein database.js
+import { fetchMemberTag } from '../modules/discordApi.js'; // siehe letzten Vorschlag
 const router = express.Router();
+
+// Utility, um Promises aus dem Pool zu bekommen
+const pool = db.promise();
 
 /**
  * Middleware, die sicherstellt, dass der Benutzer authentifiziert ist.
  */
 function ensureAuthenticated(req, res, next) {
-  if (!req.session || !req.session.access_token) {
+  if (!req.session?.access_token) {
     return res.status(401).json({ error: "Nicht authentifiziert." });
   }
   next();
 }
 
 /**
- * Helper-Funktion zur Validierung von serverId (Discord Snowflake: 17 bis 19 Ziffern).
+ * Validiert Discord-Snowflakes.
  */
-function validateServerId(serverId) {
-  return /^\d{17,19}$/.test(serverId);
+function validateServerId(id) {
+  return /^\d{17,19}$/.test(id);
 }
 
-// Alle nachfolgenden Routen erfordern Authentifizierung.
+// Alle Routen hier brauchen Auth
 router.use(ensureAuthenticated);
 
-/**
- * Ruft Blacklist-Einträge für einen bestimmten Server ab.
- *
- * @route GET /blacklist/:serverId
- * @param {Request} req - Der Request, mit Parameter serverId.
- * @param {Response} res - Die Response.
- */
-router.get('/blacklist/:serverId', (req, res) => {
-  const serverId = req.params.serverId;
-  if (!validateServerId(serverId)) {
+
+router.get('/blacklist/:serverId', async (req, res) => {
+  const { serverId } = req.params;
+  if (!validateServerId(serverId))
     return res.status(400).json({ error: "Ungültige Server ID." });
+
+  try {
+    const [resultSets] = await pool.query("CALL sp_GetBlacklist(?)", [serverId]);
+    const rows = Array.isArray(resultSets) ? resultSets[0] : [];
+
+    const enriched = await Promise.all(rows.map(async entry => {
+      let tag = null;
+      try {
+        tag = await fetchMemberTag(serverId, entry.user_id);
+      } catch (err) {
+        console.warn(`Discord-API fetch failed for ${entry.user_id}:`, err.message);
+      }
+      // Wenn tag null ist, dann war der User nicht greifbar
+      const display = tag
+        ? `${tag} (${entry.user_id})`
+        : entry.user_id; 
+      return {
+        user_id:    display,
+        reason:     entry.reason,
+        created_at: entry.created_at
+      };
+    }));
+
+    res.json(enriched);
+  } catch (err) {
+    console.error("Error GET /blacklist:", err);
+    res.status(500).json({ error: err.message });
   }
-  db.query("CALL sp_GetBlacklist(?)", [serverId], (err, results) => {
-    if (err) {
-      console.error("Fehler beim Abrufen der Blacklist:", err);
-      return res.status(500).json({ error: "Fehler beim Abrufen der Blacklist" });
-    }
-    res.json(results[0]);
-  });
+});
+
+router.get('/blacklist/:serverId/search', async (req, res) => {
+  const { serverId } = req.params;
+  const userId       = req.query.user_id;
+  if (!validateServerId(serverId) || !/^\d{18}$/.test(userId))
+    return res.status(400).json({ error: "Ungültige Parameter." });
+
+  try {
+    const [resultSets] = await pool.query("CALL sp_SearchBlacklist(?, ?)", [serverId, userId]);
+    const rows = Array.isArray(resultSets) ? resultSets[0] : [];
+
+    const enriched = await Promise.all(rows.map(async entry => {
+      let tag = null;
+      try {
+        tag = await fetchMemberTag(serverId, entry.user_id);
+      } catch {}
+      const display = tag
+        ? `${entry.user_id} (${tag})`
+        : entry.user_id;
+      return {
+        user_id:    entry.user_id,
+        display,
+        reason:     entry.reason,
+        created_at: entry.created_at
+      };
+    }));
+
+    res.json(enriched);
+  } catch (err) {
+    console.error("Error SEARCH /blacklist:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/blacklist/:serverId/:userId', async (req, res) => {
+  const { serverId, userId } = req.params;
+  if (!validateServerId(serverId) || !/^\d{18}$/.test(userId))
+    return res.status(400).json({ error: "Ungültige Parameter." });
+
+  try {
+    await pool.query("CALL sp_RemoveBlacklist(?, ?)", [serverId, userId]);
+    res.json({ success: true, message: "Eintrag entfernt." });
+  } catch (err) {
+    console.error("Error DELETE /blacklist:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**
@@ -79,62 +143,5 @@ router.post('/blacklist/:serverId', express.json(), (req, res) => {
   });
 });
 
-/**
- * Entfernt einen Blacklist-Eintrag für einen bestimmten Server.
- *
- * @route DELETE /blacklist/:serverId/:userId
- * @param {Request} req - Der Request mit Parameter serverId und userId.
- * @param {Response} res - Die Response.
- */
-router.delete('/blacklist/:serverId/:userId', (req, res) => {
-  const serverId = req.params.serverId;
-  if (!validateServerId(serverId)) {
-    return res.status(400).json({ error: "Ungültige Server ID." });
-  }
-  const userId = req.params.userId;
-  
-  if (!/^\d{18}$/.test(userId)) {
-    return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
-  }
-  
-  db.query("CALL sp_RemoveBlacklist(?, ?)", [serverId, userId], (err) => {
-    if (err) {
-      console.error("Fehler beim Entfernen aus der Blacklist:", err);
-      return res.status(500).json({ error: "Fehler beim Entfernen aus der Blacklist." });
-    }
-    res.json({ success: true, message: "Benutzer wurde von der Blacklist entfernt." });
-  });
-});
-
-/**
- * Sucht nach einem Blacklist-Eintrag für einen bestimmten Server.
- *
- * @route GET /blacklist/:serverId/search
- * @param {Request} req - Der Request mit Parameter serverId und Query user_id.
- * @param {Response} res - Die Response.
- */
-router.get('/blacklist/:serverId/search', (req, res) => {
-  const serverId = req.params.serverId;
-  if (!validateServerId(serverId)) {
-    return res.status(400).json({ error: "Ungültige Server ID." });
-  }
-  const userId = req.query.user_id;
-  
-  if (!userId) {
-    return res.status(400).json({ error: "user_id Query-Parameter ist erforderlich." });
-  }
-  
-  if (!/^\d{18}$/.test(userId)) {
-    return res.status(400).json({ error: "Ungültige User ID. Sie muss aus 18 Ziffern bestehen." });
-  }
-  
-  db.query("CALL sp_SearchBlacklist(?, ?)", [serverId, userId], (err, results) => {
-    if (err) {
-      console.error("Fehler beim Suchen in der Blacklist:", err);
-      return res.status(500).json({ error: "Fehler beim Suchen in der Blacklist." });
-    }
-    res.json(results[0]);
-  });
-});
 
 export default router;
