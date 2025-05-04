@@ -36,6 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
     .addEventListener("click", openPopup);
   document.getElementById("btnOpenFileUpload")
     .addEventListener("click", openFileUploadModal);
+  document.getElementById("btnOpenDocUpload")
+    .addEventListener("click", openDocUploadModal);
+  document.getElementById("btnImportDoc")
+    .addEventListener("click", importDoc);
+  document.getElementById("btnCancelDocImport")
+    .addEventListener("click", closeDocUploadModal);  
 
   // 6) Kategorie bearbeiten
   document.getElementById("kategorieSelect")

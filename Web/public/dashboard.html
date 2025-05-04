@@ -93,16 +93,9 @@
           </tbody>
         </table>
         <div style="text-align: right; margin-top: 15px;">
-          <button id="btnOpenPopup"
-                  style="padding: 10px 20px; background-color: #1c6b3e; color: #fff;
-                         border: none; border-radius: 8px; cursor: pointer;">
-            Neu
-          </button>
-          <button id="btnOpenFileUpload"
-                  style="padding: 10px 20px; background-color: #1c6b3e; color: #fff;
-                         border: none; border-radius: 8px; cursor: pointer;">
-            Datei hochladen
-          </button>
+          <button id="btnOpenPopup" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff;border: none; border-radius: 8px; cursor: pointer;">Neu</button>
+          <button id="btnOpenFileUpload" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Datei hochladen</button>
+          <button id="btnOpenDocUpload" style="padding: 10px 20px; background-color: #1c6b3e; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Google Docs</button>
         </div>
       </div>
 
@@ -349,6 +342,21 @@
           <div class="popup-buttons">
             <button id="btnUploadFile">Hochladen</button>
             <button id="btnCancelUploadFile">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Neues Modal: Google Docs Import -->
+      <div id="docUploadModal" class="popup-modal">
+        <div class="popup-content">
+          <h3>Google Docs Import</h3>
+          <div style="margin-bottom: 10px;">
+            <label for="docUrl" class="label-container">Google Docs Link</label>
+            <input type="text" id="docUrl" placeholder="https://docs.google.com/document/d/..." style="width:100%; padding:4px; background-color:#1e1e1e; color:#ccc; border:1px solid #444; border-radius:4px;">
+          </div>
+          <div class="popup-buttons">
+            <button id="btnImportDoc">Importieren</button>
+            <button id="btnCancelDocImport">Abbrechen</button>
           </div>
         </div>
       </div>
