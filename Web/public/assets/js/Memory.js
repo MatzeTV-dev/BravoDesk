@@ -95,29 +95,53 @@ function loadKnowledgeEntries(guildId) {
       if (data && data.length) {
         data.forEach(point => {
           const tr = document.createElement("tr");
-          tr.setAttribute("data-entry-id", point.id);
-          
+          tr.dataset.entryId = point.id;
+
+          // Inhalt
           const tdContent = document.createElement("td");
           tdContent.classList.add("wissen-cell");
-          tdContent.setAttribute("data-fulltext", point.payload.text || "");
+          tdContent.dataset.fulltext = point.payload.text || "";
           tdContent.innerText = point.payload.text || "Kein Inhalt";
-          
+          tr.appendChild(tdContent);
+
+          // Aktionen
           const tdActions = document.createElement("td");
           tdActions.style.verticalAlign = "middle";
-          // Da dies statischer HTML-Code mit fixen Inhalten ist (keine Nutzereingaben), ist die Verwendung von innerHTML hier vertretbar.
-          tdActions.innerHTML = `<span style="cursor:pointer;" onclick="openEditPopup(this)">✏️</span>
-                                  <span style="cursor:pointer; margin-left:10px;" onclick="deleteEntry(this)">❌</span>`;
-          
-          tr.appendChild(tdContent);
+
+          // Edit-Button
+          const btnEdit = document.createElement("span");
+          btnEdit.style.cursor = "pointer";
+          btnEdit.textContent = "✏️";
+          btnEdit.addEventListener("click", () => openEditPopup(btnEdit));
+          tdActions.appendChild(btnEdit);
+
+          // Abstand
+          const spacer = document.createElement("span");
+          spacer.style.marginLeft = "10px";
+          tdActions.appendChild(spacer);
+
+          // Delete-Button
+          const btnDelete = document.createElement("span");
+          btnDelete.style.cursor = "pointer";
+          btnDelete.textContent = "❌";
+          btnDelete.addEventListener("click", () => deleteEntry(btnDelete));
+          tdActions.appendChild(btnDelete);
+
           tr.appendChild(tdActions);
           tbody.appendChild(tr);
         });
       } else {
-        tbody.innerHTML = `<tr><td colspan="2">Keine Einträge gefunden.</td></tr>`;
+        const trEmpty = document.createElement("tr");
+        const tdEmpty = document.createElement("td");
+        tdEmpty.colSpan = 2;
+        tdEmpty.innerText = "Keine Einträge gefunden.";
+        trEmpty.appendChild(tdEmpty);
+        tbody.appendChild(trEmpty);
       }
     })
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
+
 
 function openFileUploadModal() {
   document.getElementById("fileUploadModal").classList.add("show");
