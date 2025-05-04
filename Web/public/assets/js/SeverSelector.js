@@ -77,7 +77,7 @@ function selectServer(guild, automatic_open) {
   }
 
   if (checkServerStatus(guild.id)) {
-    
+    console.log("Server is not set up");
   } else {
     loadKnowledgeEntries(guild.id);
     loadBlacklistEntries(guild.id);
