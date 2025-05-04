@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import multer from 'multer';
+import pdf from 'pdf-parse';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -25,14 +26,14 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    // Erlaube nur .txt Dateien
-    if (file.mimetype === 'text/plain') {
+    // Erlaube .txt und .pdf
+    if (file.mimetype === 'text/plain' || file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
-      cb(new Error("Nur .txt Dateien erlaubt"), false);
+      cb(new Error("Nur .txt und .pdf Dateien erlaubt"), false);
     }
   },
-  limits: { fileSize: 1024 * 1024 } // 1 MB Größenlimit
+  limits: { fileSize: 1024 * 1024 } // 1 MB
 });
 
 /**
@@ -68,8 +69,15 @@ router.post('/upload-file/:guildId', upload.single('file'), async (req, res) => 
     return res.status(400).json({ error: "Keine Datei hochgeladen." });
   }
   
-  // Dateiinhalt als Text auslesen (UTF-8)
-  const fileContent = req.file.buffer.toString('utf-8');
+  // Dateiinhalt als Text auslesen (UTF-8 für .txt, pdf-parse für .pdf)
+  let fileContent;
+  if (req.file.mimetype === 'application/pdf') {
+    // pdf-parse liefert ein Promise mit { text: string, … }
+    const data = await pdf(req.file.buffer);
+    fileContent = data.text;
+  } else {
+    fileContent = req.file.buffer.toString('utf-8');
+  }
   
   // Text an jedem Punkt trennen, trimmen und leere Segmente entfernen
   let segments = fileContent.split('.').map(segment => segment.trim()).filter(segment => segment !== "");
