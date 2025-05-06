@@ -41,7 +41,8 @@ function openDesignModal(key) {
       modal.classList.add('show');
     })
     .catch(err => {
-      alert('Fehler beim Laden des Embeds: ' + (err.message || err.statusText || err));
+      //alert('Fehler beim Laden des Embeds: ' + (err.message || err.statusText || err));
+      notify("Fehler beim Laden des Embeds", 3000, "error")
     });
 }
 
@@ -81,11 +82,11 @@ function saveDesignModal() {
   })
     .then(res => {
       if (!res.ok) return res.json().then(j => Promise.reject(j.error || res.statusText));
-      alert('Embed gespeichert!');
+      notify("Embed gespeichert", 3000, "success")
       closeDesignModal();
     })
     .catch(err => {
-      alert('Fehler beim Speichern: ' + (err.message || err));
+      notify("Fehler beim Speichern", 3000, "error")
     });
 }
 

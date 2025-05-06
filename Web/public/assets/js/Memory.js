@@ -160,7 +160,7 @@ function closeFileUploadModal() {
 function uploadFile() {
   const fileInput = document.getElementById("fileInput");
   if (!fileInput.files || fileInput.files.length === 0) {
-    alert("Bitte wählen Sie eine Datei aus.");
+    notify("Bitte wählen sie eine Datei aus", 3000, "warn")
     return;
   }
   
@@ -176,10 +176,12 @@ function uploadFile() {
     .then(response => response.json())
     .then(data => {
       if (data.error) {
-        alert("Fehler: " + data.error);
+        //alert("Fehler: " + data.error);
+        notify("Fehler", 3000, "error")
       } else {
-        alert("Datei erfolgreich hochgeladen. Eingefügte Einträge: " +
-              data.inserted + ", Übersprungene: " + data.skipped);
+        notify("Datei erfolgreich hochgeladen. Eingefüge Einträge: " + data.inserted + ", Übersprungen: " + data.skipped, 3000, "success");
+        //alert("Datei erfolgreich hochgeladen. Eingefügte Einträge: " +
+        //      data.inserted + ", Übersprungene: " + data.skipped);
         // Optional: Liste der Wissenseinträge neu laden
         loadKnowledgeEntries(currentGuildId);
       }
@@ -187,7 +189,7 @@ function uploadFile() {
     })
     .catch(err => {
       console.error("Fehler beim Datei Upload:", err);
-      alert("Fehler beim Datei Upload.");
+      notify("Fehler beim Datei Uploade", 3000, "error")
     });
 }
 
@@ -218,12 +220,14 @@ function closeDocUploadModal() {
 async function importDoc() {
   const url = document.getElementById('docUrl').value.trim();
   if (!url) {
-    alert('Bitte gültigen Google Docs Link angeben.');
+    notfiy("Bitte gültiges Google Docs angeben", 3000, "warn");
+    //alert('Bitte gültigen Google Docs Link angeben.');
     return;
   }
   const match = url.match(/^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+/);
   if (!match) {
-    alert('Ungültiger Google Docs Link.');
+    notify("Üngülitger Google Docs Link", 3000, "error");
+    //alert('Ungültiger Google Docs Link.');
     return;
   }
   try {
@@ -234,14 +238,16 @@ async function importDoc() {
     });
     const data = await res.json();
     if (data.error) {
-      alert('Fehler: ' + data.error);
+      //alert('Fehler: ' + data.error);
+      notify("Fehler", 3000, "error")
     } else {
-      alert(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`);
+      notify(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`, 3000, "success");
+      //alert(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`);
       loadKnowledgeEntries(currentGuildId);
     }
   } catch (err) {
     console.error('Fehler beim Importieren:', err);
-    alert('Fehler beim Importieren des Google Docs.');
+    notify(`Fehlerb eim Google Docs impotieren`, 3000, "error");
   }
   closeDocUploadModal();
 }
