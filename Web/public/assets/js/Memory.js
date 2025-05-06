@@ -72,13 +72,19 @@ function deleteEntry(el) {
     fetch(`/api/wissenseintraege/${currentGuildId}/${entryId}`, {
       method: "DELETE"
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Eintrag gelöscht:", data);
-        loadKnowledgeEntries(currentGuildId);
-        notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success");
+      .then(async response => {
+        console.log("Status:", response.status, response.statusText);
+        const text = await response.text();
+        console.log("Raw response:", text);
+        // Versuche anschließend erst, es als JSON zu interpretieren
+        return JSON.parse(text);
       })
-      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));
+      .then(data => {
+        console.log("Parsed JSON:", data);
+        loadKnowledgeEntries(currentGuildId);
+        notify("Wissenseinträge wurde erfolgreich gelöscht", 3000, "success");
+      })
+      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));    
   }
 }
 
@@ -197,3 +203,45 @@ document.addEventListener("DOMContentLoaded", function() {
     loadKnowledgeEntries(this.value);
   });
 });
+
+// Öffnet das Modal zum Google Docs Import
+function openDocUploadModal() {
+  document.getElementById('docUploadModal').classList.add('show');
+}
+
+// Schließt das Modal zum Google Docs Import
+function closeDocUploadModal() {
+  document.getElementById('docUploadModal').classList.remove('show');
+}
+
+// Importiert Google Docs per URL und legt Einträge an
+async function importDoc() {
+  const url = document.getElementById('docUrl').value.trim();
+  if (!url) {
+    alert('Bitte gültigen Google Docs Link angeben.');
+    return;
+  }
+  const match = url.match(/^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+/);
+  if (!match) {
+    alert('Ungültiger Google Docs Link.');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/docs/import/${currentGuildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert('Fehler: ' + data.error);
+    } else {
+      alert(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`);
+      loadKnowledgeEntries(currentGuildId);
+    }
+  } catch (err) {
+    console.error('Fehler beim Importieren:', err);
+    alert('Fehler beim Importieren des Google Docs.');
+  }
+  closeDocUploadModal();
+}
