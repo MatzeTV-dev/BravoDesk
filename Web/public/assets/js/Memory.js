@@ -72,13 +72,19 @@ function deleteEntry(el) {
     fetch(`/api/wissenseintraege/${currentGuildId}/${entryId}`, {
       method: "DELETE"
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Eintrag gelöscht:", data);
-        loadKnowledgeEntries(currentGuildId);
-        notify("Wissenseintrage wurde erfolgreich gelöscht", 3000, "success");
+      .then(async response => {
+        console.log("Status:", response.status, response.statusText);
+        const text = await response.text();
+        console.log("Raw response:", text);
+        // Versuche anschließend erst, es als JSON zu interpretieren
+        return JSON.parse(text);
       })
-      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));
+      .then(data => {
+        console.log("Parsed JSON:", data);
+        loadKnowledgeEntries(currentGuildId);
+        notify("Wissenseinträge wurde erfolgreich gelöscht", 3000, "success");
+      })
+      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));    
   }
 }
 
@@ -95,29 +101,53 @@ function loadKnowledgeEntries(guildId) {
       if (data && data.length) {
         data.forEach(point => {
           const tr = document.createElement("tr");
-          tr.setAttribute("data-entry-id", point.id);
-          
+          tr.dataset.entryId = point.id;
+
+          // Inhalt
           const tdContent = document.createElement("td");
           tdContent.classList.add("wissen-cell");
-          tdContent.setAttribute("data-fulltext", point.payload.text || "");
+          tdContent.dataset.fulltext = point.payload.text || "";
           tdContent.innerText = point.payload.text || "Kein Inhalt";
-          
+          tr.appendChild(tdContent);
+
+          // Aktionen
           const tdActions = document.createElement("td");
           tdActions.style.verticalAlign = "middle";
-          // Da dies statischer HTML-Code mit fixen Inhalten ist (keine Nutzereingaben), ist die Verwendung von innerHTML hier vertretbar.
-          tdActions.innerHTML = `<span style="cursor:pointer;" onclick="openEditPopup(this)">✏️</span>
-                                  <span style="cursor:pointer; margin-left:10px;" onclick="deleteEntry(this)">❌</span>`;
-          
-          tr.appendChild(tdContent);
+
+          // Edit-Button
+          const btnEdit = document.createElement("span");
+          btnEdit.style.cursor = "pointer";
+          btnEdit.textContent = "✏️";
+          btnEdit.addEventListener("click", () => openEditPopup(btnEdit));
+          tdActions.appendChild(btnEdit);
+
+          // Abstand
+          const spacer = document.createElement("span");
+          spacer.style.marginLeft = "10px";
+          tdActions.appendChild(spacer);
+
+          // Delete-Button
+          const btnDelete = document.createElement("span");
+          btnDelete.style.cursor = "pointer";
+          btnDelete.textContent = "❌";
+          btnDelete.addEventListener("click", () => deleteEntry(btnDelete));
+          tdActions.appendChild(btnDelete);
+
           tr.appendChild(tdActions);
           tbody.appendChild(tr);
         });
       } else {
-        tbody.innerHTML = `<tr><td colspan="2">Keine Einträge gefunden.</td></tr>`;
+        const trEmpty = document.createElement("tr");
+        const tdEmpty = document.createElement("td");
+        tdEmpty.colSpan = 2;
+        tdEmpty.innerText = "Keine Einträge gefunden.";
+        trEmpty.appendChild(tdEmpty);
+        tbody.appendChild(trEmpty);
       }
     })
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
+
 
 function openFileUploadModal() {
   document.getElementById("fileUploadModal").classList.add("show");
@@ -130,7 +160,7 @@ function closeFileUploadModal() {
 function uploadFile() {
   const fileInput = document.getElementById("fileInput");
   if (!fileInput.files || fileInput.files.length === 0) {
-    alert("Bitte wählen Sie eine Datei aus.");
+    notify("Bitte wählen sie eine Datei aus", 3000, "warn")
     return;
   }
   
@@ -146,10 +176,12 @@ function uploadFile() {
     .then(response => response.json())
     .then(data => {
       if (data.error) {
-        alert("Fehler: " + data.error);
+        //alert("Fehler: " + data.error);
+        notify("Fehler", 3000, "error")
       } else {
-        alert("Datei erfolgreich hochgeladen. Eingefügte Einträge: " +
-              data.inserted + ", Übersprungene: " + data.skipped);
+        notify("Datei erfolgreich hochgeladen. Eingefüge Einträge: " + data.inserted + ", Übersprungen: " + data.skipped, 3000, "success");
+        //alert("Datei erfolgreich hochgeladen. Eingefügte Einträge: " +
+        //      data.inserted + ", Übersprungene: " + data.skipped);
         // Optional: Liste der Wissenseinträge neu laden
         loadKnowledgeEntries(currentGuildId);
       }
@@ -157,7 +189,7 @@ function uploadFile() {
     })
     .catch(err => {
       console.error("Fehler beim Datei Upload:", err);
-      alert("Fehler beim Datei Upload.");
+      notify("Fehler beim Datei Uploade", 3000, "error")
     });
 }
 
@@ -173,3 +205,49 @@ document.addEventListener("DOMContentLoaded", function() {
     loadKnowledgeEntries(this.value);
   });
 });
+
+// Öffnet das Modal zum Google Docs Import
+function openDocUploadModal() {
+  document.getElementById('docUploadModal').classList.add('show');
+}
+
+// Schließt das Modal zum Google Docs Import
+function closeDocUploadModal() {
+  document.getElementById('docUploadModal').classList.remove('show');
+}
+
+// Importiert Google Docs per URL und legt Einträge an
+async function importDoc() {
+  const url = document.getElementById('docUrl').value.trim();
+  if (!url) {
+    notfiy("Bitte gültiges Google Docs angeben", 3000, "warn");
+    //alert('Bitte gültigen Google Docs Link angeben.');
+    return;
+  }
+  const match = url.match(/^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+/);
+  if (!match) {
+    notify("Üngülitger Google Docs Link", 3000, "error");
+    //alert('Ungültiger Google Docs Link.');
+    return;
+  }
+  try {
+    const res = await fetch(`/api/docs/import/${currentGuildId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (data.error) {
+      //alert('Fehler: ' + data.error);
+      notify("Fehler", 3000, "error")
+    } else {
+      notify(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`, 3000, "success");
+      //alert(`Import erfolgreich. Eingefügte Einträge: ${data.inserted}, Übersprungene: ${data.skipped}`);
+      loadKnowledgeEntries(currentGuildId);
+    }
+  } catch (err) {
+    console.error('Fehler beim Importieren:', err);
+    notify(`Fehlerb eim Google Docs impotieren`, 3000, "error");
+  }
+  closeDocUploadModal();
+}
