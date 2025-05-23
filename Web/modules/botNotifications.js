@@ -34,7 +34,16 @@ function authenticateBotRequest(req, res, next) {
     next();
 }
 
-
+/**
+ * POST /api/notify/reset
+ * Empfängt eine Reset-Benachrichtigung vom Discord-Bot für eine bestimmte Guild.
+ * Validiert die Anfrage und löst serverseitige Aktionen aus (z.B. Cache-Löschung, UI-Updates).
+ *
+ * @route POST /api/notify/reset
+ * @param {express.Request} req - Das Request-Objekt. Erwartet `guildId` im Body.
+ * @param {express.Response} res - Das Response-Objekt.
+ * @returns {Promise<void>}
+ */
 router.post('/notify/reset', authenticateBotRequest, async (req, res) => {
     console.log('Reset-Benachrichtigung vom Discord-Bot erhalten.');
 

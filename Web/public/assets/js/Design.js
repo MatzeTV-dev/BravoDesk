@@ -1,13 +1,26 @@
 // assets/js/DesignModal.js
 let currentDesignKey;
-//let currentGuildId;
+//let currentGuildId; // Globale Variable für die aktuelle Guild-ID, wird in initDesign gesetzt.
 
-// Wird von loadAll(guild) aufgerufen:
+/**
+ * Initialisiert die Design-Bearbeitung für eine spezifische Guild.
+ * Setzt die globale `currentGuildId` Variable, die von anderen Funktionen in diesem Skript verwendet wird.
+ * Diese Funktion wird typischerweise aufgerufen, wenn die Hauptseite oder der Bereich für eine Guild geladen wird.
+ *
+ * @param {object} guild - Das Guild-Objekt, das mindestens eine `id`-Eigenschaft enthält.
+ * @param {string} guild.id - Die ID der aktuellen Guild.
+ */
 function initDesign(guild) {
   currentGuildId = guild.id;
 }
 
-// Öffnet das Modal, lädt die Daten, füllt das Formular und zeigt es an
+/**
+ * Öffnet das Modal zur Bearbeitung eines Embed-Designs.
+ * Lädt die aktuellen Embed-Daten für den gegebenen Schlüssel (key) und die currentGuildId,
+ * füllt die Formularfelder im Modal und zeigt das Modal an.
+ *
+ * @param {string} key - Der Schlüssel des zu bearbeitenden Embed-Designs (z.B. 'ticket_creation', 'welcome_message').
+ */
 function openDesignModal(key) {
   currentDesignKey = key;
   const modal = document.getElementById('editEmbedModal');
@@ -46,12 +59,18 @@ function openDesignModal(key) {
     });
 }
 
-// Schließt das Modal
+/**
+ * Schließt das Modal zur Bearbeitung des Embed-Designs.
+ */
 function closeDesignModal() {
   document.getElementById('editEmbedModal').classList.remove('show');
 }
 
-// Sammelt die Formularwerte, sendet PUT und schließt das Modal
+/**
+ * Sammelt die Werte aus dem Embed-Design-Formular, erstellt ein Embed-Objekt,
+ * sendet dieses per PUT-Request an den Server, um das Design zu speichern,
+ * und schließt das Modal bei Erfolg. Benachrichtigt den Benutzer über Erfolg oder Fehler.
+ */
 function saveDesignModal() {
   const title         = document.getElementById('modalEmbedTitle').value.trim();
   const description   = document.getElementById('modalEmbedDescription').value.trim();
@@ -90,7 +109,12 @@ function saveDesignModal() {
     });
 }
 
-// Live-Vorschau bei Thumbnail-Link-Eingabe
+/**
+ * Event-Listener für das Eingabefeld der Thumbnail-URL im Embed-Design-Modal.
+ * Aktualisiert die Vorschau des Thumbnails live, während der Benutzer tippt.
+ * Zeigt das Vorschaubild an, wenn eine gültige URL eingegeben wird, die zu einem Bild führt.
+ * Versteckt die Vorschau, wenn die URL ungültig ist oder kein Bild geladen werden kann.
+ */
 document.getElementById('modalEmbedThumbnail').addEventListener('input', (e) => {
   const url = e.target.value;
   const preview = document.getElementById('modalEmbedThumbnailPreview');

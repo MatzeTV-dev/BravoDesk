@@ -1,13 +1,25 @@
 let currentCategoryId = null;
 let guildID = null;
 
-// Hilfsfunktion zur HTML-Escape, falls dynamische Inhalte per innerHTML eingefügt werden müssen
+/**
+ * Escaped HTML-Sonderzeichen in einem String, um XSS-Schwachstellen vorzubeugen.
+ * Ersetzt Zeichen wie <, >, &, ", ' durch ihre entsprechenden HTML-Entitäten.
+ *
+ * @param {string} str - Der zu escapende String.
+ * @returns {string} Der String mit escapeden HTML-Zeichen.
+ */
 function escapeHTML(str) {
   const div = document.createElement('div');
   div.innerText = str;
   return div.innerHTML;
 }
 
+/**
+ * Lädt die Ticket-Kategorien für die angegebene Guild-ID vom Server.
+ * Füllt das Auswahlfeld für Kategorien und lädt die Daten der ersten Kategorie in die Formularfelder.
+ *
+ * @param {string} guildId - Die ID der Guild, für die die Kategorien geladen werden sollen.
+ */
 function loadTicketCategories(guildId) {
   guildID = guildId;
   fetch(`/api/ticket_categories/${guildId}`)
@@ -39,6 +51,11 @@ function loadTicketCategories(guildId) {
     .catch(err => console.error("Fehler beim Laden der Ticket-Kategorien:", err));
 }
 
+/**
+ * Lädt die Daten einer spezifischen Kategorie anhand ihrer ID und füllt die Formularfelder.
+ *
+ * @param {string|number} categoryId - Die ID der zu ladenden Kategorie.
+ */
 function loadCategoryData(categoryId) {
   fetch(`/api/ticket_categories/${guildID}`)
     .then(response => response.json())
@@ -52,6 +69,11 @@ function loadCategoryData(categoryId) {
     .catch(err => console.error("Fehler beim Laden der Kategorie:", err));
 }
 
+/**
+ * Füllt die Formularfelder auf der Seite mit den Daten des übergebenen Kategorie-Objekts.
+ *
+ * @param {object} cat - Das Kategorie-Objekt mit den Eigenschaften { emoji, description, ai_prompt, ai_enabled, permission }.
+ */
 function fillCategoryFields(cat) {
   document.getElementById("kategorieEmoji").value = cat.emoji || "";
   document.getElementById("kategorieBeschreibung").value = cat.description || "";
@@ -70,6 +92,11 @@ function fillCategoryFields(cat) {
   }
 }
 
+/**
+ * Speichert die Änderungen an der aktuell ausgewählten Ticket-Kategorie.
+ * Liest die Werte aus den Formularfeldern und sendet sie an den Server.
+ * Aktualisiert die Kategorienliste nach Erfolg.
+ */
 function saveCategoryChanges() {
   if (!currentCategoryId) {
     notify("Keine Kategorie ausgewählt", 3000, "warn")
@@ -115,6 +142,10 @@ function saveCategoryChanges() {
     .catch(err => console.error("Fehler beim Aktualisieren der Kategorie:", err));
 }
 
+/**
+ * Löscht die aktuell ausgewählte Ticket-Kategorie nach Bestätigung durch den Benutzer.
+ * Aktualisiert die Kategorienliste nach Erfolg.
+ */
 function deleteCategory() {
   if (!currentCategoryId) {
     notify("Keine Kategorie ausgewählt", 3000, "error")
@@ -139,10 +170,16 @@ function deleteCategory() {
     .catch(err => console.error("Fehler beim Löschen der Kategorie:", err));
 }
 
+/**
+ * Öffnet das Popup-Fenster (Modal) zum Erstellen einer neuen Ticket-Kategorie.
+ */
 function openCreateCategoryPopup() {
   document.getElementById("createCategoryPopup").classList.add("show");
 }
 
+/**
+ * Schließt das Popup-Fenster (Modal) zum Erstellen einer neuen Ticket-Kategorie und setzt die Formularfelder zurück.
+ */
 function closeCreateCategoryPopup() {
   document.getElementById("createCategoryPopup").classList.remove("show");
   document.getElementById("newCategoryName").value = "";
@@ -153,6 +190,10 @@ function closeCreateCategoryPopup() {
   document.getElementById("newCategoryPermission").innerHTML = "";
 }
 
+/**
+ * Erstellt eine neue Ticket-Kategorie mit den im Popup-Formular eingegebenen Daten.
+ * Sendet die Daten an den Server und aktualisiert die Kategorienliste nach Erfolg.
+ */
 function createCategory() {
   const label = document.getElementById("newCategoryName").value.trim();
   const emoji = document.getElementById("newCategoryEmoji").value.trim();
@@ -198,6 +239,10 @@ function createCategory() {
     .catch(err => console.error("Fehler beim Erstellen der Kategorie:", err));
 }
 
+/**
+ * Lädt die Rollen der aktuellen Guild vom Server und füllt die Berechtigungs-Auswahlfelder
+ * für das Bearbeiten und Erstellen von Kategorien.
+ */
 function loadGuildRoles() {
   fetch(`/api/roles/${guildID}`)
     .then(response => response.json())

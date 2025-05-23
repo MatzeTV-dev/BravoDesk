@@ -2,6 +2,13 @@ import { PermissionsBitField, ChannelType } from 'discord.js';
 import { executeQuery } from '../Database/database.js';
 import Logger from '../helper/loggerHelper.js';
 
+/**
+ * Aktualisiert oder erstellt die Support-Rolle für eine Guild.
+ * Wenn die Rolle nicht existiert, wird sie erstellt und die ID in der Datenbank gespeichert.
+ * @async
+ * @param {import('discord.js').Guild} guild - Das Guild-Objekt.
+ * @returns {Promise<import('discord.js').Role|undefined>} Die erstellte oder gefundene Rolle, oder undefined bei einem Fehler.
+ */
 async function updateSupportRoleID(guild) {
     try {
         Logger.error('Support-Rolle nicht gefunden.');
@@ -28,6 +35,13 @@ async function updateSupportRoleID(guild) {
     }
 }
 
+/**
+ * Aktualisiert oder erstellt die KI-Admin-Rolle für eine Guild.
+ * Wenn die Rolle nicht existiert, wird sie erstellt und die ID in der Datenbank gespeichert.
+ * @async
+ * @param {import('discord.js').Guild} guild - Das Guild-Objekt.
+ * @returns {Promise<import('discord.js').Role|undefined>} Die erstellte oder gefundene Rolle, oder undefined bei einem Fehler.
+ */
 async function updateKiAdminID(guild) {
     Logger.error('KI-Admin Rolle nicht gefunden.');
 
@@ -45,6 +59,13 @@ async function updateKiAdminID(guild) {
     return adminRole;
 }
 
+/**
+ * Aktualisiert oder erstellt die Ticket-Kategorie (Channel-Kategorie) für eine Guild.
+ * Wenn die Kategorie nicht existiert, wird sie erstellt und die ID in der Datenbank gespeichert.
+ * @async
+ * @param {import('discord.js').Guild} guild - Das Guild-Objekt.
+ * @returns {Promise<import('discord.js').CategoryChannel|undefined>} Die erstellte oder gefundene Kategorie, oder undefined bei einem Fehler.
+ */
 async function updateTicketCategoryID(guild) {
     Logger.error('Ticket Kategorie nicht gefunden.');
 
@@ -77,6 +98,13 @@ async function updateTicketCategoryID(guild) {
     return category;
 }
 
+/**
+ * Aktualisiert oder erstellt die Archiv-Kategorie (Channel-Kategorie) für eine Guild.
+ * Wenn die Kategorie nicht existiert, wird sie erstellt und die ID in der Datenbank gespeichert.
+ * @async
+ * @param {import('discord.js').Guild} guild - Das Guild-Objekt.
+ * @returns {Promise<import('discord.js').CategoryChannel|undefined>} Die erstellte oder gefundene Kategorie, oder undefined bei einem Fehler.
+ */
 async function updateArchivCategoryID(guild) {
     Logger.error('Archiv Kategorie nicht gefunden.');
     let archiv = null;
@@ -113,6 +141,13 @@ async function updateArchivCategoryID(guild) {
     return archiv;
 }
 
+/**
+ * Aktualisiert oder erstellt den Ticket-System-Kanal für eine Guild.
+ * Wenn der Kanal nicht existiert, wird er erstellt und die ID in der Datenbank gespeichert.
+ * @async
+ * @param {import('discord.js').Guild} guild - Das Guild-Objekt.
+ * @returns {Promise<import('discord.js').TextChannel|undefined>} Der erstellte oder gefundene Kanal, oder undefined bei einem Fehler.
+ */
 async function updateTicketSystemChannelID(guild) {
     Logger.error('Ticket System Channel nicht gefunden.');
 
@@ -143,7 +178,7 @@ async function updateTicketSystemChannelID(guild) {
         Logger.error(`Error beim aktualisieren von der Ticket System Channel ID ${error.message, error.stack}`);
     }
     Logger.success(`Ticket System Channel ID Rolle für Server ID ${guild.id} aktualisiert`);
-    return category;
+    return channel; // Korrigiert: sollte channel zurückgeben, nicht category
 }
 
 export { updateSupportRoleID, updateKiAdminID, updateTicketCategoryID, updateTicketSystemChannelID, updateArchivCategoryID}

@@ -13,7 +13,15 @@ const columnMap = {
   welcome_message: 'welcome_message_embed'
 };
 
-// GET /api/embeds/getEmbeds/:guildId/:key → Einzelnes Embed abrufen
+/**
+ * Ruft ein spezifisches Embed-Design für eine Guild ab.
+ *
+ * @route GET /api/embeds/getEmbeds/:guildId/:key
+ * @param {express.Request} req - Das Request-Objekt, das `guildId` und `key` als URL-Parameter enthält.
+ *                                `key` kann 'ticket_creation' oder 'welcome_message' sein.
+ * @param {express.Response} res - Das Response-Objekt.
+ * @returns {Promise<void>}
+ */
 router.get('/getEmbeds/:guildId/:key', async (req, res) => {
   try {
     const { guildId, key } = req.params;
@@ -37,7 +45,16 @@ router.get('/getEmbeds/:guildId/:key', async (req, res) => {
   }
 });
 
-// PUT /api/embeds/:guildId/:key → Embed speichern + Bot aktualisieren
+/**
+ * Aktualisiert ein spezifisches Embed-Design für eine Guild und benachrichtigt den Bot.
+ *
+ * @route PUT /api/embeds/:guildId/:key
+ * @param {express.Request} req - Das Request-Objekt, das `guildId` und `key` als URL-Parameter
+ *                                sowie den Embed-Payload im Body enthält.
+ *                                `key` kann 'ticket_creation' oder 'welcome_message' sein.
+ * @param {express.Response} res - Das Response-Objekt.
+ * @returns {Promise<void>}
+ */
 router.put('/:guildId/:key', async (req, res) => {
   const { guildId, key } = req.params;
   const embedsPayload = req.body.embeds;

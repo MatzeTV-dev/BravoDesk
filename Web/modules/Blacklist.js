@@ -26,7 +26,14 @@ function validateServerId(id) {
 // Alle Routen hier brauchen Auth
 router.use(ensureAuthenticated);
 
-
+/**
+ * Ruft alle Blacklist-Einträge für einen bestimmten Server ab.
+ *
+ * @route GET /blacklist/:serverId
+ * @param {express.Request} req - Der Request mit der Server-ID als Parameter.
+ * @param {express.Response} res - Die Response, die die Blacklist-Einträge als JSON zurückgibt.
+ * @returns {Promise<void>}
+ */
 router.get('/blacklist/:serverId', async (req, res) => {
   const { serverId } = req.params;
   if (!validateServerId(serverId))
@@ -61,6 +68,14 @@ router.get('/blacklist/:serverId', async (req, res) => {
   }
 });
 
+/**
+ * Sucht nach einem bestimmten Benutzer in der Blacklist eines Servers.
+ *
+ * @route GET /blacklist/:serverId/search
+ * @param {express.Request} req - Der Request mit Server-ID als Parameter und User-ID als Query-Parameter.
+ * @param {express.Response} res - Die Response, die die gefundenen Blacklist-Einträge als JSON zurückgibt.
+ * @returns {Promise<void>}
+ */
 router.get('/blacklist/:serverId/search', async (req, res) => {
   const { serverId } = req.params;
   const userId       = req.query.user_id;
@@ -94,6 +109,14 @@ router.get('/blacklist/:serverId/search', async (req, res) => {
   }
 });
 
+/**
+ * Entfernt einen Benutzer von der Blacklist eines Servers.
+ *
+ * @route DELETE /blacklist/:serverId/:userId
+ * @param {express.Request} req - Der Request mit Server-ID und User-ID als Parameter.
+ * @param {express.Response} res - Die Response, die den Erfolg der Operation als JSON zurückgibt.
+ * @returns {Promise<void>}
+ */
 router.delete('/blacklist/:serverId/:userId', async (req, res) => {
   const { serverId, userId } = req.params;
   if (!validateServerId(serverId) || !/^\d{18}$/.test(userId))

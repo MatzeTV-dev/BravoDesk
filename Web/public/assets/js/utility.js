@@ -1,3 +1,10 @@
+/**
+ * Zeigt einen bestimmten Inhaltsbereich (Sektion) auf der Seite an und hebt das zugehörige Navigationselement hervor.
+ * Alle anderen Sektionen werden ausgeblendet und bei anderen Navigationselementen wird die Hervorhebung entfernt.
+ *
+ * @param {string} sectionId - Die ID des HTML-Elements, das die anzuzeigende Sektion darstellt.
+ * @param {HTMLElement} navItem - Das HTML-Listenelement (`<li>`) in der Navigation, das zur Sektion gehört und hervorgehoben werden soll.
+ */
 function showSection(sectionId, navItem) {
   // Sicherstellen, dass sectionId gültig ist, bevor sie verwendet wird.
   const sectionElement = document.getElementById(sectionId);
@@ -15,6 +22,13 @@ function showSection(sectionId, navItem) {
   navItem.classList.add('active');
 }
 
+/**
+ * Schaltet die Sichtbarkeit eines Menüs um (z.B. Dropdown-Menü).
+ * Animiert das Ein- und Ausblenden des Menüs und dreht optional ein zugehöriges Pfeil-Icon.
+ *
+ * @param {string} menuId - Die ID des HTML-Elements, das das Menü darstellt.
+ * @param {string} [arrowId] - Optionale ID des HTML-Elements, das ein Pfeil-Icon darstellt, das gedreht werden soll.
+ */
 function toggleMenu(menuId, arrowId) {
   var menu = document.getElementById(menuId);
   var arrow = arrowId ? document.getElementById(arrowId) : null;
@@ -33,12 +47,25 @@ function toggleMenu(menuId, arrowId) {
   }
   
 }
+
+/**
+ * Aktualisiert den angezeigten Namen des ausgewählten Servers und schließt das Server-Auswahlmenü.
+ * (Hinweis: Diese Funktion scheint spezifisch für das Server-Dropdown zu sein und überschneidet sich
+ * möglicherweise mit Funktionalität in `SeverSelector.js`.)
+ *
+ * @param {string} serverName - Der Name des Servers, der angezeigt werden soll.
+ */
 function selectServer(serverName) {
   // Sicherer Umgang mit dynamischen Inhalten: Verwendung von textContent.
   document.getElementById("selectedServer").textContent = serverName;
   toggleMenu("serverDropdown");
 }
 
+/**
+ * Globaler Event-Listener für Klicks auf das gesamte Dokument.
+ * Dient dazu, offene Dropdown-Menüs (Server-Auswahl, User-Menü) zu schließen,
+ * wenn außerhalb dieser Menüs und ihrer zugehörigen Buttons geklickt wird.
+ */
 document.addEventListener("click", function(event) {
   if (!event.target.closest("#serverButton") && !event.target.closest("#serverDropdown")) {
     var serverDropdown = document.getElementById("serverDropdown");
@@ -54,6 +81,16 @@ document.addEventListener("click", function(event) {
   }
 });
 
+/**
+ * Zeigt eine Benachrichtigungsnachricht auf der Seite an.
+ * Die Benachrichtigung wird nach einer festgelegten Dauer automatisch ausgeblendet.
+ * Es werden maximal 5 Benachrichtigungen gleichzeitig angezeigt; ältere werden entfernt.
+ *
+ * @param {string} message - Die anzuzeigende Nachricht.
+ * @param {number} [duration=3000] - Die Anzeigedauer der Benachrichtigung in Millisekunden.
+ * @param {string} [type="info"] - Der Typ der Benachrichtigung ("info", "success", "warn", "error"),
+ *                                 der das Aussehen beeinflusst.
+ */
 function notify(message, duration = 3000, type = "info") {
     const container = document.getElementById("notifyContainer");
     if (container.children.length >= 5) {
@@ -75,13 +112,15 @@ var emojiFields = document.querySelectorAll('.emoji-field');
 var triggers = [];
 emojiFields.forEach(function(el) {
   triggers.push({
-    selector: '#' + el.id,
-    insertInto: '#' + el.id
+    selector: '#' + el.id, // Selektor für das Eingabefeld
+    insertInto: '#' + el.id // Eingabefeld, in das das Emoji eingefügt wird
   });
 });
+// Initialisiert den EmojiPicker für alle Felder, die als 'emoji-field' markiert sind.
+// Konfiguriert den Picker mit spezifischen Optionen wie Schließen-Button und Verhalten beim Auswählen.
 new EmojiPicker({
-  trigger: triggers,
-  closeButton: true,
-  closeOnSelect: true,
-  specialButtons: 'green'
+  trigger: triggers, // Array von Trigger-Objekten
+  closeButton: true, // Zeigt einen Schließen-Button im Picker
+  closeOnSelect: true, // Schließt den Picker nach Auswahl eines Emojis
+  specialButtons: 'green' // Farbschema für spezielle Buttons (falls vorhanden)
 });
