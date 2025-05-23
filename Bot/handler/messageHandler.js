@@ -1,6 +1,6 @@
 import { getCategories, updateTicketCreationMessage } from '../helper/ticketCategoryHelper.js';
+import { getServerInformation, chefIfServerExists } from '../Database/database.js';
 //import { checkKeyValidity, GetActivationKey } from '../helper/keyHelper.js';
-import { getServerInformation } from '../Database/database.js';
 import { getData, upload } from '../Database/qdrant.js';
 import Logger from '../helper/loggerHelper.js';
 import axios from 'axios';
@@ -194,6 +194,11 @@ async function collectMessagesFromChannel(channel, client, triggeringMessage) {
 export default async (client, message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
+  if (await chefIfServerExists(message.guild.id)){
+    console.log("Server isn't setup");
+    return;
+  }  
+  
   const serverInformation = await getServerInformation(message.guild.id);
   if (message.channel.id === serverInformation[0][0].ticket_system_channel_id) {
     try {
