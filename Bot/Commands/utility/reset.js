@@ -9,6 +9,14 @@ import axios from 'axios';
 const WEBSERVER_NOTIFICATION_URL = process.env.WEBSERVER_URL + '/api/notify/reset';
 const WEBSERVER_API_SECRET = process.env.DASHBOARD_API_TOKEN;
 
+/**
+ * Benachrichtigt die Webanwendung über einen Reset-Vorgang für eine bestimmte Guild.
+ * Sendet eine POST-Anfrage an den konfigurierten Webserver-Endpunkt.
+ *
+ * @async
+ * @param {string} guildId - Die ID der Guild, für die der Reset durchgeführt wurde.
+ * @returns {Promise<void>} Ein Promise, das resolved, wenn die Benachrichtigung erfolgreich gesendet wurde oder fehlschlägt.
+ */
 async function notifyWebsiteOfReset(guildId) {
   if (!WEBSERVER_NOTIFICATION_URL || !WEBSERVER_API_SECRET) {
     Logger.warn('Webserver Benachrichtigungs-URL oder Secret nicht konfiguriert. Überspringe Benachrichtigung.');

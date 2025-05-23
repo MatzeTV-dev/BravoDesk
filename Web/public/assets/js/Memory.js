@@ -1,14 +1,22 @@
-// Öffnet das Popup zum Erstellen eines Wissenseintrags.
+/**
+ * Öffnet das Popup-Modal zum Erstellen eines neuen Wissenseintrags.
+ */
 function openPopup() {
   document.getElementById("popupModal").classList.add("show");
 }
 
-// Schließt das Popup zum Erstellen eines Wissenseintrags.
+/**
+ * Schließt das Popup-Modal zum Erstellen eines neuen Wissenseintrags.
+ */
 function closePopup() {
   document.getElementById("popupModal").classList.remove("show");
 }
 
-// Speichert einen neuen Wissenseintrag über den API-Endpunkt.
+/**
+ * Speichert einen neuen Wissenseintrag.
+ * Liest den Text aus dem Eingabefeld, sendet ihn an den Server
+ * und lädt bei Erfolg die Wissenseinträge neu.
+ */
 function saveEntry() {
   const newEntryText = document.getElementById("newEntryText").value.trim();
   if (newEntryText !== "" && currentGuildId) {
@@ -28,7 +36,14 @@ function saveEntry() {
   }
 }
 
-// Öffnet das Popup zur Bearbeitung eines bestehenden Wissenseintrags.
+/**
+ * Öffnet das Popup-Modal zur Bearbeitung eines vorhandenen Wissenseintrags.
+ * Füllt das Bearbeitungsfeld mit dem aktuellen Text des Eintrags.
+ *
+ * @param {HTMLElement} el - Das HTML-Element (z.B. ein Button), das das Öffnen des Popups ausgelöst hat.
+ *                           Es wird erwartet, dass dieses Element Teil einer Tabellenzeile ist,
+ *                           die das Attribut 'data-entry-id' und den Text des Eintrags enthält.
+ */
 function openEditPopup(el) {
   const row = el.parentElement.parentElement;
   currentEditRow = row;
@@ -38,12 +53,18 @@ function openEditPopup(el) {
   document.getElementById("editPopupModal").classList.add("show");
 }
 
-// Schließt das Bearbeitungs-Popup.
+/**
+ * Schließt das Popup-Modal zur Bearbeitung eines Wissenseintrags.
+ */
 function closeEditPopup() {
   document.getElementById("editPopupModal").classList.remove("show");
 }
 
-// Speichert die Änderungen eines bearbeiteten Wissenseintrags über den API-Endpunkt.
+/**
+ * Speichert die Änderungen an einem bearbeiteten Wissenseintrag.
+ * Liest den neuen Text aus dem Bearbeitungsfeld, sendet ihn an den Server
+ * und lädt bei Erfolg die Wissenseinträge neu.
+ */
 function saveEditEntry() {
   const newText = document.getElementById("editEntryText").value.trim();
   if (currentEditRow && currentEditEntryId && newText !== "" && currentGuildId) {
@@ -64,7 +85,15 @@ function saveEditEntry() {
   }
 }
 
-// Löscht einen Wissenseintrag über den API-Endpunkt.
+/**
+ * Löscht einen Wissenseintrag nach Bestätigung durch den Benutzer.
+ * Sendet eine Anfrage an den Server, um den Eintrag zu löschen,
+ * und lädt bei Erfolg die Wissenseinträge neu.
+ *
+ * @param {HTMLElement} el - Das HTML-Element (z.B. ein Button), das das Löschen ausgelöst hat.
+ *                           Es wird erwartet, dass dieses Element Teil einer Tabellenzeile ist,
+ *                           die das Attribut 'data-entry-id' enthält.
+ */
 function deleteEntry(el) {
   if (confirm("Eintrag wirklich löschen?") && currentGuildId) {
     const row = el.parentElement.parentElement;
@@ -84,11 +113,16 @@ function deleteEntry(el) {
         loadKnowledgeEntries(currentGuildId);
         notify("Wissenseinträge wurde erfolgreich gelöscht", 3000, "success");
       })
-      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));    
+      .catch(err => console.error("Fehler beim Löschen des Eintrags:", err));
   }
 }
 
-// Lädt alle Wissenseinträge für die angegebene Guild von der API.
+/**
+ * Lädt alle Wissenseinträge für die angegebene Guild-ID vom Server
+ * und stellt sie in der Tabelle dar.
+ *
+ * @param {string} guildId - Die ID der Guild, für die die Wissenseinträge geladen werden sollen.
+ */
 function loadKnowledgeEntries(guildId) {
   currentGuildId = guildId;
   fetch(`/api/wissenseintraege/${guildId}`)
@@ -148,15 +182,25 @@ function loadKnowledgeEntries(guildId) {
     .catch(err => console.error("Fehler beim Laden der Wissenseinträge:", err));
 }
 
-
+/**
+ * Öffnet das Modal für den Datei-Upload.
+ */
 function openFileUploadModal() {
   document.getElementById("fileUploadModal").classList.add("show");
 }
 
+/**
+ * Schließt das Modal für den Datei-Upload.
+ */
 function closeFileUploadModal() {
   document.getElementById("fileUploadModal").classList.remove("show");
 }
 
+/**
+ * Lädt die ausgewählte Datei auf den Server hoch, um daraus Wissenseinträge zu erstellen.
+ * Sendet die Datei als FormData an den API-Endpunkt.
+ * Benachrichtigt den Benutzer über Erfolg oder Fehler und lädt ggf. die Wissenseinträge neu.
+ */
 function uploadFile() {
   const fileInput = document.getElementById("fileInput");
   if (!fileInput.files || fileInput.files.length === 0) {
@@ -193,30 +237,44 @@ function uploadFile() {
     });
 }
 
-
 // Globale Variablen für den aktuellen Guild-Kontext und Editierstatus.
-let currentGuildId = null;
-let currentEditRow = null;
-let currentEditEntryId = null;
+let currentGuildId = null; // Hält die ID der aktuell ausgewählten Guild.
+let currentEditRow = null; // Referenz auf die Tabellenzeile des aktuell bearbeiteten Eintrags.
+let currentEditEntryId = null; // ID des aktuell bearbeiteten Wissenseintrags.
 
+/**
+ * Event-Listener, der nach dem vollständigen Laden des DOMs ausgeführt wird.
+ * Initialisiert Event-Handler, z.B. für das Ändern der Auswahl im Wissenseinträge-Dropdown.
+ */
 document.addEventListener("DOMContentLoaded", function() {
   // Bindet den Änderungs-Event für das Dropdown zur Kategorieauswahl.
+  // Hinweis: Das Element mit der ID "wissenseintraege" scheint hier als Dropdown für Guilds/Server zu fungieren,
+  // basierend auf `loadKnowledgeEntries(this.value)`.
   document.getElementById("wissenseintraege").addEventListener("change", function() {
     loadKnowledgeEntries(this.value);
   });
 });
 
-// Öffnet das Modal zum Google Docs Import
+/**
+ * Öffnet das Modal für den Google Docs Import.
+ */
 function openDocUploadModal() {
   document.getElementById('docUploadModal').classList.add('show');
 }
 
-// Schließt das Modal zum Google Docs Import
+/**
+ * Schließt das Modal für den Google Docs Import.
+ */
 function closeDocUploadModal() {
   document.getElementById('docUploadModal').classList.remove('show');
 }
 
-// Importiert Google Docs per URL und legt Einträge an
+/**
+ * Importiert ein Google Docs Dokument über dessen URL.
+ * Sendet die URL an den Server, der das Dokument verarbeitet und Wissenseinträge erstellt.
+ * Benachrichtigt den Benutzer über Erfolg oder Fehler und lädt ggf. die Wissenseinträge neu.
+ * @async
+ */
 async function importDoc() {
   const url = document.getElementById('docUrl').value.trim();
   if (!url) {

@@ -1,3 +1,9 @@
+/**
+ * Lädt die Liste der Server (Guilds), in denen der Benutzer Administrator ist und der Bot Mitglied ist.
+ * Füllt das Server-Auswahl-Dropdown-Menü mit diesen Servern.
+ * Fügt auch einen Button hinzu, um den Bot zu weiteren Servern einzuladen.
+ * Wählt standardmäßig den ersten Server in der Liste aus.
+ */
 function loadServers() {
   fetch('/api/guilds')
     .then(response => response.json())
@@ -68,6 +74,19 @@ function loadServers() {
     .catch(err => console.error("Fehler beim Laden der Server:", err));
 }
 
+/**
+ * Wählt einen Server aus und lädt die entsprechenden Daten für diesen Server.
+ * Aktualisiert den angezeigten Servernamen und schließt optional das Dropdown-Menü.
+ * Überprüft den Setup-Status des Servers und lädt ggf. Wissenseinträge, Blacklist, etc.
+ *
+ * @param {object} guild - Das Guild-Objekt des ausgewählten Servers. Enthält mindestens `id` und `name`.
+ * @param {string} guild.id - Die ID der ausgewählten Guild.
+ * @param {string} guild.name - Der Name der ausgewählten Guild.
+ * @param {boolean} automatic_open - Gibt an, ob das Server-Auswahlmenü nach der Auswahl geschlossen werden soll.
+ *                                   (Hinweis: Der Parametername `automatic_open` scheint irreführend,
+ *                                   basierend auf der Verwendung `toggleMenu("serverDropdown")` sollte es eher
+ *                                   `closeMenuAfterSelection` oder ähnlich heißen und bei `true` das Menü schließen).
+ */
 function selectServer(guild, automatic_open) {
   // textContent statt innerText verwenden, um sicherzustellen, dass unerwünschte HTML-Interpretation unterbunden wird
   document.getElementById("selectedServer").textContent = guild.name;
@@ -86,14 +105,33 @@ function selectServer(guild, automatic_open) {
   }
 }
 
+/**
+ * Zeigt das Setup-Overlay an, das den Hauptinhalt der Seite überlagert.
+ * Wird verwendet, wenn der ausgewählte Server den Setup-Prozess noch nicht abgeschlossen hat.
+ */
 function showOverlay() {
   document.getElementById('setupOverlay').style.display = 'flex';
 }
 
+/**
+ * Versteckt das Setup-Overlay.
+ */
 function hideOverlay() {
   document.getElementById('setupOverlay').style.display = 'none';
 }
 
+/**
+ * Überprüft den Setup-Status für eine gegebene Guild-ID.
+ * Sendet eine Anfrage an den API-Endpunkt und zeigt oder versteckt das Setup-Overlay
+ * basierend auf dem Ergebnis.
+ *
+ * @param {string} guildid - Die ID der Guild, deren Setup-Status überprüft werden soll.
+ * @returns {boolean|null} Gibt den Setup-Status (`true` für abgeschlossen, `false` für nicht abgeschlossen)
+ *                         synchron zurück, obwohl die Aktualisierung der UI asynchron erfolgt.
+ *                         Gibt `null` zurück, bevor der Fetch-Request abgeschlossen ist.
+ *                         (Hinweis: Die synchrone Rückgabe des Check-Wertes vor Abschluss des Fetch ist problematisch,
+ *                         da der Aufrufer einen veralteten oder initialen Wert erhalten könnte.)
+ */
 function checkServerStatus(guildid) {
   let check = null;
   fetch(`/api/setupstatus/${guildid}`)

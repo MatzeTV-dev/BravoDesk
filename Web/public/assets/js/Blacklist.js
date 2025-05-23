@@ -1,10 +1,21 @@
-// Hilfsfunktion zur HTML-Escape, um potenzielle XSS-Angriffe zu verhindern
+/**
+ * Escaped HTML-Sonderzeichen in einem String, um XSS-Schwachstellen vorzubeugen.
+ * Ersetzt Zeichen wie <, >, &, ", ' durch ihre entsprechenden HTML-Entitäten.
+ *
+ * @param {string} str - Der zu escapende String.
+ * @returns {string} Der String mit escapeden HTML-Zeichen.
+ */
 function escapeHTML(str) {
   var div = document.createElement('div');
   div.innerText = str;
   return div.innerHTML;
 }
 
+/**
+ * Lädt die Blacklist-Einträge für eine gegebene Guild-ID vom Server und zeigt sie in der Tabelle an.
+ *
+ * @param {string} guildId - Die ID der Guild, für die die Blacklist-Einträge geladen werden sollen.
+ */
 function loadBlacklistEntries(guildId) {
   currentGuildId = guildId;
   fetch(`/api/blacklist/${guildId}`)
@@ -40,14 +51,24 @@ function loadBlacklistEntries(guildId) {
     .catch(err => console.error("Fehler beim Laden der Blacklist-Einträge:", err));
 }
 
+/**
+ * Öffnet das Modal zum Hinzufügen eines neuen Blacklist-Eintrags.
+ */
 function openBlacklistAddModal() {
   document.getElementById("blacklistAddModal").classList.add("show");
 }
 
+/**
+ * Schließt das Modal zum Hinzufügen eines neuen Blacklist-Eintrags.
+ */
 function closeBlacklistAddModal() {
   document.getElementById("blacklistAddModal").classList.remove("show");
 }
 
+/**
+ * Speichert einen neuen Blacklist-Eintrag. Sendet die User-ID und den Grund an den Server.
+ * Aktualisiert nach Erfolg die Blacklist-Anzeige und schließt das Modal.
+ */
 function saveBlacklistEntry() {
   const userId = document.getElementById("blacklistAddUserId").value.trim();
   const reason = document.getElementById("blacklistAddReason").value.trim();
@@ -85,15 +106,24 @@ function saveBlacklistEntry() {
     });
 }
 
-
+/**
+ * Öffnet das Modal zum Entfernen eines Blacklist-Eintrags.
+ */
 function openBlacklistRemoveModal() {
   document.getElementById("blacklistRemoveModal").classList.add("show");
 }
 
+/**
+ * Schließt das Modal zum Entfernen eines Blacklist-Eintrags.
+ */
 function closeBlacklistRemoveModal() {
   document.getElementById("blacklistRemoveModal").classList.remove("show");
 }
 
+/**
+ * Bestätigt und führt das Entfernen eines Blacklist-Eintrags für die angegebene User-ID durch.
+ * Aktualisiert nach Erfolg die Blacklist-Anzeige und schließt das Modal.
+ */
 function confirmBlacklistRemoval() {
   const userId = document.getElementById("blacklistRemoveUserId").value.trim();
   if (userId !== "" && currentGuildId) {
@@ -112,15 +142,26 @@ function confirmBlacklistRemoval() {
   }
 }
 
+/**
+ * Öffnet das Modal zur Suche nach Blacklist-Einträgen.
+ * Leert vorherige Suchergebnisse.
+ */
 function openBlacklistSearchModal() {
   document.getElementById("blacklistSearchModal").classList.add("show");
   document.getElementById("blacklistSearchResults").innerHTML = "";
 }
 
+/**
+ * Schließt das Modal zur Suche nach Blacklist-Einträgen.
+ */
 function closeBlacklistSearchModal() {
   document.getElementById("blacklistSearchModal").classList.remove("show");
 }
 
+/**
+ * Führt eine Suche nach Blacklist-Einträgen für die angegebene User-ID durch.
+ * Zeigt die Ergebnisse im Suchmodal an.
+ */
 function performBlacklistSearch() {
   const userId = document.getElementById("blacklistSearchUserId").value.trim();
   if (userId !== "" && currentGuildId) {

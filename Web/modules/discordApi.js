@@ -3,7 +3,14 @@ import fetch from 'node-fetch';
 const API_BASE = 'https://discord.com/api/v10';
 const TOKEN    = process.env.DISCORD_BOT_TOKEN;
 
-// Helper zum einmaligen Fetch
+/**
+ * Interne Hilfsfunktion zum Abrufen von Daten von einer URL mit Bot-Autorisierung.
+ * Fängt Fehler ab und gibt null zurück, wenn der Abruf fehlschlägt oder die Antwort nicht OK ist.
+ *
+ * @async
+ * @param {string} url - Die URL, von der die Daten abgerufen werden sollen.
+ * @returns {Promise<Object|null>} Ein Promise, das zum JSON-Objekt der Antwort auflöst, oder null bei einem Fehler.
+ */
 async function tryFetch(url) {
     try {
       const res = await fetch(url, {

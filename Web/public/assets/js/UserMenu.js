@@ -1,3 +1,9 @@
+/**
+ * Lädt die Benutzerinformationen des aktuell angemeldeten Benutzers vom Server.
+ * Aktualisiert den angezeigten Benutzernamen und das Avatar-Bild im User-Menü.
+ * Verwendet die globalen Benutzerdaten (`user.global_name`) und den Diskriminator, falls vorhanden.
+ * Setzt ein Standard-Avatar, falls kein benutzerdefiniertes Avatar vorhanden ist.
+ */
 function loadUserInfo() {
   fetch('/api/user')
     .then(response => response.json())
@@ -33,6 +39,11 @@ function loadUserInfo() {
     .catch(err => console.error("Fehler beim Laden der User-Daten:", err));
 }
 
+/**
+ * Meldet den aktuellen Benutzer ab.
+ * Schließt zuerst das User-Menü, sendet dann eine Logout-Anfrage an den Server
+ * und leitet den Benutzer bei Erfolg zur Startseite weiter.
+ */
 function logout() {
   toggleMenu("userMenu", "userArrow");
   fetch('/auth/logout')
@@ -42,4 +53,8 @@ function logout() {
     .catch(err => console.error("Fehler beim Abmelden:", err));
 }
 
+/**
+ * Event-Listener, der beim vollständigen Laden der Seite ('load'-Event des `window`-Objekts)
+ * die Funktion `loadUserInfo` aufruft, um die Benutzerinformationen zu laden und anzuzeigen.
+ */
 window.addEventListener('load', loadUserInfo);

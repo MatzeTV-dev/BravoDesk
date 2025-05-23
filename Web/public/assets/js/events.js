@@ -1,7 +1,17 @@
 // assets/js/events.js
 
+/**
+ * Haupt-Event-Listener, der nach dem vollständigen Laden des DOMs (DOMContentLoaded) aktiv wird.
+ * Initialisiert alle Event-Handler für die interaktiven Elemente der Benutzeroberfläche des Dashboards,
+ * wie z.B. Buttons, Dropdown-Menüs und Navigationselemente.
+ * Bindet Aktionen wie das Laden von Serverdaten, Anzeigen von Sektionen, Öffnen/Schließen von Modals
+ * und das Speichern von Änderungen an die entsprechenden UI-Elemente.
+ */
 document.addEventListener("DOMContentLoaded", () => {
-  // 1) Preloader & Initial Load
+  /**
+   * Wird ausgeführt, wenn das gesamte Fenster (inklusive aller Ressourcen wie Bilder) geladen wurde.
+   * Ruft `loadServers()` auf, um die Serverliste zu initialisieren, und blendet den Preloader aus.
+   */
   function loadAll() {
     loadServers();
     const pre = document.getElementById("preloader");
@@ -12,11 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.addEventListener("load", loadAll);
 
-  // 2) Server Dropdown
+  // Initialisiert Event-Listener für das Server-Auswahl-Dropdown.
   document.getElementById("serverButton")
     .addEventListener("click", () => toggleMenu("serverDropdown"));
 
-  // 3) Sidebar Navigation
+  // Initialisiert Event-Listener für die Navigation in der Seitenleiste.
+  // Setzt die aktive Klasse und zeigt die entsprechende Sektion an.
   document.querySelectorAll(".nav li").forEach(li => {
     li.addEventListener("click", () => {
       document.querySelectorAll(".nav li").forEach(x => x.classList.remove("active"));
@@ -25,13 +36,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 4) User Menu & Logout
+  // Initialisiert Event-Listener für das Benutzermenü (Öffnen) und den Logout-Button.
   document.getElementById("userInfo")
     .addEventListener("click", () => toggleMenu("userMenu", "userArrow"));
   document.getElementById("logoutBtn")
     .addEventListener("click", logout);
 
-  // 5) Wissenseinträge
+  // Initialisiert Event-Listener für Aktionen im Bereich Wissenseinträge:
+  // - Öffnen der Popups zum Erstellen von Einträgen, Datei-Upload und Google Docs Import.
+  // - Bestätigen des Imports und Abbrechen des Imports für Google Docs.
   document.getElementById("btnOpenPopup")
     .addEventListener("click", openPopup);
   document.getElementById("btnOpenFileUpload")
@@ -41,9 +54,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnImportDoc")
     .addEventListener("click", importDoc);
   document.getElementById("btnCancelDocImport")
-    .addEventListener("click", closeDocUploadModal);  
+    .addEventListener("click", closeDocUploadModal);
 
-  // 6) Kategorie bearbeiten
+  // Initialisiert Event-Listener für Aktionen im Bereich Ticket-Kategorien bearbeiten:
+  // - Laden der Kategoriedaten bei Auswahl.
+  // - Öffnen des Popups zum Erstellen einer neuen Kategorie.
+  // - Speichern und Löschen von Kategorien.
   document.getElementById("kategorieSelect")
     .addEventListener("change", e => loadCategoryData(e.target.value));
   document.getElementById("btnOpenCreateCategory")
@@ -53,13 +69,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnDeleteCategory")
     .addEventListener("click", deleteCategory);
 
-  // 7) Neue Kategorie erstellen
+  // Initialisiert Event-Listener für das Erstellen einer neuen Kategorie im entsprechenden Popup.
   document.getElementById("btnCreateCategorySave")
     .addEventListener("click", createCategory);
   document.getElementById("btnCreateCategoryCancel")
     .addEventListener("click", closeCreateCategoryPopup);
 
-  // 8) Blacklist Controls
+  // Initialisiert Event-Listener für die Blacklist-Verwaltung (Hinzufügen, Entfernen, Suchen).
+  // Öffnen der jeweiligen Modals und Ausführen/Abbrechen der Aktionen.
   document.getElementById("btnBlacklistAdd")
     .addEventListener("click", () => toggleModal("blacklistAddModal"));
   document.getElementById("btnBlacklistRemove")
@@ -82,13 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnBlacklistCancelSearch")
     .addEventListener("click", closeBlacklistSearchModal);
 
-  // 9) Datei Upload
+  // Initialisiert Event-Listener für den Datei-Upload von Wissensdaten.
   document.getElementById("btnUploadFile")
     .addEventListener("click", uploadFile);
   document.getElementById("btnCancelUploadFile")
     .addEventListener("click", closeFileUploadModal);
 
-  // 10) Design Embeds
+  // Initialisiert Event-Listener für die Auswahl und Bearbeitung von Embed-Designs.
   document.querySelectorAll(".embed-list li").forEach(li => {
     li.addEventListener("click", () => openDesignModal(li.dataset.embedId));
   });
@@ -98,7 +115,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnCancelDesignModal")
     .addEventListener("click", closeDesignModal);
 
-  // 11) Wissenseintrag bearbeiten
+  // Initialisiert Event-Listener für das Speichern und Abbrechen beim Erstellen
+  // und Bearbeiten von einzelnen Wissenseinträgen.
   document.getElementById("btnSaveEntry")
     .addEventListener("click", saveEntry);
   document.getElementById("btnCancelEntry")
