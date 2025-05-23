@@ -83,8 +83,8 @@ Before you begin, ensure you have the following installed and configured:
 #### a. Clone the Repository
 
 ```bash
-git clone <repository_url> # Replace <repository_url> with the actual URL
-cd <repository_name>/Bot
+git clone https://github.com/MatzeTV-dev/BravoDesk/
+cd BravoDesk
 ```
 
 #### b. Install Dependencies
